@@ -9,11 +9,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .top h1{font-size:34px;font-weight:900}.top h1 .a{color:#F0B429}
 .top .clock{text-align:right}.top .clock .t{font-size:34px;font-weight:900;color:#F0B429;line-height:1}
 .top .clock .d{font-size:15px;color:#B8C4D4}
-.wx{display:flex;align-items:center;gap:12px}
-.wx .wxi{font-size:40px;line-height:1}
-.wx .wxt{font-size:30px;font-weight:900;color:#F0B429;line-height:1}
-.wx .wxt .wxfl{font-size:14px;color:#9fb2ca;font-weight:700;margin-left:6px}
-.wx .wxd{font-size:14px;color:#B8C4D4}
 .bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px}
 .bdaybanner .bd-ic{font-size:24px;line-height:1}
 .kpis{display:flex;gap:16px;padding:16px 34px}
@@ -31,7 +26,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .ord{background:#0e1c31;border-left:6px solid #43d17a;border-radius:0 12px 12px 0;padding:9px 16px;margin-bottom:8px}
 .ord.b1{border-left-color:#F0B429}
 .ord.b2{border-left-color:#ff5b5b}
-.ord.unk{border-left-color:#5c7089}
 .ord .oh{display:flex;justify-content:space-between;align-items:baseline}
 .ord .oid{font-size:19px;font-weight:800}.ord .oid .acct{font-size:14px;color:#9fb2ca;font-weight:600}
 .ord .age{font-size:22px;font-weight:900;color:#fff;white-space:nowrap}.ord .age small{font-size:12px;color:#9fb2ca;margin-left:5px}
@@ -54,16 +48,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 </style></head><body>
 <div class="top">
   <h1>AER <span class="a">|</span> Transfer Tracker</h1>
-  <div class="wx" id="weather"><span class="wxi">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
   <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
 </div>
 <div class="kpis" id="kpis"></div>
 <div class="bdaybanner" id="bdaybanner" style="display:none"></div>
 <div class="grid">
   <div class="panel"><h2><span class="n">AT DUNCAN</span><span class="hx" id="duncanhint"></span></h2><div class="scroll" id="orders_duncan"></div></div>
-  <div class="panel"><h2><span class="n">AT LIVERMORE</span> &middot; or in transit<span class="hx" id="livhint"></span></h2><div class="scroll" id="orders_livermore"></div></div>
+  <div class="panel"><h2><span class="n">AT EL PASO</span><span class="hx" id="elpasohint"></span></h2><div class="scroll" id="orders_el_paso"></div></div>
 </div>
-<div class="foot"><div id="src">Makor InboundOrders (Livermore-owned orders) + Duncan OPS Dashboard floor</div><div id="updated">&nbsp;</div></div>
+<div class="foot"><div id="src">Makor InboundOrders (Livermore-owned orders) + Duncan &amp; El Paso OPS Dashboard floors</div><div id="updated">&nbsp;</div></div>
 <script>
 function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function lbs(n){return Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});}
@@ -84,19 +77,15 @@ function renderOrders(list, opts){
     var tag=band===2?('<span class="slatag">OVERDUE +'+(o.days-sla)+'d</span>')
            :(band===1?('<span class="slatag warn">due in '+o.due_in+'d</span>'):'');
     var acct=o.account?(' &middot; '+esc(o.account)):'';
-    var cls='ord b'+band+(opts.unknown?' unk':'');
-    var flr, chips='';
-    if(opts.unknown){
-      flr='not currently on the Duncan floor';
-    } else {
-      flr=o.floor_items?('<b>'+o.floor_items.toLocaleString()+'</b> items &middot; <b>'+lbs(o.floor_weight)+'</b> lbs on floor')
-         :(o.floor_weight?('<b>'+lbs(o.floor_weight)+'</b> lbs on floor'):'no in-process material');
-      (o.stations||[]).forEach(function(s){
-        var name=s[0], items=s[1], weight=s[2];
-        var cnt=name==='Tracked Recycling'?(weight?(lbs(weight)+' lbs'):''):(items?items.toLocaleString():'');
-        chips+='<span class="chip">'+esc(name)+(cnt?(' &middot; '+cnt):'')+'</span>';
-      });
-    }
+    var cls='ord b'+band;
+    var chips='';
+    var flr=o.floor_items?('<b>'+o.floor_items.toLocaleString()+'</b> items &middot; <b>'+lbs(o.floor_weight)+'</b> lbs on floor')
+       :(o.floor_weight?('<b>'+lbs(o.floor_weight)+'</b> lbs on floor'):'no in-process material');
+    (o.stations||[]).forEach(function(s){
+      var name=s[0], items=s[1], weight=s[2];
+      var cnt=name==='Tracked Recycling'?(weight?(lbs(weight)+' lbs'):''):(items?items.toLocaleString():'');
+      chips+='<span class="chip">'+esc(name)+(cnt?(' &middot; '+cnt):'')+'</span>';
+    });
     h+='<div class="'+cls+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span>'+tag+'</div>'
       +'<div class="age'+(band===2?' over':'')+'">'+o.days+'<small>days since received</small></div></div>'
       +'<div class="meta">received '+fdate(o.received)+' &middot; <span class="due'+(band>0?' hot':'')+'">due '+fdate(o.due)+'</span> &middot; '+flr+'</div>'
@@ -110,13 +99,13 @@ function paint(d){
   if(d.loading){document.getElementById('orders_duncan').innerHTML='<div class="empty mut">Loading live data&hellip;</div>';return;}
   var T=d.totals, sla=d.sla||45;
   document.getElementById('kpis').innerHTML=
-    kpi(T.total_open,'Open Livermore orders')
+    kpi(T.total_open,'Livermore orders in progress')
     +kpi(T.at_duncan,'Currently at Duncan')
-    +'<div class="kpi"><div class="v" style="color:#7fd8ff">'+T.at_livermore+'</div><div class="l">At Livermore / in transit</div></div>'
+    +'<div class="kpi"><div class="v" style="color:#7fd8ff">'+T.at_el_paso+'</div><div class="l">At El Paso</div></div>'
     +'<div class="kpi"><div class="v" style="'+(T.over_sla>0?'color:#ff6b6b':'')+'">'+T.over_sla+'</div><div class="l">Over '+sla+'d SLA</div></div>'
     +kpi(T.oldest,'Oldest (days)','hot');
   document.getElementById('duncanhint').innerHTML=T.at_duncan+' orders &middot; oldest first';
-  document.getElementById('livhint').innerHTML=T.at_livermore+' orders &middot; oldest first';
+  document.getElementById('elpasohint').innerHTML=T.at_el_paso+' orders &middot; oldest first';
   var bd=document.getElementById('bdaybanner');
   if(d.birthdays_today&&d.birthdays_today.length){
     bd.innerHTML='<span class="bd-ic">&#127874;</span><span>Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span>';
@@ -127,56 +116,24 @@ function paint(d){
     document.querySelector('.grid').style.height='';
   }
   document.getElementById('orders_duncan').innerHTML=renderOrders(d.at_duncan,{sla:sla,more:T.more_duncan,empty:'No Livermore orders currently at Duncan.'});
-  document.getElementById('orders_livermore').innerHTML=renderOrders(d.at_livermore,{sla:sla,more:T.more_livermore,unknown:true,empty:'Every open Livermore order is currently at Duncan.'});
+  document.getElementById('orders_el_paso').innerHTML=renderOrders(d.at_el_paso,{sla:sla,more:T.more_el_paso,empty:'No Livermore orders currently at El Paso.'});
   var mins=Math.round((Date.now()-new Date(d.generated_at).getTime())/60000);
   var el=document.getElementById('updated');
-  var ops='', opsStale=false;
-  if(d.opsdash_fresh){
-    var ot=new Date(String(d.opsdash_fresh).replace(' ','T'));
-    var oAge=Math.round((Date.now()-ot.getTime())/60000);
+  function freshBit(label, ts, staleMin){
+    if(!ts) return {html:'', stale:false};
+    var age=Math.round((Date.now()-new Date(String(ts).replace(' ','T')).getTime())/60000);
     var hr=new Date().getHours();
-    opsStale=(!isNaN(oAge))&&oAge>30&&hr>=6&&hr<20;
-    ops=' &middot; Duncan floor data '+esc(d.opsdash_fresh)+(opsStale?' <b class="opsstale">STALE</b>':'');
+    var stale=(!isNaN(age))&&age>staleMin&&hr>=6&&hr<20;
+    return {html:' &middot; '+label+' '+esc(ts)+(stale?' <b class="opsstale">STALE</b>':''), stale:stale};
   }
+  var duncanBit=freshBit('Duncan floor', d.duncan_fresh, 30);
+  var elPasoBit=freshBit('El Paso floor', d.el_paso_fresh, 40);
   var api='';
   if(d.api_fresh) api=' &middot; Makor API '+esc(String(d.api_fresh).slice(11,16));
   var nts=(d.notes&&d.notes.length)?(' &middot; <span class="notewarn">'+esc(d.notes[0])+'</span>'):'';
-  el.innerHTML='Updated '+(mins<=0?'just now':mins+'m ago')+ops+api+nts;
-  el.className=(mins>20||opsStale)?'stale':'';
+  el.innerHTML='Updated '+(mins<=0?'just now':mins+'m ago')+duncanBit.html+elPasoBit.html+api+nts;
+  el.className=(mins>20||duncanBit.stale||elPasoBit.stale)?'stale':'';
 }
-
-// ── Weather (Duncan, SC) via Open-Meteo — free, no key, browser-side fetch ──
-function wxEmoji(c){
-  if(c===0) return '&#9728;';
-  if(c<=2)  return '&#9925;';
-  if(c===3) return '&#9729;';
-  if(c<=48) return '&#127787;';
-  if(c<=67) return '&#127783;';
-  if(c<=77) return '&#127784;';
-  if(c<=82) return '&#127782;';
-  return '&#9928;';
-}
-function wxText(c){
-  if(c===0) return 'Clear'; if(c<=2) return 'Partly cloudy'; if(c===3) return 'Overcast';
-  if(c<=48) return 'Fog'; if(c<=67) return 'Rain'; if(c<=77) return 'Snow';
-  if(c<=82) return 'Showers'; return 'Storms';
-}
-function loadWeather(){
-  fetch('https://api.open-meteo.com/v1/forecast?latitude=34.938&longitude=-82.138&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&temperature_unit=fahrenheit')
-    .then(function(r){return r.json();})
-    .then(function(d){
-      var c=(d&&d.current)||{}; if(c.temperature_2m==null) return;
-      var code=c.weather_code||0, t=Math.round(c.temperature_2m);
-      var feels=(c.apparent_temperature!=null)?Math.round(c.apparent_temperature):null;
-      var hum=(c.relative_humidity_2m!=null)?Math.round(c.relative_humidity_2m):null;
-      var fl=(feels!=null&&feels!==t)?('<span class="wxfl">feels '+feels+'&deg;</span>'):'';
-      document.getElementById('weather').innerHTML=
-        '<span class="wxi">'+wxEmoji(code)+'</span><div class="wxb">'
-        +'<div class="wxt">'+t+'&deg;'+fl+'</div>'
-        +'<div class="wxd">'+wxText(code)+(hum!=null?(' &middot; '+hum+'% humidity'):'')+' &middot; Duncan, SC</div></div>';
-    }).catch(function(){});
-}
-loadWeather(); setInterval(loadWeather, 900000);
 
 function poll(){fetch('transfer_tracker_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});}
 poll();setInterval(poll,60000);
