@@ -1,0 +1,297 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AER Tech Room</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;padding:18px 34px;background:#152B47;border-bottom:4px solid #F0B429}
+.top h1{font-size:34px;font-weight:900}.top h1 .a{color:#F0B429}
+.top .clock{text-align:right}.top .clock .t{font-size:34px;font-weight:900;color:#F0B429;line-height:1}
+.top .clock .d{font-size:15px;color:#B8C4D4}
+.wx{display:flex;align-items:center;gap:12px}
+.wx .wxi{font-size:40px;line-height:1}
+.wx .wxt{font-size:30px;font-weight:900;color:#F0B429;line-height:1}
+.wx .wxd{font-size:14px;color:#B8C4D4}
+.wx .wxt .wxfl{font-size:14px;color:#9fb2ca;font-weight:700;margin-left:6px}
+.kpis{display:flex;gap:16px;padding:16px 34px}
+.kpi{flex:1;background:#152B47;border:2px solid #24406a;border-radius:14px;padding:12px 8px;text-align:center}
+.kpi .v{font-size:44px;font-weight:900;color:#F0B429;line-height:1}
+.kpi .l{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#9fb2ca;margin-top:4px}
+.kpi.hot{border-color:#F0B429;background:#1c2f4d}.kpi.hot .v{color:#43d17a}
+.roster{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding:2px 34px 10px}
+.roster .rl{display:flex;align-items:baseline;gap:8px}
+.roster .rl .rk{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#F0B429;font-weight:800}
+.roster .rl .rp{font-size:17px;font-weight:700;color:#fff}
+.roster .rl .rp .none{color:#7f93ad;font-weight:600;font-style:italic}
+.roster .sup{margin-left:auto;font-size:13px;color:#9fb2ca}.roster .sup b{color:#fff}
+.roster .upd{font-size:12px;color:#7f93ad}
+.bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px}
+.bdaybanner .bd-ic{font-size:24px;line-height:1}
+.grid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;padding:6px 34px 20px;height:calc(100vh - 258px)}
+.rcol,.lcol{display:flex;flex-direction:column;gap:16px;overflow:hidden}
+.rcol .panel{flex:1 1 0;min-height:0}
+.lcol .panel.wq{flex:1.7 1 0;min-height:0}
+.lcol .panel.mv-panel{flex:1 1 0;min-height:0}
+.panel{background:#12233c;border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;overflow:hidden}
+.panel h2{font-size:20px;letter-spacing:2px;text-transform:uppercase;color:#fff;margin-bottom:12px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:baseline}
+.panel h2 .n{color:#F0B429}
+.panel h2 .hx{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none}
+.panel h2 .hx.wip{color:#ffc247;font-style:italic}
+.scroll{overflow:hidden;flex:1 1 auto}
+.ord{background:#0e1c31;border-left:6px solid #43d17a;border-radius:0 12px 12px 0;padding:11px 16px;margin-bottom:11px}
+.ord.b1{border-left-color:#F0B429}
+.ord.b2{border-left-color:#ff5b5b}
+.ord .oh{display:flex;justify-content:space-between;align-items:baseline}
+.ord .oid{font-size:21px;font-weight:800}.ord .oid .acct{font-size:14px;color:#9fb2ca;font-weight:600}
+.ord .age{font-size:27px;font-weight:900;color:#fff;white-space:nowrap}.ord .age small{font-size:12px;color:#9fb2ca;margin-left:5px}
+.ord .age.over{color:#ff6b6b}
+.slatag{display:inline-block;background:#5a1616;color:#ffb0b0;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:800;margin-left:8px}
+.slatag.warn{background:#4a3a0c;color:#ffd782}
+.xftag{display:inline-block;background:#0d3a4a;color:#7fd8ff;border:1px solid #1f6b85;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:800;margin-left:8px}
+.priotag{display:inline-block;background:#F0B429;color:#152B47;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:900;margin-left:8px}
+.locktag{display:inline-block;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:800;margin-left:8px}
+.locktag.pending{background:#5a1616;color:#ffb0b0}
+.locktag.partial{background:#4a3a0c;color:#ffd782}
+.locktag.ok{background:#14361f;color:#7fe0a0}
+.ord.prio{border-left-color:#F0B429;box-shadow:0 0 0 2px rgba(240,180,41,.35)}
+.ord .meta{font-size:15px;color:#c7d3e2;margin:5px 0 8px}.ord .meta .op{color:#ff6b6b;font-weight:900;font-size:17px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{background:#3a2f10;color:#f6d68a;border-radius:20px;padding:4px 13px;font-size:13.5px}.chip b{color:#fff}
+.chip.drv{background:#3a1420;color:#ffb0c4}.chip.drv b{color:#fff}
+.dv{display:flex;align-items:center;gap:14px;background:#0e1c31;border-left:5px solid #ff5b5b;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:8px}
+.dvs{font-weight:800;font-size:18px;color:#fff;min-width:52px}
+.dvo2{font-weight:900;font-size:20px;color:#F0B429;min-width:78px}
+.dvm{color:#9fb2ca;font-size:14px;flex:1}
+.dva{font-weight:900;font-size:20px;color:#ff6b6b;white-space:nowrap}
+.dfresh{font-size:12px;color:#7f93ad;margin-top:8px}
+.mvtot{display:flex;gap:12px;background:#14361f;border:1px solid #2c6b41;border-radius:12px;padding:10px 18px;margin-bottom:12px}
+.mvtot .mvtcol{flex:1;display:flex;flex-direction:column;align-items:center}
+.mvtot .mvtcol.wk{border-left:1px solid #2c6b41}
+.mvtot .mvtv{font-size:38px;font-weight:900;color:#43d17a;line-height:1}
+.mvtot .mvtcol.wk .mvtv{color:#7fd8ff}
+.mvtot .mvtl{font-size:12px;color:#bfe6cd;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.mvrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mv{display:flex;align-items:center;gap:12px;background:#0e1c31;border-radius:12px;padding:12px 16px}
+.mv .ic{font-size:26px;width:36px;text-align:center}
+.mv .mvv{font-size:34px;font-weight:900;min-width:56px;text-align:center}
+.mv.inv .mvv{color:#43d17a}.mv.rec .mvv{color:#ffc247}
+.mv .mvb{flex:1}.mv .mvb .mvl{font-size:18px;font-weight:800}.mv .mvb .mvp{font-size:14px;color:#9fb2ca;margin-top:2px}
+.mv .mvb .mvp .none{color:#7f93ad;font-style:italic}
+.mv .mvb .mvp.none{color:#7f93ad;font-style:italic;font-size:13px}
+.mv .mvb .mvl .wk{font-size:12px;color:#7fd8ff;font-weight:700;margin-left:6px}
+.mv .mvb .mvp b{color:#fff}
+.tr{display:flex;align-items:center;gap:14px;background:#0e1c31;border-radius:12px;padding:12px 16px;margin-bottom:11px}
+.tr .rank{font-size:22px;font-weight:900;color:#F0B429;width:34px;text-align:center}
+.tr .who{flex:1}.tr .who .nm{font-size:22px;font-weight:800}.tr .who .tool{font-size:13px;color:#9fb2ca}
+.tr .num{text-align:center;min-width:60px}.tr .num .v{font-size:24px;font-weight:900}.tr .num .l{font-size:11px;color:#9fb2ca;text-transform:uppercase}
+.v.g{color:#43d17a}.v.r{color:#ff6b6b}.v.o{color:#ffc247}.v.big{color:#fff;font-size:30px}
+.empty{color:#43d17a;font-size:22px;font-weight:800;padding:20px 0}
+.foot{display:flex;justify-content:space-between;padding:0 34px 12px;font-size:13px;color:#7f93ad}
+.stale{color:#ffc247}
+.opsstale{background:#5a1616;color:#ffb0b0;border-radius:4px;padding:1px 7px;font-weight:900}
+.notewarn{color:#ffc247}
+.dcheld{color:#7fd8ff;font-weight:700}
+</style></head><body>
+<div class="top">
+  <h1>AER <span class="a">|</span> Tech Room</h1>
+  <div class="wx" id="weather"><span class="wxi">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
+  <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
+</div>
+<div class="kpis" id="kpis"></div>
+<div class="bdaybanner" id="bdaybanner" style="display:none"></div>
+<div class="roster" id="roster"></div>
+<div class="grid">
+  <div class="lcol">
+    <div class="panel wq"><h2><span class="n">WORK QUEUE</span> &mdash; top 3, oldest first<span class="hx" id="slahint"></span></h2><div class="scroll" id="orders"></div></div>
+    <div class="panel mv-panel"><h2><span class="n">INVENTORY &amp; RECYCLING</span> &mdash; moved today</h2><div class="scroll" id="movement"></div></div>
+  </div>
+  <div class="rcol">
+    <div class="panel"><h2><span class="n">TESTERS TODAY</span> &mdash; Duncan &middot; MacCheck + PhoneCheck</h2><div class="scroll" id="testers"></div></div>
+    <div class="panel"><h2><span class="n">DRIVE MANAGEMENT</span> &mdash; pending wipes</h2><div class="scroll" id="drives"></div></div>
+  </div>
+</div>
+<div class="foot"><div id="src">Makor OPS Dashboard (Tech + Drive backlog, throughput) &middot; PhoneCheck + MacCheck (testers)</div><div id="updated">&nbsp;</div></div>
+<script>
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function tickClock(){var n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('cdate').textContent=n.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});}
+setInterval(tickClock,1000);tickClock();
+
+function kpi(v,l){return '<div class="kpi"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
+
+function renderOrders(d){
+  if(!d.orders||!d.orders.length) return '<div class="empty">All active Duncan orders complete &#127881;</div>';
+  var sla=d.sla||45, warn=sla-5, h='';
+  d.orders.forEach(function(o){
+    var band=o.age>sla?2:(o.age>=warn?1:0);
+    var tag=band===2?('<span class="slatag">OVER SLA +'+(o.age-sla)+'d</span>')
+           :(band===1?('<span class="slatag warn">'+(sla-o.age)+'d to SLA</span>'):'');
+    var prio=o.priority?'<span class="priotag">&#9733; PRIORITY</span>':'';
+    var xf=o.xfer?('<span class="xftag">&#8644; XFER'+(o.xfer_to?(' &middot; '+esc(o.xfer_to)):'')+'</span>'):'';
+    var chips=o.cats.map(function(c){return '<span class="chip">'+esc(c[0])+' <b>'+c[1]+'</b></span>';}).join(' ');
+    if(o.drives) chips+=' <span class="chip drv">Drives to wipe <b>'+o.drives+'</b></span>';
+    var acct=o.account?(' &middot; '+esc(o.account)):'';
+    var parts=[];
+    if(o.assets) parts.push('<span class="op">'+o.assets+'</span> assets');
+    if(o.drives) parts.push('<span class="op">'+o.drives+'</span> drives');
+    var meta=(parts.join(' + ')||'0')+' in queue';
+    var lock='';
+    if(o.unlock==='unlocked')     lock='<span class="locktag ok">&#128275; UNLOCKED</span>';
+    else if(o.unlock==='partial') lock='<span class="locktag partial">&#128274; PARTIAL UNLOCK</span>';
+    else if(o.unlock==='pending') lock='<span class="locktag pending">&#128274; PENDING UNLOCK</span>';
+    h+='<div class="ord b'+band+(o.priority?' prio':'')+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span>'+xf+prio+tag+lock+'</div>'
+      +'<div class="age'+(band===2?' over':'')+'">'+o.age+'<small>days in queue</small></div></div>'
+      +'<div class="meta">'+meta+'</div>'
+      +'<div class="chips">'+chips+'</div></div>';
+  });
+  if(d.totals.more>0) h+='<div class="chip" style="background:none;color:#7f93ad">+ '+d.totals.more+' more in queue</div>';
+  return h;
+}
+
+function renderDrives(d){
+  var dr=d.drives||{queue:[],count:0,more:0,fresh:null};
+  if(!dr.count) return '<div class="empty">No drives pending a wipe &#127881;</div>';
+  var rows=(dr.queue||[]).map(function(x){
+    var spec=[esc(x.hddType||''),esc(x.capacity||'')].filter(Boolean).join(' &middot; ');
+    return '<div class="dv"><span class="dvs">'+x.qty+' &#215;</span>'
+      +'<span class="dvo2">'+esc(x.order)+'</span>'
+      +'<span class="dvm">'+spec+' &middot; '+esc(x.service||'')+'</span>'
+      +'<span class="dva">'+x.age+'d</span></div>';
+  }).join('');
+  var more=dr.more>0?('<div class="dfresh">+ '+dr.more+' more pending order(s)</div>'):'';
+  var destroys=(dr.pending_destroys>0)?('<div class="dfresh">'+dr.pending_destroys+' pending destroys</div>'):'';
+  return rows+more+destroys;
+}
+
+function renderRoster(d){
+  var r=d.roster||{roles:[]};
+  var h='';
+  (r.roles||[]).forEach(function(role){
+    var ppl=(role.people&&role.people.length)?role.people.map(esc).join(', '):'<span class="none">unassigned</span>';
+    h+='<div class="rl"><span class="rk">'+esc(role.role)+'</span><span class="rp">'+ppl+'</span></div>';
+  });
+  if(r.supervisor) h+='<div class="sup">Supervisor <b>'+esc(r.supervisor)+'</b></div>';
+  if(r.updated) h+='<div class="upd">roster '+esc(r.updated)+'</div>';
+  return h||'<div class="upd">No roster set &mdash; edit duncan_roster.json</div>';
+}
+
+function renderMovement(d){
+  var m=d.movement||{inventory:{count:0,week:0},recycling:{count:0,week:0}};
+  var invW=m.inventory.week||0, recW=m.recycling.week||0;
+  var todayTot=(m.inventory.count||0)+(m.recycling.count||0);
+  var weekTot=invW+recW;
+  return ''
+    +'<div class="mvtot"><div class="mvtcol"><span class="mvtv">'+todayTot+'</span><span class="mvtl">processed today</span></div>'
+      +'<div class="mvtcol wk"><span class="mvtv">'+weekTot+'</span><span class="mvtl">this week</span></div></div>'
+    +'<div class="mvrow">'
+    +'<div class="mv inv"><div class="ic">&#128230;</div><div class="mvv">'+m.inventory.count+'</div>'
+      +'<div class="mvb"><div class="mvl">Moved to inventory</div><div class="mvp">'+invW+' this week</div></div></div>'
+    +'<div class="mv rec"><div class="ic">&#9851;</div><div class="mvv">'+m.recycling.count+'</div>'
+      +'<div class="mvb"><div class="mvl">Tracked Recycling</div><div class="mvp">'+recW+' this week</div></div></div>'
+    +'</div>';
+}
+
+function renderTesters(d){
+  if(!d.testers||!d.testers.length) return '<div class="empty" style="color:#9fb2ca">No tester activity logged yet today.</div>';
+  var h='';
+  d.testers.forEach(function(t,i){
+    h+='<div class="tr"><div class="rank">'+(i+1)+'</div>'
+      +'<div class="who"><div class="nm">'+esc(t.name)+'</div><div class="tool">'+esc(t.tools)+'</div></div>'
+      +'<div class="num"><div class="v big">'+t.tested+'</div><div class="l">Tested</div></div>'
+      +'<div class="num"><div class="v g">'+t.sale_ready+'</div><div class="l">Ready</div></div>'
+      +'<div class="num"><div class="v r">'+t.fail+'</div><div class="l">Fail</div></div>'
+      +'<div class="num"><div class="v o">'+t.pending+'</div><div class="l">Pending</div></div>'
+      +'<div class="num"><div class="v">'+t.rate+'%</div><div class="l">Rate</div></div></div>';
+  });
+  return h;
+}
+
+function paint(d){
+  if(d.loading){document.getElementById('orders').innerHTML='<div class="empty" style="color:#9fb2ca">Loading live data&hellip;</div>';return;}
+  var T=d.totals, sla=d.sla||45;
+  var over='<div class="kpi"><div class="v" style="'+(T.over_sla>0?'color:#ff6b6b':'')+'">'+T.over_sla+'</div><div class="l">Over '+sla+'d</div></div>';
+  document.getElementById('kpis').innerHTML=
+    kpi(T.open_devices,'Devices open')+over+kpi(T.oldest,'Oldest (days)')
+    +kpi(T.tested_today,'Tested today')
+    +'<div class="kpi hot"><div class="v">'+(T.processed_today||0)+'</div><div class="l">Processed today</div></div>';
+  document.getElementById('roster').innerHTML=renderRoster(d);
+  var bd=document.getElementById('bdaybanner');
+  if(d.birthdays_today&&d.birthdays_today.length){
+    bd.innerHTML='<span class="bd-ic">&#127874;</span><span>Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span>';
+    bd.style.display='flex';
+    document.querySelector('.grid').style.height='calc(100vh - '+(258+bd.offsetHeight+12)+'px)';
+  } else {
+    bd.style.display='none';
+    document.querySelector('.grid').style.height='';
+  }
+  var held=T.held_in_dc||[];
+  document.getElementById('slahint').innerHTML='target &lt;'+sla+'d &middot; '+T.over_sla+' over &middot; '+T.at_risk+' at risk'
+    +(held.length?(' &middot; <span class="dcheld">&#8987; '+held.map(esc).join(', ')+' in Data Capture</span>'):'');
+  document.getElementById('orders').innerHTML=renderOrders(d);
+  document.getElementById('testers').innerHTML=renderTesters(d);
+  document.getElementById('movement').innerHTML=renderMovement(d);
+  document.getElementById('drives').innerHTML=renderDrives(d);
+  var mins=Math.round((Date.now()-new Date(d.generated_at).getTime())/60000);
+  var el=document.getElementById('updated');
+  // Ops-data staleness alarm: the puller runs every 10 min, 06:00-20:00. If the
+  // ops JSON is >30 min old during those hours, flag it in red so the crew
+  // knows the queue is frozen (off-hours, old data is expected — no alarm).
+  var ops='', opsStale=false;
+  if(d.opsdash_fresh){
+    var ot=new Date(String(d.opsdash_fresh).replace(' ','T'));
+    var oAge=Math.round((Date.now()-ot.getTime())/60000);
+    var hr=new Date().getHours();
+    opsStale=(!isNaN(oAge))&&oAge>30&&hr>=6&&hr<20;
+    ops=' &middot; ops data '+esc(d.opsdash_fresh)+(opsStale?' <b class="opsstale">STALE</b>':'');
+  }
+  var unl=d.unlocks_updated?(' &middot; unlocks '+esc(d.unlocks_updated)):'';
+  var nts=(d.notes&&d.notes.length)?(' &middot; <span class="notewarn">'+esc(d.notes[0])+'</span>'):'';
+  el.innerHTML='Updated '+(mins<=0?'just now':mins+'m ago')+ops+unl+nts;
+  el.className=(mins>20||opsStale)?'stale':'';
+}
+
+// ── Weather (Duncan, SC) via Open-Meteo — free, no key, browser-side fetch ──
+function wxEmoji(c){
+  if(c===0) return '&#9728;';        // clear
+  if(c<=2)  return '&#9925;';        // partly cloudy
+  if(c===3) return '&#9729;';        // overcast
+  if(c<=48) return '&#127787;';      // fog
+  if(c<=67) return '&#127783;';      // rain
+  if(c<=77) return '&#127784;';      // snow
+  if(c<=82) return '&#127782;';      // showers
+  return '&#9928;';                  // thunderstorm
+}
+function wxText(c){
+  if(c===0) return 'Clear'; if(c<=2) return 'Partly cloudy'; if(c===3) return 'Overcast';
+  if(c<=48) return 'Fog'; if(c<=67) return 'Rain'; if(c<=77) return 'Snow';
+  if(c<=82) return 'Showers'; return 'Storms';
+}
+function loadWeather(){
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=34.938&longitude=-82.138&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&temperature_unit=fahrenheit')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var c=(d&&d.current)||{}; if(c.temperature_2m==null) return;
+      var code=c.weather_code||0, t=Math.round(c.temperature_2m);
+      var feels=(c.apparent_temperature!=null)?Math.round(c.apparent_temperature):null;
+      var hum=(c.relative_humidity_2m!=null)?Math.round(c.relative_humidity_2m):null;
+      var fl=(feels!=null&&feels!==t)?('<span class="wxfl">feels '+feels+'&deg;</span>'):'';
+      document.getElementById('weather').innerHTML=
+        '<span class="wxi">'+wxEmoji(code)+'</span><div class="wxb">'
+        +'<div class="wxt">'+t+'&deg;'+fl+'</div>'
+        +'<div class="wxd">'+wxText(code)+(hum!=null?(' &middot; '+hum+'% humidity'):'')+' &middot; Duncan, SC</div></div>';
+    }).catch(function(){});
+}
+loadWeather(); setInterval(loadWeather, 900000);   // refresh weather every 15 min
+
+function poll(){fetch('tech_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});}
+poll();setInterval(poll,60000);
+
+// Kiosk hygiene: reload the page once a night (~3 AM) so a TV left on for
+// months never accumulates browser memory bloat.
+setInterval(function(){
+  var n=new Date();
+  if(n.getHours()===3 && n.getMinutes()===0) location.reload();
+},60000);
+</script></body></html>
