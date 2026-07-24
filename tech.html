@@ -148,11 +148,10 @@ function renderDrives(d){
   var dr=d.drives||{queue:[],count:0,more:0,fresh:null};
   if(!dr.count) return '<div class="empty">No drives pending a wipe &#127881;</div>';
   var rows=(dr.queue||[]).map(function(x){
-    var spec=[esc(x.hddType||''),esc(x.capacity||'')].filter(Boolean).join(' &middot; ');
-    var act=(x.action==='Destroy')?'<span class="dact destroy">DESTROY</span>':'<span class="dact">WIPE</span>';
-    return '<div class="dv"><span class="dvs">'+x.qty+' &#215;</span>'
-      +'<span class="dvo2">'+esc(x.order)+'</span>'
-      +'<span class="dvm">'+spec+'</span>'+act
+    var acct=x.account?(' &middot; '+esc(x.account)):'';
+    return '<div class="dv"><span class="dvo2">'+esc(x.order)+'</span>'
+      +'<span class="dvs">'+x.qty+' &#215;</span>'
+      +'<span class="dvm">to wipe'+acct+'</span>'
       +'<span class="dva">'+x.age+'d</span></div>';
   }).join('');
   var more=dr.more>0?('<div class="dfresh">+ '+dr.more+' more pending order(s)</div>'):'';
