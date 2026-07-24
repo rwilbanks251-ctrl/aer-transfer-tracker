@@ -62,10 +62,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .dfresh{font-size:12px;color:#7f93ad;margin-top:8px}
 .mvtot{display:flex;gap:12px;background:#14361f;border:1px solid #2c6b41;border-radius:12px;padding:10px 18px;margin-bottom:12px}
 .mvtot .mvtcol{flex:1;display:flex;flex-direction:column;align-items:center}
-.mvtot .mvtcol.yst,.mvtot .mvtcol.wk{border-left:1px solid #2c6b41}
+.mvtot .mvtcol.yst,.mvtot .mvtcol.wk,.mvtot .mvtcol.lwk{border-left:1px solid #2c6b41}
 .mvtot .mvtv{font-size:38px;font-weight:900;color:#43d17a;line-height:1}
 .mvtot .mvtcol.yst .mvtv{color:#F0B429}
 .mvtot .mvtcol.wk .mvtv{color:#7fd8ff}
+.mvtot .mvtcol.lwk .mvtv{color:#9fb2ca}
 .mvtot .mvtl{font-size:12px;color:#bfe6cd;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
 .mvrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .mv{display:flex;align-items:center;gap:12px;background:#0e1c31;border-radius:12px;padding:12px 16px}
@@ -166,10 +167,12 @@ function renderMovement(d){
   var todayTot=(m.inventory.count||0)+(m.recycling.count||0);
   var weekTot=invW+recW;
   var ystTot=(d.totals&&d.totals.processed_yesterday)||0;
+  var lwkTot=(d.totals&&d.totals.processed_last_week)||0;
   return ''
     +'<div class="mvtot"><div class="mvtcol"><span class="mvtv">'+todayTot+'</span><span class="mvtl">processed today</span></div>'
       +'<div class="mvtcol yst"><span class="mvtv">'+ystTot+'</span><span class="mvtl">yesterday</span></div>'
-      +'<div class="mvtcol wk"><span class="mvtv">'+weekTot+'</span><span class="mvtl">this week</span></div></div>'
+      +'<div class="mvtcol wk"><span class="mvtv">'+weekTot+'</span><span class="mvtl">this week</span></div>'
+      +'<div class="mvtcol lwk"><span class="mvtv">'+lwkTot+'</span><span class="mvtl">last week</span></div></div>'
     +'<div class="mvrow">'
     +'<div class="mv inv"><div class="ic">&#128230;</div><div class="mvv">'+m.inventory.count+'</div>'
       +'<div class="mvb"><div class="mvl">Moved to inventory</div><div class="mvp">'+invW+' this week</div></div></div>'
