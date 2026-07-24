@@ -19,16 +19,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .kpi .v{font-size:44px;font-weight:900;color:#F0B429;line-height:1}
 .kpi .l{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#9fb2ca;margin-top:4px}
 .kpi.hot{border-color:#F0B429;background:#1c2f4d}.kpi.hot .v{color:#43d17a}
-.roster{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding:2px 34px 10px}
-.roster .rl{display:flex;align-items:baseline;gap:8px}
-.roster .rl .rk{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#F0B429;font-weight:800}
-.roster .rl .rp{font-size:17px;font-weight:700;color:#fff}
-.roster .rl .rp .none{color:#7f93ad;font-weight:600;font-style:italic}
-.roster .sup{margin-left:auto;font-size:13px;color:#9fb2ca}.roster .sup b{color:#fff}
-.roster .upd{font-size:12px;color:#7f93ad}
 .bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px}
 .bdaybanner .bd-ic{font-size:24px;line-height:1}
-.grid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;padding:6px 34px 20px;height:calc(100vh - 258px)}
+.grid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;padding:6px 34px 20px;height:calc(100vh - 214px)}
 .rcol,.lcol{display:flex;flex-direction:column;gap:16px;overflow:hidden}
 .rcol .panel{flex:1 1 0;min-height:0}
 .lcol .panel.wq{flex:1.7 1 0;min-height:0}
@@ -63,6 +56,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .dvs{font-weight:800;font-size:18px;color:#fff;min-width:52px}
 .dvo2{font-weight:900;font-size:20px;color:#F0B429;min-width:78px}
 .dvm{color:#9fb2ca;font-size:14px;flex:1}
+.dact{background:#3a1420;color:#ffb0c4;border-radius:6px;padding:1px 9px;font-size:12px;font-weight:900}
+.dact.destroy{background:#5a1616;color:#ffd0d0}
 .dva{font-weight:900;font-size:20px;color:#ff6b6b;white-space:nowrap}
 .dfresh{font-size:12px;color:#7f93ad;margin-top:8px}
 .mvtot{display:flex;gap:12px;background:#14361f;border:1px solid #2c6b41;border-radius:12px;padding:10px 18px;margin-bottom:12px}
@@ -100,10 +95,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 </div>
 <div class="kpis" id="kpis"></div>
 <div class="bdaybanner" id="bdaybanner" style="display:none"></div>
-<div class="roster" id="roster"></div>
 <div class="grid">
   <div class="lcol">
-    <div class="panel wq"><h2><span class="n">WORK QUEUE</span> &mdash; top 3, oldest first<span class="hx" id="slahint"></span></h2><div class="scroll" id="orders"></div></div>
+    <div class="panel wq"><h2><span class="n">WORK QUEUE</span> &mdash; top 6, oldest first<span class="hx" id="slahint"></span></h2><div class="scroll" id="orders"></div></div>
     <div class="panel mv-panel"><h2><span class="n">INVENTORY &amp; RECYCLING</span> &mdash; moved today</h2><div class="scroll" id="movement"></div></div>
   </div>
   <div class="rcol">
@@ -155,26 +149,15 @@ function renderDrives(d){
   if(!dr.count) return '<div class="empty">No drives pending a wipe &#127881;</div>';
   var rows=(dr.queue||[]).map(function(x){
     var spec=[esc(x.hddType||''),esc(x.capacity||'')].filter(Boolean).join(' &middot; ');
+    var act=(x.action==='Destroy')?'<span class="dact destroy">DESTROY</span>':'<span class="dact">WIPE</span>';
     return '<div class="dv"><span class="dvs">'+x.qty+' &#215;</span>'
       +'<span class="dvo2">'+esc(x.order)+'</span>'
-      +'<span class="dvm">'+spec+' &middot; '+esc(x.service||'')+'</span>'
+      +'<span class="dvm">'+spec+'</span>'+act
       +'<span class="dva">'+x.age+'d</span></div>';
   }).join('');
   var more=dr.more>0?('<div class="dfresh">+ '+dr.more+' more pending order(s)</div>'):'';
   var destroys=(dr.pending_destroys>0)?('<div class="dfresh">'+dr.pending_destroys+' pending destroys</div>'):'';
   return rows+more+destroys;
-}
-
-function renderRoster(d){
-  var r=d.roster||{roles:[]};
-  var h='';
-  (r.roles||[]).forEach(function(role){
-    var ppl=(role.people&&role.people.length)?role.people.map(esc).join(', '):'<span class="none">unassigned</span>';
-    h+='<div class="rl"><span class="rk">'+esc(role.role)+'</span><span class="rp">'+ppl+'</span></div>';
-  });
-  if(r.supervisor) h+='<div class="sup">Supervisor <b>'+esc(r.supervisor)+'</b></div>';
-  if(r.updated) h+='<div class="upd">roster '+esc(r.updated)+'</div>';
-  return h||'<div class="upd">No roster set &mdash; edit duncan_roster.json</div>';
 }
 
 function renderMovement(d){
@@ -216,7 +199,6 @@ function paint(d){
     kpi(T.open_devices,'Devices open')+over+kpi(T.oldest,'Oldest (days)')
     +kpi(T.tested_today,'Tested today')
     +'<div class="kpi hot"><div class="v">'+(T.processed_today||0)+'</div><div class="l">Processed today</div></div>';
-  document.getElementById('roster').innerHTML=renderRoster(d);
   var bd=document.getElementById('bdaybanner');
   if(d.birthdays_today&&d.birthdays_today.length){
     bd.innerHTML='<span class="bd-ic">&#127874;</span><span>Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span>';
