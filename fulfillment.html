@@ -1,0 +1,247 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AER Fulfillment</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;padding:18px 34px;background:#152B47;border-bottom:4px solid #F0B429}
+.top h1{font-size:34px;font-weight:900}.top h1 .a{color:#F0B429}
+.top .clock{text-align:right}.top .clock .t{font-size:34px;font-weight:900;color:#F0B429;line-height:1}
+.top .clock .d{font-size:15px;color:#B8C4D4}
+.wx{display:flex;align-items:center;gap:12px}
+.wx .wxi{font-size:40px;line-height:1}
+.wx .wxt{font-size:30px;font-weight:900;color:#F0B429;line-height:1}
+.wx .wxd{font-size:14px;color:#B8C4D4}
+.wx .wxt .wxfl{font-size:14px;color:#9fb2ca;font-weight:700;margin-left:6px}
+.bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px}
+.bdaybanner .bd-ic{font-size:24px;line-height:1}
+.kpis{display:flex;gap:16px;padding:16px 34px}
+.kpi{flex:1;background:#152B47;border:2px solid #24406a;border-radius:14px;padding:12px 8px;text-align:center}
+.kpi .v{font-size:44px;font-weight:900;color:#F0B429;line-height:1}
+.kpi .v small{font-size:18px;color:#9fb2ca;font-weight:700}
+.kpi .l{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#9fb2ca;margin-top:4px}
+.kpi.hot{border-color:#ff5b5b;background:#1c2f4d}.kpi.hot .v{color:#ff6b6b}
+.kpi.on{border-color:#F0B429;background:#1c2f4d}.kpi.on .v{color:#F0B429}
+.grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;padding:6px 34px 14px;height:calc(100vh - 252px)}
+.rcol,.lcol{display:flex;flex-direction:column;gap:16px;overflow:hidden}
+.lcol .panel.wq{flex:1 1 0;min-height:0}
+.rcol .panel.flow{flex:0 0 auto}
+.rcol .panel.rec{flex:1 1 0;min-height:0}
+.panel{background:#12233c;border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;overflow:hidden}
+.panel h2{font-size:20px;letter-spacing:2px;text-transform:uppercase;color:#fff;margin-bottom:12px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:baseline}
+.panel h2 .n{color:#F0B429}
+.panel h2 .hx{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none}
+.scroll{overflow:hidden;flex:1 1 auto}
+.ord{background:#0e1c31;border-left:6px solid #43d17a;border-radius:0 12px 12px 0;padding:10px 16px;margin-bottom:9px}
+.ord.overnight{border-left-color:#ff5b5b;background:#1a1220}
+.ord.expedited{border-left-color:#F0B429}
+.ord .oh{display:flex;justify-content:space-between;align-items:baseline}
+.ord .oid{font-size:21px;font-weight:800}.ord .oid .acct{font-size:14px;color:#9fb2ca;font-weight:600}
+.ord .age{font-size:25px;font-weight:900;color:#fff;white-space:nowrap;text-align:right}
+.ord .age small{font-size:12px;color:#9fb2ca;margin-left:5px}
+.badge{display:inline-block;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:900;margin-left:8px;white-space:nowrap}
+.badge.on{background:#5a1616;color:#ffb3b3;border:1px solid #a33}
+.badge.exp{background:#4a3a0c;color:#ffd782}
+.badge.type{background:#13314a;color:#7fd8ff;border:1px solid #1f5f7d;font-weight:800}
+.badge.type.commodity{background:#123a2a;color:#7fe6b8;border-color:#1f6b4d}
+.badge.type.transfer{background:#2a1440;color:#c9a3ff;border-color:#5a2a8a}
+.badge.late{background:#5a1616;color:#ffb0b0}
+.badge.today{background:#14361f;color:#8fe3ab;border:1px solid #2c6b41}
+.ord .meta{font-size:14px;color:#c7d3e2;margin:5px 0 0}
+.ord .meta b{color:#ffc247}
+.ord .meta .instr{color:#9fb2ca;font-style:italic}
+.steps{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;align-items:center}
+.chip{font-size:12px;font-weight:800;letter-spacing:.4px;border-radius:6px;padding:3px 11px;text-transform:uppercase;white-space:nowrap}
+.chip.active{background:#F0B429;color:#152B47}
+.chip.done{background:#14361f;color:#43d17a;border:1px solid #2c6b41}
+.chip.pending{background:#0a1626;color:#5c7089;border:1px solid #1c3050}
+.arr{color:#3a4d68;font-size:12px}
+.expline{font-size:14px;color:#9fb2ca;margin-top:6px}.expline b{color:#fff}
+.flowrow{display:flex;gap:12px}
+.flowcell{flex:1;background:#0e1c31;border-radius:12px;padding:10px 12px;text-align:center}
+.flowcell .fl{font-size:11.5px;color:#9fb2ca;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
+.flowcell .fv{font-size:30px;font-weight:900;color:#43d17a;line-height:1.1}
+.flowcell .fv small{font-size:12px;color:#9fb2ca;font-weight:700}
+.flowcell .fw{font-size:12.5px;color:#7fd8ff;margin-top:2px;white-space:nowrap}
+.flowcell.hl{border:1px solid #7a5c12;background:#1a1a0e}
+.flowcell .fv.amb{color:#F0B429}
+.flowcell .fv.amb small{font-size:12px;color:#9fb2ca;font-weight:700}
+.rec{background:#0e1c31;border-left:5px solid #43d17a;border-radius:0 10px 10px 0;padding:7px 13px;margin-bottom:7px}
+.rec .oh{display:flex;justify-content:space-between;align-items:baseline}
+.rec .oid{font-size:17px;font-weight:800}.rec .oid .acct{font-size:13px;color:#9fb2ca;font-weight:600}
+.rec .when{font-size:14px;font-weight:800;color:#43d17a;white-space:nowrap}
+.rec .meta{font-size:13px;color:#9fb2ca;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .meta b{color:#7fd8ff}
+.pk{display:inline-block;border-radius:6px;padding:2px 9px;font-size:12px;font-weight:900;white-space:nowrap}
+.pk.awaiting_pickup{background:#5a1616;color:#ffb3b3;border:1px solid #a33}
+.pk.picked_up,.pk.out_for_delivery{background:#14361f;color:#8fe3ab;border:1px solid #2c6b41}
+.pk.delivered{background:#0e2a1a;color:#5f9f78;border:1px solid #1f4d34}
+.pk.exception{background:#5a1616;color:#ffd0d0;border:1px solid #a33}
+.pk.unknown,.pk.off{background:#0a1626;color:#5c7089;border:1px solid #1c3050}
+.empty{color:#43d17a;font-size:22px;font-weight:800;padding:20px 0}
+.empty.mut{color:#9fb2ca}
+.foot{display:flex;justify-content:space-between;padding:0 34px 12px;font-size:13px;color:#7f93ad}
+.stale{color:#ffc247}
+.notewarn{color:#ffc247}
+.testtag{background:#4a3a0c;color:#ffd782;border:1px solid #7a5c12;border-radius:6px;padding:1px 8px;font-weight:900;letter-spacing:0}
+</style></head><body>
+<div class="top">
+  <h1>AER <span class="a">|</span> Order Fulfillment</h1>
+  <div class="wx" id="weather"><span class="wxi">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
+  <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
+</div>
+<div class="kpis" id="kpis"></div>
+<div class="bdaybanner" id="bdaybanner" style="display:none"></div>
+<div class="grid">
+  <div class="lcol">
+    <div class="panel wq"><h2><span class="n">FULFILLMENT QUEUE</span> &mdash; overnight first, then oldest<span class="hx" id="qhint"></span></h2><div class="scroll" id="orders"></div></div>
+  </div>
+  <div class="rcol">
+    <div class="panel flow"><h2><span class="n">SHIP FLOW</span> &mdash; orders off the dock</h2><div id="flow"></div></div>
+    <div class="panel rec"><h2><span class="n">SHIPPED</span> &mdash; carrier pickup status<span class="hx" id="rechint"></span></h2><div class="scroll" id="recent"></div></div>
+  </div>
+</div>
+<div class="foot"><div id="src">Makor OutboundOrders (asset/part + commodity) &middot; Duncan</div><div id="updated">&nbsp;</div></div>
+<script>
+function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function money(n){return '$'+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});}
+function fdate(s){if(!s)return '';var p=String(s).split('-');return p.length===3?(p[1]+'/'+p[2]):s;}
+function tickClock(){var n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('cdate').textContent=n.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});}
+setInterval(tickClock,1000);tickClock();
+
+function kpi(v,l,cls){return '<div class="kpi'+(cls?' '+cls:'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
+
+function renderOrders(d){
+  if(!d.orders||!d.orders.length) return '<div class="empty'+(d.notes&&d.notes.length?' mut':'')+'">'+(d.notes&&d.notes.length?'Loading orders&hellip;':'No open orders &#127881;')+'</div>';
+  var h='';
+  d.orders.forEach(function(o){
+    var cls=o.rush==='overnight'?'overnight':(o.rush==='expedited'?'expedited':'');
+    var rb=o.rush==='overnight'?'<span class="badge on">&#9889; OVERNIGHT</span>'
+          :(o.rush==='expedited'?'<span class="badge exp">2-DAY</span>':'');
+    var tb='<span class="badge type '+esc(o.type)+'">'+esc(o.type_label)+'</span>';
+    var xb=o.transfer&&o.dest?('<span class="badge type transfer">&#8644; '+esc(o.dest)+'</span>'):'';
+    var lb=o.late?'<span class="badge late">LATE</span>':(o.due_today?'<span class="badge today">SHIP TODAY</span>':'');
+    var acct=o.account?('<span class="acct"> &middot; '+esc(o.account)+'</span>'):'';
+    var chips='';
+    (o.stages||[]).forEach(function(s,i){
+      if(i) chips+='<span class="arr">&#9656;</span>';
+      chips+='<span class="chip '+s.state+'">'+esc(s.name)+'</span>';
+    });
+    var dest=o.ship_to?(esc(o.ship_to)+(o.ship_loc?(' &middot; '+esc(o.ship_loc)):'')):(o.ship_loc?esc(o.ship_loc):'');
+    var line2=[];
+    if(o.carrier) line2.push('<b>'+esc(o.carrier)+'</b>');
+    if(dest) line2.push(dest);
+    if(o.total>0) line2.push(money(o.total));
+    if(o.preferred) line2.push('ship '+fdate(o.preferred));
+    var instr=o.instructions?('<div class="meta instr">&ldquo;'+esc(o.instructions)+'&rdquo;</div>'):'';
+    h+='<div class="ord '+cls+'"><div class="oh"><div class="oid">'+esc(o.id)+acct+' '+tb+xb+rb+lb+'</div>'
+      +'<div class="age">'+o.days+'<small>days waiting</small></div></div>'
+      +(line2.length?('<div class="meta">'+line2.join(' &middot; ')+'</div>'):'')
+      +instr
+      +'<div class="steps">'+chips+'</div></div>';
+  });
+  if(d.totals.more>0) h+='<div class="expline">+ '+d.totals.more+' more open order(s) in queue</div>';
+  return h;
+}
+
+function renderFlow(d){
+  var T=d.totals||{}, st=T.shipped_today||{}, sw=T.shipped_week||{};
+  function cell(l,v,sub){return '<div class="flowcell"><div class="fl">'+l+'</div>'
+    +'<div class="fv">'+v+'</div><div class="fw">'+sub+'</div></div>';}
+  var P=T.prep||{}, md=T.metric_days||30;
+  var prepV=(P.avg!=null)?(P.avg+'<small> bus. days</small>'):'&mdash;';
+  var prepSub=(P.n>0)?('median '+P.median+' &middot; n='+P.n+' &middot; '+md+'d'):'no shipments yet';
+  return '<div class="flowrow">'
+    +cell('Shipped today',(st.total||0),(st.asset||0)+' asset &middot; '+(st.commodity||0)+' comm')
+    +cell('Shipped this week',(sw.total||0),money(sw.value||0)+' value')
+    +cell('In queue',(T.open||0),(T.pick||0)+' pick &middot; '+(T.ship||0)+' ship')
+    +'<div class="flowcell hl"><div class="fl">Avg pick&rarr;pack&rarr;ship (asset)</div>'
+      +'<div class="fv amb">'+prepV+'</div><div class="fw">'+prepSub+'</div></div>'
+    +'</div>';
+}
+
+function renderRecent(d){
+  var rows=d.recent||[];
+  if(!rows.length) return '<div class="empty mut">Nothing shipped recently.</div>';
+  var h='';
+  rows.forEach(function(o){
+    var meta=[];
+    if(o.carrier) meta.push('<b>'+esc(o.carrier)+'</b>');
+    if(o.tracking) meta.push(esc(o.tracking));
+    var pk=(o.state&&o.state!=='off'&&o.state!=='blocked')?('<span class="pk '+esc(o.state)+'">'+esc(o.state_label||o.state)+'</span>'):'';
+    h+='<div class="rec"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct"> &middot; '+esc(o.account)+'</span></div>'
+      +'<div class="when">'+(pk||fdate(o.shipped))+'</div></div>'
+      +(meta.length?('<div class="meta">shipped '+fdate(o.shipped)+' &middot; '+meta.join(' &middot; ')+'</div>'):'')+'</div>';
+  });
+  return h;
+}
+
+function paint(d){
+  if(d.loading){document.getElementById('orders').innerHTML='<div class="empty mut">Loading live data&hellip;</div>';return;}
+  var T=d.totals;
+  var awV=d.tracking_on?T.awaiting_pickup:'&mdash;';
+  document.getElementById('kpis').innerHTML=
+    kpi(T.open,'Orders in queue')
+    +kpi(T.overnight,'Overnight &#9889;',T.overnight>0?'on':'')
+    +kpi(T.pick,'Awaiting pick')
+    +kpi(T.ship,'Awaiting shipment')
+    +kpi(awV,'Awaiting pickup',(d.tracking_on&&T.awaiting_pickup>0)?'hot':'')
+    +kpi(T.shipped_today.total,'Shipped today');
+  var bd=document.getElementById('bdaybanner');
+  if(d.birthdays_today&&d.birthdays_today.length){
+    bd.innerHTML='<span class="bd-ic">&#127874;</span><span>Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span>';
+    bd.style.display='flex';
+    document.querySelector('.grid').style.height='calc(100vh - '+(252+bd.offsetHeight+12)+'px)';
+  } else {
+    bd.style.display='none';
+    document.querySelector('.grid').style.height='';
+  }
+  document.getElementById('qhint').innerHTML='oldest '+T.oldest+'d waiting'
+    +(T.late>0?(' &middot; '+T.late+' past ship date'):'');
+  var rh=[];
+  if(d.tracking_sandbox) rh.push('<span class="testtag">&#9888; FedEx TEST DATA</span>');
+  if(d.usps_pending) rh.push('<span class="testtag">USPS access pending</span>');
+  if(!rh.length&&!d.tracking_on) rh.push('add FedEx/USPS keys to config.json');
+  document.getElementById('rechint').innerHTML=rh.join(' ');
+  document.getElementById('orders').innerHTML=renderOrders(d);
+  document.getElementById('flow').innerHTML=renderFlow(d);
+  document.getElementById('recent').innerHTML=renderRecent(d);
+  var mins=Math.round((Date.now()-new Date(d.generated_at).getTime())/60000);
+  var api='';
+  if(d.api_fresh) api=' &middot; Makor API '+esc(String(d.api_fresh).slice(11,16));
+  var nts=(d.notes&&d.notes.length)?(' &middot; <span class="notewarn">'+esc(d.notes[0])+'</span>'):'';
+  var el=document.getElementById('updated');
+  el.innerHTML='Updated '+(mins<=0?'just now':mins+'m ago')+api+nts;
+  el.className=(mins>20)?'stale':'';
+}
+
+// ── Weather (Duncan, SC) via Open-Meteo — free, no key, browser-side fetch ──
+function wxEmoji(c){if(c===0)return '&#9728;';if(c<=2)return '&#9925;';if(c===3)return '&#9729;';
+  if(c<=48)return '&#127787;';if(c<=67)return '&#127783;';if(c<=77)return '&#127784;';
+  if(c<=82)return '&#127782;';return '&#9928;';}
+function wxText(c){if(c===0)return 'Clear';if(c<=2)return 'Partly cloudy';if(c===3)return 'Overcast';
+  if(c<=48)return 'Fog';if(c<=67)return 'Rain';if(c<=77)return 'Snow';if(c<=82)return 'Showers';return 'Storms';}
+function loadWeather(){
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=34.938&longitude=-82.138&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&temperature_unit=fahrenheit')
+    .then(function(r){return r.json();})
+    .then(function(d){var c=(d&&d.current)||{};if(c.temperature_2m==null)return;
+      var code=c.weather_code||0,t=Math.round(c.temperature_2m);
+      var feels=(c.apparent_temperature!=null)?Math.round(c.apparent_temperature):null;
+      var hum=(c.relative_humidity_2m!=null)?Math.round(c.relative_humidity_2m):null;
+      var fl=(feels!=null&&feels!==t)?('<span class="wxfl">feels '+feels+'&deg;</span>'):'';
+      document.getElementById('weather').innerHTML='<span class="wxi">'+wxEmoji(code)+'</span><div class="wxb">'
+        +'<div class="wxt">'+t+'&deg;'+fl+'</div><div class="wxd">'+wxText(code)+(hum!=null?(' &middot; '+hum+'% humidity'):'')+' &middot; Duncan, SC</div></div>';
+    }).catch(function(){});
+}
+loadWeather();setInterval(loadWeather,900000);
+
+function poll(){fetch('fulfillment_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});}
+poll();setInterval(poll,60000);
+
+// Kiosk hygiene: reload once a night (~3 AM) to shed browser memory on a TV
+// that is left on for months.
+setInterval(function(){var n=new Date();if(n.getHours()===3&&n.getMinutes()===0)location.reload();},60000);
+</script></body></html>
