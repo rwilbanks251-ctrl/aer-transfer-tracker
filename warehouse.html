@@ -110,10 +110,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 <div class="grid2">
   <div class="ordersrow">
     <div class="panel"><h2><span class="n">IN-HOUSE</span> &middot; Duncan<span class="hx" id="ihhint"></span></h2><div class="scroll" id="orders_ih"></div></div>
-    <div class="panel"><h2><span class="n">XFER</span> &middot; Livermore<span class="hx" id="xfhint"></span></h2><div class="scroll" id="orders_xf"></div></div>
+    <div class="panel"><h2><span class="n">XFER</span><span class="hx" id="xfhint"></span></h2><div class="scroll" id="orders_xf"></div></div>
   </div>
   <div class="inforow">
-    <div class="panel flow"><h2><span class="n">WEEK FLOW</span> &mdash; lbs through the floor</h2><div id="flow"></div></div>
+    <div class="panel flow"><h2><span class="n">WEEK FLOW</span></h2><div id="flow"></div></div>
     <div class="panel inv"><h2><span class="n">OUSEI LOAD</span><span class="hx" id="invhint"></span></h2><div class="scroll" id="inv"></div></div>
     <div class="panel cord"><h2><span class="n">AWAITING CUSTOMER</span><span class="hx">shipped &middot; pending invoice</span></h2><div class="scroll" id="cord"></div></div>
   </div>
@@ -207,9 +207,9 @@ function paint(d){
     p90kpi(T.p90_inhouse,'In-house P90 &middot; goal &lt;'+sla+'d',sla)
     +p90kpi(T.p90_xfer,'XFER P90 &middot; goal &lt;'+sla+'d',sla)
     +kpi(T.inhouse,'In-house on floor &middot; Duncan')
-    +'<div class="kpi"><div class="v" style="color:#7fd8ff">'+T.xfers+'</div><div class="l">XFER on floor &middot; Livermore</div></div>'
+    +'<div class="kpi"><div class="v" style="color:#7fd8ff">'+T.xfers+'</div><div class="l">XFER on floor</div></div>'
     +kpi(lbs(T.recv_week)+'<small> lbs</small>','Received this week','hot');
-  document.getElementById('ihhint').innerHTML=T.inhouse+' orders &middot; oldest first &middot; due = received + '+sla+'d';
+  document.getElementById('ihhint').innerHTML='';
   document.getElementById('xfhint').innerHTML=T.xfers+' orders &middot; oldest first';
   // Birthday banner + supervisor floor note (Afshan) -> banners; grid shrinks
   // by each visible banner's ACTUAL rendered height (measured, not guessed --
@@ -227,8 +227,7 @@ function paint(d){
     nb.style.display='flex'; bandH+=nb.offsetHeight+12;
   } else { nb.style.display='none'; }
   document.querySelector('.grid2').style.height=bandH?('calc(100vh - '+(252+bandH)+'px)'):'';
-  var O=d.ousei||{};
-  document.getElementById('invhint').innerHTML=O.unstaged?(lbs(O.unstaged)+' lbs loose'):'';
+  document.getElementById('invhint').innerHTML='';
   document.getElementById('orders_ih').innerHTML=renderOrders(d.orders_inhouse,{sla:sla,more:T.more_inhouse,hideXfer:true,empty:'No in-house orders on the floor'});
   document.getElementById('orders_xf').innerHTML=renderOrders(d.orders_xfer,{sla:sla,more:T.more_xfer,hideXfer:true,empty:'No transfer orders on the floor'});
   document.getElementById('flow').innerHTML=renderFlow(d);
