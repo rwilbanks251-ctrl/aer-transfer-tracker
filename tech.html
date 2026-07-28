@@ -21,7 +21,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .kpi.hot{border-color:#F0B429;background:#1c2f4d}.kpi.hot .v{color:#43d17a}
 .bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px}
 .bdaybanner .bd-ic{font-size:24px;line-height:1}
-.grid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;padding:6px 34px 20px;height:calc(100vh - 214px)}
+.grid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;padding:6px 34px 20px;height:calc(100vh - 248px)}
 .rcol,.lcol{display:flex;flex-direction:column;gap:16px;overflow:hidden}
 .rcol .panel{flex:1 1 0;min-height:0}
 .lcol .panel.wq{flex:1.7 1 0;min-height:0}
@@ -226,7 +226,7 @@ function paint(d){
   if(d.birthdays_today&&d.birthdays_today.length){
     bd.innerHTML='<span class="bd-ic">&#127874;</span><span>Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span>';
     bd.style.display='flex';
-    document.querySelector('.grid').style.height='calc(100vh - '+(258+bd.offsetHeight+12)+'px)';
+    document.querySelector('.grid').style.height='calc(100vh - '+(248+bd.offsetHeight+12)+'px)';
   } else {
     bd.style.display='none';
     document.querySelector('.grid').style.height='';
