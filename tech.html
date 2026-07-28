@@ -105,8 +105,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 <div class="bdaybanner" id="bdaybanner" style="display:none"></div>
 <div class="grid">
   <div class="lcol">
-    <div class="panel wq"><h2><span class="n">WORK QUEUE</span> &mdash; top 6, oldest first<span class="hx" id="slahint"></span></h2><div class="scroll" id="orders"></div></div>
-    <div class="panel mv-panel"><h2><span class="n">INVENTORY &amp; RECYCLING</span> &mdash; moved today</h2><div class="scroll" id="movement"></div></div>
+    <div class="panel wq"><h2><span class="n">WORK QUEUE</span><span class="hx" id="slahint"></span></h2><div class="scroll" id="orders"></div></div>
+    <div class="panel mv-panel"><h2><span class="n">INVENTORY &amp; RECYCLING</span></h2><div class="scroll" id="movement"></div></div>
   </div>
   <div class="rcol">
     <div class="panel"><h2><span class="n">TESTERS TODAY</span> &mdash; Duncan &middot; MacCheck + PhoneCheck + WipeOS</h2><div class="scroll" id="testers"></div></div>
@@ -232,8 +232,8 @@ function paint(d){
     document.querySelector('.grid').style.height='';
   }
   var held=T.held_in_dc||[];
-  document.getElementById('slahint').innerHTML='target &lt;'+sla+'d &middot; '+T.over_sla+' over &middot; '+T.at_risk+' at risk'
-    +(held.length?(' &middot; <span class="dcheld">&#8987; '+held.map(esc).join(', ')+' in Data Capture</span>'):'');
+  document.getElementById('slahint').innerHTML=held.length
+    ?('<span class="dcheld">&#8987; '+held.map(esc).join(', ')+' in Data Capture</span>') : '';
   document.getElementById('orders').innerHTML=renderOrders(d);
   document.getElementById('testers').innerHTML=renderTesters(d);
   document.getElementById('movement').innerHTML=renderMovement(d);
