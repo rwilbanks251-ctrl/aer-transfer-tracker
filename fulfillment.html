@@ -153,7 +153,7 @@ function renderFlow(d){
     +'<div class="fv">'+v+'</div><div class="fw">'+sub+'</div></div>';}
   var P=T.prep||{}, md=T.metric_days||30;
   var prepV=(P.avg!=null)?(P.avg+'<small> bus. days</small>'):'&mdash;';
-  var prepSub=(P.n>0)?('median '+P.median+' &middot; n='+P.n+' &middot; '+md+'d'):'no shipments yet';
+  var prepSub=(P.n>0)?('median '+P.median+' &middot; P90 '+P.p90+' &middot; n='+P.n+' &middot; '+md+'d'):'no shipments yet';
   return '<div class="flowrow">'
     +cell('Shipped today',(st.total||0),(st.asset||0)+' asset &middot; '+(st.commodity||0)+' comm')
     +cell('Shipped this week',(sw.total||0),money(sw.value||0)+' value')
