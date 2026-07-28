@@ -86,6 +86,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .tr{display:flex;align-items:center;gap:14px;background:#0e1c31;border-radius:12px;padding:12px 16px;margin-bottom:11px}
 .tr .rank{font-size:22px;font-weight:900;color:#F0B429;width:34px;text-align:center}
 .tr .who{flex:1}.tr .who .nm{font-size:22px;font-weight:800}.tr .who .tool{font-size:13px;color:#9fb2ca}
+.tr .who .tool .wiped{color:#7fd8ff;font-weight:700}
 .tr .num{text-align:center;min-width:60px}.tr .num .v{font-size:24px;font-weight:900}.tr .num .l{font-size:11px;color:#9fb2ca;text-transform:uppercase}
 .v.g{color:#43d17a}.v.r{color:#ff6b6b}.v.o{color:#ffc247}.v.big{color:#fff;font-size:30px}
 .empty{color:#43d17a;font-size:22px;font-weight:800;padding:20px 0}
@@ -108,11 +109,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
     <div class="panel mv-panel"><h2><span class="n">INVENTORY &amp; RECYCLING</span> &mdash; moved today</h2><div class="scroll" id="movement"></div></div>
   </div>
   <div class="rcol">
-    <div class="panel"><h2><span class="n">TESTERS TODAY</span> &mdash; Duncan &middot; MacCheck + PhoneCheck</h2><div class="scroll" id="testers"></div></div>
+    <div class="panel"><h2><span class="n">TESTERS TODAY</span> &mdash; Duncan &middot; MacCheck + PhoneCheck + WipeOS</h2><div class="scroll" id="testers"></div></div>
     <div class="panel"><h2><span class="n">DRIVE MANAGEMENT</span> &mdash; pending wipes</h2><div class="scroll" id="drives"></div></div>
   </div>
 </div>
-<div class="foot"><div id="src">Makor OPS Dashboard (Tech + Drive backlog, throughput) &middot; PhoneCheck + MacCheck (testers)</div><div id="updated">&nbsp;</div></div>
+<div class="foot"><div id="src">Makor OPS Dashboard (Tech + Drive backlog, throughput) &middot; PhoneCheck + MacCheck + WipeOS (testers)</div><div id="updated">&nbsp;</div></div>
 <script>
 function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function tickClock(){var n=new Date();
@@ -201,8 +202,9 @@ function renderTesters(d){
   if(!d.testers||!d.testers.length) return '<div class="empty" style="color:#9fb2ca">No tester activity logged yet today.</div>';
   var h='';
   d.testers.forEach(function(t,i){
+    var wiped=t.wiped?(' &middot; <span class="wiped">&#128190; '+t.wiped+' wiped</span>'):'';
     h+='<div class="tr"><div class="rank">'+(i+1)+'</div>'
-      +'<div class="who"><div class="nm">'+esc(t.name)+'</div><div class="tool">'+esc(t.tools)+'</div></div>'
+      +'<div class="who"><div class="nm">'+esc(t.name)+'</div><div class="tool">'+esc(t.tools)+wiped+'</div></div>'
       +'<div class="num"><div class="v big">'+t.tested+'</div><div class="l">Tested</div></div>'
       +'<div class="num"><div class="v g">'+t.sale_ready+'</div><div class="l">Ready</div></div>'
       +'<div class="num"><div class="v r">'+t.fail+'</div><div class="l">Fail</div></div>'
