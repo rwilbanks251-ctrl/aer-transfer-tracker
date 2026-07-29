@@ -10,7 +10,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .top .clock{text-align:right}.top .clock .t{font-size:34px;font-weight:900;color:#F0B429;line-height:1}
 .top .clock .d{font-size:15px;color:#B8C4D4}
 .wx{display:flex;align-items:center;gap:12px}
-.wx .wxi{font-size:40px;line-height:1}
+.wx .wxi{font-size:40px;line-height:1;display:inline-block}
+@keyframes wxspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes wxfloat{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+@keyframes wxbounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes wxflash{0%,100%{opacity:1}50%{opacity:.35}}
+.wx .wxi.wx-spin{animation:wxspin 8s linear infinite}
+.wx .wxi.wx-float{animation:wxfloat 3s ease-in-out infinite}
+.wx .wxi.wx-bounce{animation:wxbounce 1.4s ease-in-out infinite}
+.wx .wxi.wx-flash{animation:wxflash 1s ease-in-out infinite}
 .wx .wxt{font-size:30px;font-weight:900;color:#F0B429;line-height:1}
 .wx .wxd{font-size:14px;color:#B8C4D4}
 .wx .wxt .wxfl{font-size:14px;color:#9fb2ca;font-weight:700;margin-left:6px}
@@ -45,11 +53,17 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .xftag{display:inline-block;background:#0d3a4a;color:#7fd8ff;border:1px solid #1f6b85;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:800;margin-left:8px}
 .priotag{display:inline-block;background:#F0B429;color:#152B47;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:900;margin-left:8px}
 .ord.prio{border-left-color:#F0B429 !important}
-.notebanner{margin:0 34px 12px;background:#1c2f4d;border:2px solid #F0B429;border-radius:12px;padding:11px 18px;color:#ffe08a;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px}
-.notebanner .nb-ic{font-size:24px;line-height:1}
+.notebanner{margin:0 34px 12px;background:#1c2f4d;border:2px solid #F0B429;border-radius:12px;padding:11px 18px;color:#ffe08a;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px;overflow:hidden}
+.notebanner .nb-ic{font-size:24px;line-height:1;animation:iconpulse 1.6s ease-in-out infinite}
 .notebanner .nb-by{color:#9fb2ca;font-size:13px;font-weight:600;margin-left:auto;white-space:nowrap}
-.bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px}
-.bdaybanner .bd-ic{font-size:24px;line-height:1}
+.notebanner .nb-marq{flex:1;overflow:hidden;min-width:0}
+.notebanner .nb-txt{display:inline-block;white-space:nowrap;padding-left:100%;animation:bannerscroll 16s linear infinite}
+.bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px;overflow:hidden}
+.bdaybanner .bd-ic{font-size:24px;line-height:1;animation:iconpulse 1.6s ease-in-out infinite}
+.bdaybanner .bd-marq{flex:1;overflow:hidden;min-width:0}
+.bdaybanner .bd-txt{display:inline-block;white-space:nowrap;padding-left:100%;animation:bannerscroll 16s linear infinite}
+@keyframes bannerscroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@keyframes iconpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 .ord .meta{font-size:12.5px;color:#c7d3e2;margin:2px 0 0}
 .ord .meta b{color:#ffc247}
 .steps{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
@@ -101,7 +115,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 </style></head><body>
 <div class="top">
   <h1>AER <span class="a">|</span> Warehouse</h1>
-  <div class="wx" id="weather"><span class="wxi">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
+  <div class="wx" id="weather"><span class="wxi wx-float">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
   <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
 </div>
 <div class="kpis" id="kpis"></div>
@@ -217,12 +231,12 @@ function paint(d){
   var bandH=0;
   var bd=document.getElementById('bdaybanner');
   if(d.birthdays_today&&d.birthdays_today.length){
-    bd.innerHTML='<span class="bd-ic">&#127874;</span><span>Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span>';
+    bd.innerHTML='<span class="bd-ic">&#127874;</span><span class="bd-marq"><span class="bd-txt">Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span></span>';
     bd.style.display='flex'; bandH+=bd.offsetHeight+12;
   } else { bd.style.display='none'; }
   var nb=document.getElementById('notebanner');
   if(d.note){
-    nb.innerHTML='<span class="nb-ic">&#128204;</span><span>'+esc(d.note)+'</span>'
+    nb.innerHTML='<span class="nb-ic">&#128204;</span><span class="nb-marq"><span class="nb-txt">'+esc(d.note)+'</span></span>'
       +(d.supervisor?('<span class="nb-by">&mdash; '+esc(d.supervisor)+'</span>'):'');
     nb.style.display='flex'; bandH+=nb.offsetHeight+12;
   } else { nb.style.display='none'; }
@@ -268,6 +282,12 @@ function wxText(c){
   if(c<=48) return 'Fog'; if(c<=67) return 'Rain'; if(c<=77) return 'Snow';
   if(c<=82) return 'Showers'; return 'Storms';
 }
+function wxAnimClass(c){
+  if(c===0) return 'wx-spin';
+  if(c<=3||c<=48) return 'wx-float';
+  if(c<=82) return 'wx-bounce';
+  return 'wx-flash';
+}
 function loadWeather(){
   fetch('https://api.open-meteo.com/v1/forecast?latitude=34.938&longitude=-82.138&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&temperature_unit=fahrenheit')
     .then(function(r){return r.json();})
@@ -278,7 +298,7 @@ function loadWeather(){
       var hum=(c.relative_humidity_2m!=null)?Math.round(c.relative_humidity_2m):null;
       var fl=(feels!=null&&feels!==t)?('<span class="wxfl">feels '+feels+'&deg;</span>'):'';
       document.getElementById('weather').innerHTML=
-        '<span class="wxi">'+wxEmoji(code)+'</span><div class="wxb">'
+        '<span class="wxi '+wxAnimClass(code)+'">'+wxEmoji(code)+'</span><div class="wxb">'
         +'<div class="wxt">'+t+'&deg;'+fl+'</div>'
         +'<div class="wxd">'+wxText(code)+(hum!=null?(' &middot; '+hum+'% humidity'):'')+' &middot; Duncan, SC</div></div>';
     }).catch(function(){});
