@@ -16,8 +16,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .kpi .v{font-size:44px;font-weight:900;color:#F0B429;line-height:1}
 .kpi .l{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#9fb2ca;margin-top:4px}
 .kpi.hot{border-color:#F0B429;background:#1c2f4d}.kpi.hot .v{color:#43d17a}
-.grid{display:flex;gap:16px;padding:6px 34px 14px;height:calc(100vh - 252px)}
-.panel{flex:1;background:#12233c;border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;overflow:hidden}
+.grid{padding:6px 34px 14px;height:calc(100vh - 252px)}
+.panel{background:#12233c;border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;overflow:hidden;height:100%}
 .panel h2{font-size:20px;letter-spacing:2px;text-transform:uppercase;color:#fff;margin-bottom:12px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:baseline}
 .panel h2 .n{color:#F0B429}
 .panel h2 .hx{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none}
@@ -34,6 +34,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .steps{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
 .chip{font-size:11px;font-weight:800;letter-spacing:.3px;border-radius:6px;padding:2px 8px;text-transform:uppercase;white-space:nowrap;background:#F0B429;color:#152B47}
 .chip.carr{background:#233b5c;color:#cfe0f5}
+.chip.fac{background:#2e4a3c;color:#a9f0c6}
 .expline{font-size:14px;color:#9fb2ca;margin-top:6px}.expline b{color:#fff}
 .empty{color:#43d17a;font-size:22px;font-weight:800;padding:20px 0}
 .empty.mut{color:#9fb2ca}
@@ -48,10 +49,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 <div class="kpis" id="kpis"></div>
 <div class="bdaybanner" id="bdaybanner" style="display:none"></div>
 <div class="grid">
-  <div class="panel"><h2><span class="n">APAC</span><span class="hx" id="apachint"></span></h2><div class="scroll" id="orders_apac"></div></div>
-  <div class="panel"><h2><span class="n">MALAYSIA (PENANG)</span><span class="hx" id="penanghint"></span></h2><div class="scroll" id="orders_penang"></div></div>
+  <div class="panel"><h2><span class="n">ORDERS ON THE FLOOR</span><span class="hx" id="qhint"></span></h2><div class="scroll" id="orders_queue"></div></div>
 </div>
-<div class="foot"><div id="src">Makor InboundOrders — open APAC + Penang orders (Pending Receiving / Pending Financial Approval excluded)</div><div id="updated">&nbsp;</div></div>
+<div class="foot"><div id="src">Makor InboundOrders — APAC + Malaysia (Penang), Operations In-Progress only</div><div id="updated">&nbsp;</div></div>
 <script>
 function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function fdate(s){if(!s)return '';var p=s.split('-');return p.length===3?(p[1]+'/'+p[2]+'/'+p[0].slice(2)):s;}
@@ -62,6 +62,8 @@ setInterval(tickClock,1000);tickClock();
 
 function kpi(v,l,cls){return '<div class="kpi'+(cls?' '+cls:'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
 
+var FAC_LABEL={apac:'APAC',APAC:'APAC',Penang:'Malaysia',penang:'Malaysia'};
+
 function renderOrders(list, opts){
   opts=opts||{};
   if(!list||!list.length) return '<div class="empty mut">'+(opts.empty||'None')+'</div>';
@@ -70,7 +72,7 @@ function renderOrders(list, opts){
     var nr=(o.days===null||o.days===undefined);
     var acct=o.account?(' &middot; '+esc(o.account)):'';
     var cls='ord'+(nr?' nr':'');
-    var chips='';
+    var chips='<span class="chip fac">'+esc(FAC_LABEL[o.facility]||o.facility)+'</span>';
     if(o.program) chips+='<span class="chip">'+esc(o.program)+'</span>';
     if(o.carrier) chips+='<span class="chip carr">Partner: '+esc(o.carrier)+'</span>';
     var ageHtml=nr?'<div class="age nr">not yet<br>received</div>'
@@ -78,23 +80,21 @@ function renderOrders(list, opts){
     h+='<div class="'+cls+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span>'
       +'<span class="statuschip">'+esc(o.status)+'</span></div>'+ageHtml+'</div>'
       +(o.received?('<div class="meta">received '+fdate(o.received)+'</div>'):'')
-      +(chips?('<div class="steps">'+chips+'</div>'):'')+'</div>';
+      +'<div class="steps">'+chips+'</div></div>';
   });
   if(opts.more>0) h+='<div class="expline">+ '+opts.more+' more</div>';
   return h;
 }
 
 function paint(d){
-  if(d.loading){document.getElementById('orders_apac').innerHTML='<div class="empty mut">Loading live data&hellip;</div>';return;}
+  if(d.loading){document.getElementById('orders_queue').innerHTML='<div class="empty mut">Loading live data&hellip;</div>';return;}
   var T=d.totals;
   document.getElementById('kpis').innerHTML=
-    kpi(T.total_open,'Open APAC + Malaysia orders')
+    kpi(T.total_open,'On the floor (Ops In-Progress)')
     +kpi(T.apac||0,'At APAC')
-    +'<div class="kpi"><div class="v" style="color:#7fd8ff">'+(T.penang||0)+'</div><div class="l">At Malaysia (Penang)</div></div>'
-    +kpi(T.oldest,'Oldest (days)','hot')
-    +'<div class="kpi"><div class="v" style="color:#9fb2ca">'+T.not_received+'</div><div class="l">Not yet received</div></div>';
-  document.getElementById('apachint').innerHTML=(T.apac||0)+' orders &middot; oldest first';
-  document.getElementById('penanghint').innerHTML=(T.penang||0)+' orders &middot; oldest first';
+    +'<div class="kpi"><div class="v" style="color:#7fd8ff">'+(T.penang||0)+'</div><div class="l">At Malaysia</div></div>'
+    +kpi(T.oldest,'Oldest (days)','hot');
+  document.getElementById('qhint').innerHTML=T.total_open+' orders &middot; oldest first';
   var bd=document.getElementById('bdaybanner');
   if(d.birthdays_today&&d.birthdays_today.length){
     bd.innerHTML='<span class="bd-ic">&#127874;</span><span>Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span>';
@@ -104,8 +104,7 @@ function paint(d){
     bd.style.display='none';
     document.querySelector('.grid').style.height='';
   }
-  document.getElementById('orders_apac').innerHTML=renderOrders(d.panels.apac,{more:d.more.apac,empty:'No open APAC orders.'});
-  document.getElementById('orders_penang').innerHTML=renderOrders(d.panels.penang,{more:d.more.penang,empty:'No open Malaysia (Penang) orders.'});
+  document.getElementById('orders_queue').innerHTML=renderOrders(d.queue,{more:d.more,empty:'No open APAC or Malaysia orders on the floor.'});
   var mins=Math.round((Date.now()-new Date(d.generated_at).getTime())/60000);
   var el=document.getElementById('updated');
   var api='';
