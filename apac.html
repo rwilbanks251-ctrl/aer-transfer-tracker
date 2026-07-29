@@ -30,16 +30,17 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .ord .age.nr{font-size:14px;color:#9fb2ca;font-weight:700}
 .ord .meta{font-size:14px;color:#c7d3e2;margin:4px 0 0}
 .ord .meta b{color:#ffc247}
-.statuschip{display:inline-block;background:#233b5c;color:#cfe0f5;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:800;margin-left:8px}
 .steps{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
 .chip{font-size:11px;font-weight:800;letter-spacing:.3px;border-radius:6px;padding:2px 8px;text-transform:uppercase;white-space:nowrap;background:#F0B429;color:#152B47}
 .chip.carr{background:#233b5c;color:#cfe0f5}
 .chip.fac{background:#2e4a3c;color:#a9f0c6}
+.chip.prog{background:#3a2f52;color:#d7c6ff}
 .expline{font-size:14px;color:#9fb2ca;margin-top:6px}.expline b{color:#fff}
 .empty{color:#43d17a;font-size:22px;font-weight:800;padding:20px 0}
 .empty.mut{color:#9fb2ca}
 .foot{display:flex;justify-content:space-between;padding:0 34px 12px;font-size:13px;color:#7f93ad}
 .stale{color:#ffc247}
+.opsstale{background:#5a1616;color:#ffb0b0;border-radius:4px;padding:1px 7px;font-weight:900}
 .notewarn{color:#ffc247}
 </style></head><body>
 <div class="top">
@@ -54,6 +55,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 <div class="foot"><div id="src">Makor InboundOrders — APAC + Malaysia (Penang), Operations In-Progress only</div><div id="updated">&nbsp;</div></div>
 <script>
 function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lbs(n){return Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});}
 function fdate(s){if(!s)return '';var p=s.split('-');return p.length===3?(p[1]+'/'+p[2]+'/'+p[0].slice(2)):s;}
 function tickClock(){var n=new Date();
   document.getElementById('clock').textContent=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
@@ -73,13 +75,19 @@ function renderOrders(list, opts){
     var acct=o.account?(' &middot; '+esc(o.account)):'';
     var cls='ord'+(nr?' nr':'');
     var chips='<span class="chip fac">'+esc(FAC_LABEL[o.facility]||o.facility)+'</span>';
-    if(o.program) chips+='<span class="chip">'+esc(o.program)+'</span>';
+    (o.stations||[]).forEach(function(s){
+      var name=s[0], items=s[1], weight=s[2];
+      var cnt=name==='Tracked Recycling'?(weight?(lbs(weight)+' lbs'):''):(items?items.toLocaleString():'');
+      chips+='<span class="chip">'+esc(name)+(cnt?(' &middot; '+cnt):'')+'</span>';
+    });
+    if(o.program) chips+='<span class="chip prog">'+esc(o.program)+'</span>';
     if(o.carrier) chips+='<span class="chip carr">Partner: '+esc(o.carrier)+'</span>';
     var ageHtml=nr?'<div class="age nr">not yet<br>received</div>'
                   :'<div class="age">'+o.days+'<small>days since received</small></div>';
-    h+='<div class="'+cls+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span>'
-      +'<span class="statuschip">'+esc(o.status)+'</span></div>'+ageHtml+'</div>'
-      +(o.received?('<div class="meta">received '+fdate(o.received)+'</div>'):'')
+    var flr=o.floor_items?('<b>'+o.floor_items.toLocaleString()+'</b> items &middot; <b>'+lbs(o.floor_weight)+'</b> lbs on floor')
+       :(o.floor_weight?('<b>'+lbs(o.floor_weight)+'</b> lbs on floor'):'no in-process material on floor yet');
+    h+='<div class="'+cls+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span></div>'+ageHtml+'</div>'
+      +'<div class="meta">'+(o.received?('received '+fdate(o.received)+' &middot; '):'')+flr+'</div>'
       +'<div class="steps">'+chips+'</div></div>';
   });
   if(opts.more>0) h+='<div class="expline">+ '+opts.more+' more</div>';
@@ -107,11 +115,20 @@ function paint(d){
   document.getElementById('orders_queue').innerHTML=renderOrders(d.queue,{more:d.more,empty:'No open APAC or Malaysia orders on the floor.'});
   var mins=Math.round((Date.now()-new Date(d.generated_at).getTime())/60000);
   var el=document.getElementById('updated');
+  function freshBit(label, ts, staleMin){
+    if(!ts) return {html:'', stale:false};
+    var age=Math.round((Date.now()-new Date(String(ts).replace(' ','T')).getTime())/60000);
+    var hr=new Date().getHours();
+    var stale=(!isNaN(age))&&age>staleMin&&hr>=6&&hr<20;
+    return {html:' &middot; '+label+' '+esc(ts)+(stale?' <b class="opsstale">STALE</b>':''), stale:stale};
+  }
+  var apacBit=freshBit('APAC floor', d.apac_fresh, 40);
+  var penangBit=freshBit('Malaysia floor', d.penang_fresh, 40);
   var api='';
   if(d.api_fresh) api=' &middot; Makor API '+esc(String(d.api_fresh).slice(11,16));
   var nts=(d.notes&&d.notes.length)?(' &middot; <span class="notewarn">'+esc(d.notes[0])+'</span>'):'';
-  el.innerHTML='Updated '+(mins<=0?'just now':mins+'m ago')+api+nts;
-  el.className=(mins>20)?'stale':'';
+  el.innerHTML='Updated '+(mins<=0?'just now':mins+'m ago')+apacBit.html+penangBit.html+api+nts;
+  el.className=(mins>20||apacBit.stale||penangBit.stale)?'stale':'';
 }
 
 function poll(){fetch('apac_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});}
