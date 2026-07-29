@@ -169,7 +169,7 @@ function renderDrives(d){
 
 function renderWeeklyTarget(d){
   var t=d.totals||{};
-  var target=t.weekly_target||400, week=t.processed_week||0;
+  var target=t.weekly_target||450, week=t.processed_week||0;
   var pct=(typeof t.weekly_pct==='number')?t.weekly_pct:Math.round(100*week/target);
   var barW=Math.min(100,pct);
   return '<div class="wktarget"><div class="wkhead"><span>Weekly target &mdash; '+week+' / '+target+'</span>'
