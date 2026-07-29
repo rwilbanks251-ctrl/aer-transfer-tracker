@@ -202,9 +202,8 @@ function renderTesters(d){
   if(!d.testers||!d.testers.length) return '<div class="empty" style="color:#9fb2ca">No tester activity logged yet today.</div>';
   var h='';
   d.testers.forEach(function(t,i){
-    var wiped=t.wiped?(' &middot; <span class="wiped">&#128190; '+t.wiped+' wiped</span>'):'';
     h+='<div class="tr"><div class="rank">'+(i+1)+'</div>'
-      +'<div class="who"><div class="nm">'+esc(t.name)+'</div><div class="tool">'+esc(t.tools)+wiped+'</div></div>'
+      +'<div class="who"><div class="nm">'+esc(t.name)+'</div><div class="tool">'+esc(t.tools)+'</div></div>'
       +'<div class="num"><div class="v big">'+t.tested+'</div><div class="l">Tested</div></div>'
       +'<div class="num"><div class="v g">'+t.sale_ready+'</div><div class="l">Ready</div></div>'
       +'<div class="num"><div class="v r">'+t.fail+'</div><div class="l">Fail</div></div>'
