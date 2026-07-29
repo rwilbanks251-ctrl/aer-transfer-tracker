@@ -21,7 +21,17 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .panel h2{font-size:20px;letter-spacing:2px;text-transform:uppercase;color:#fff;margin-bottom:12px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:baseline}
 .panel h2 .n{color:#F0B429}
 .panel h2 .hx{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none}
-.scroll{overflow:hidden;flex:1 1 auto}
+.filterbar{display:flex;gap:10px;margin-bottom:12px;flex:0 0 auto}
+.filterbar input{flex:1;background:#0e1c31;border:2px solid #24406a;border-radius:8px;color:#fff;padding:9px 14px;font-size:14px;outline:none}
+.filterbar input:focus{border-color:#F0B429}
+.filterbar input::placeholder{color:#5c7089}
+.factabs{display:flex;gap:6px}
+.factabs button{background:#0e1c31;border:2px solid #24406a;color:#9fb2ca;border-radius:8px;padding:0 16px;font-size:13px;font-weight:700;cursor:pointer}
+.factabs button.active{background:#F0B429;color:#152B47;border-color:#F0B429}
+.scroll{overflow-y:auto;flex:1 1 auto;scrollbar-color:#24406a #0e1c31;scrollbar-width:thin}
+.scroll::-webkit-scrollbar{width:10px}
+.scroll::-webkit-scrollbar-track{background:#0e1c31}
+.scroll::-webkit-scrollbar-thumb{background:#24406a;border-radius:6px}
 .ord{background:#0e1c31;border-left:6px solid #43d17a;border-radius:0 12px 12px 0;padding:9px 16px;margin-bottom:8px}
 .ord.nr{border-left-color:#5a6c88}
 .ord .oh{display:flex;justify-content:space-between;align-items:baseline}
@@ -50,7 +60,18 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 <div class="kpis" id="kpis"></div>
 <div class="bdaybanner" id="bdaybanner" style="display:none"></div>
 <div class="grid">
-  <div class="panel"><h2><span class="n">ORDERS ON THE FLOOR</span><span class="hx" id="qhint"></span></h2><div class="scroll" id="orders_queue"></div></div>
+  <div class="panel">
+    <h2><span class="n">ORDERS ON THE FLOOR</span><span class="hx" id="qhint"></span></h2>
+    <div class="filterbar">
+      <input id="q" type="text" placeholder="Filter by order id, account, program, carrier, station...">
+      <div class="factabs" id="factabs">
+        <button data-fac="all" class="active">All</button>
+        <button data-fac="APAC">APAC</button>
+        <button data-fac="Penang">Malaysia</button>
+      </div>
+    </div>
+    <div class="scroll" id="orders_queue"></div>
+  </div>
 </div>
 <div class="foot"><div id="src">Makor InboundOrders — APAC + Malaysia (Penang), Operations In-Progress only</div><div id="updated">&nbsp;</div></div>
 <script>
@@ -63,6 +84,8 @@ function tickClock(){var n=new Date();
 setInterval(tickClock,1000);tickClock();
 
 function kpi(v,l,cls){return '<div class="kpi'+(cls?' '+cls:'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
+function p90col(v,s){return v>=s?'#ff6b6b':(v>=s-5?'#ffd782':'#43d17a');}
+function p90kpi(v,l,s){return '<div class="kpi"><div class="v" style="color:'+p90col(v,s)+'">'+v+'<small>d</small></div><div class="l">'+l+'</div></div>';}
 
 var FAC_LABEL={apac:'APAC',APAC:'APAC',Penang:'Malaysia',penang:'Malaysia'};
 
@@ -77,7 +100,7 @@ function renderOrders(list, opts){
     var chips='<span class="chip fac">'+esc(FAC_LABEL[o.facility]||o.facility)+'</span>';
     (o.stations||[]).forEach(function(s){
       var name=s[0], items=s[1], weight=s[2];
-      var cnt=name==='Tracked Recycling'?(weight?(lbs(weight)+' lbs'):''):(items?items.toLocaleString():'');
+      var cnt=items?(items.toLocaleString()+' items'):(weight?(lbs(weight)+' lbs'):'');
       chips+='<span class="chip">'+esc(name)+(cnt?(' &middot; '+cnt):'')+'</span>';
     });
     if(o.program) chips+='<span class="chip prog">'+esc(o.program)+'</span>';
@@ -90,19 +113,51 @@ function renderOrders(list, opts){
       +'<div class="meta">'+(o.received?('received '+fdate(o.received)+' &middot; '):'')+flr+'</div>'
       +'<div class="steps">'+chips+'</div></div>';
   });
-  if(opts.more>0) h+='<div class="expline">+ '+opts.more+' more</div>';
   return h;
 }
+
+var LAST_QUEUE=[], CUR_FAC='all';
+
+function matchesFilter(o, q){
+  if(!q) return true;
+  var hay=[o.id,o.account,o.program,o.carrier,FAC_LABEL[o.facility]||o.facility]
+    .concat((o.stations||[]).map(function(s){return s[0];}))
+    .join(' ').toLowerCase();
+  return hay.indexOf(q)>=0;
+}
+
+function renderFiltered(){
+  var q=(document.getElementById('q').value||'').trim().toLowerCase();
+  var filtered=LAST_QUEUE.filter(function(o){
+    return (CUR_FAC==='all'||o.facility===CUR_FAC) && matchesFilter(o,q);
+  });
+  var emptyMsg=LAST_QUEUE.length?'No matching orders.':'No open APAC or Malaysia orders on the floor.';
+  document.getElementById('orders_queue').innerHTML=renderOrders(filtered,{empty:emptyMsg});
+  var hint=filtered.length+' of '+LAST_QUEUE.length+' orders &middot; oldest first';
+  document.getElementById('qhint').innerHTML=hint;
+}
+
+document.getElementById('q').addEventListener('input', renderFiltered);
+document.getElementById('factabs').addEventListener('click', function(e){
+  var btn=e.target.closest('button[data-fac]');
+  if(!btn) return;
+  CUR_FAC=btn.getAttribute('data-fac');
+  Array.prototype.forEach.call(document.querySelectorAll('#factabs button'), function(b){
+    b.classList.toggle('active', b===btn);
+  });
+  renderFiltered();
+});
 
 function paint(d){
   if(d.loading){document.getElementById('orders_queue').innerHTML='<div class="empty mut">Loading live data&hellip;</div>';return;}
   var T=d.totals;
+  var sla=T.sla||45;
   document.getElementById('kpis').innerHTML=
     kpi(T.total_open,'On the floor (Ops In-Progress)')
     +kpi(T.apac||0,'At APAC')
     +'<div class="kpi"><div class="v" style="color:#7fd8ff">'+(T.penang||0)+'</div><div class="l">At Malaysia</div></div>'
-    +kpi(T.oldest,'Oldest (days)','hot');
-  document.getElementById('qhint').innerHTML=T.total_open+' orders &middot; oldest first';
+    +kpi(T.oldest,'Oldest (days)','hot')
+    +p90kpi(T.p90||0,'P90 &middot; goal &lt;'+sla+'d',sla);
   var bd=document.getElementById('bdaybanner');
   if(d.birthdays_today&&d.birthdays_today.length){
     bd.innerHTML='<span class="bd-ic">&#127874;</span><span>Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span>';
@@ -112,7 +167,8 @@ function paint(d){
     bd.style.display='none';
     document.querySelector('.grid').style.height='';
   }
-  document.getElementById('orders_queue').innerHTML=renderOrders(d.queue,{more:d.more,empty:'No open APAC or Malaysia orders on the floor.'});
+  LAST_QUEUE=d.queue||[];
+  renderFiltered();
   var mins=Math.round((Date.now()-new Date(d.generated_at).getTime())/60000);
   var el=document.getElementById('updated');
   function freshBit(label, ts, staleMin){
