@@ -1,0 +1,125 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AER APAC / Malaysia Order Tracker</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;padding:18px 34px;background:#152B47;border-bottom:4px solid #F0B429}
+.top h1{font-size:32px;font-weight:900}.top h1 .a{color:#F0B429}
+.top .clock{text-align:right}.top .clock .t{font-size:34px;font-weight:900;color:#F0B429;line-height:1}
+.top .clock .d{font-size:15px;color:#B8C4D4}
+.bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px}
+.bdaybanner .bd-ic{font-size:24px;line-height:1}
+.kpis{display:flex;gap:16px;padding:16px 34px}
+.kpi{flex:1;background:#152B47;border:2px solid #24406a;border-radius:14px;padding:12px 8px;text-align:center}
+.kpi .v{font-size:44px;font-weight:900;color:#F0B429;line-height:1}
+.kpi .l{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#9fb2ca;margin-top:4px}
+.kpi.hot{border-color:#F0B429;background:#1c2f4d}.kpi.hot .v{color:#43d17a}
+.grid{display:flex;gap:16px;padding:6px 34px 14px;height:calc(100vh - 252px)}
+.panel{flex:1;background:#12233c;border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;overflow:hidden}
+.panel h2{font-size:20px;letter-spacing:2px;text-transform:uppercase;color:#fff;margin-bottom:12px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:baseline}
+.panel h2 .n{color:#F0B429}
+.panel h2 .hx{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none}
+.scroll{overflow:hidden;flex:1 1 auto}
+.ord{background:#0e1c31;border-left:6px solid #43d17a;border-radius:0 12px 12px 0;padding:9px 16px;margin-bottom:8px}
+.ord.nr{border-left-color:#5a6c88}
+.ord .oh{display:flex;justify-content:space-between;align-items:baseline}
+.ord .oid{font-size:19px;font-weight:800}.ord .oid .acct{font-size:14px;color:#9fb2ca;font-weight:600}
+.ord .age{font-size:22px;font-weight:900;color:#fff;white-space:nowrap}.ord .age small{font-size:12px;color:#9fb2ca;margin-left:5px}
+.ord .age.nr{font-size:14px;color:#9fb2ca;font-weight:700}
+.ord .meta{font-size:14px;color:#c7d3e2;margin:4px 0 0}
+.ord .meta b{color:#ffc247}
+.statuschip{display:inline-block;background:#233b5c;color:#cfe0f5;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:800;margin-left:8px}
+.steps{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.chip{font-size:11px;font-weight:800;letter-spacing:.3px;border-radius:6px;padding:2px 8px;text-transform:uppercase;white-space:nowrap;background:#F0B429;color:#152B47}
+.chip.carr{background:#233b5c;color:#cfe0f5}
+.expline{font-size:14px;color:#9fb2ca;margin-top:6px}.expline b{color:#fff}
+.empty{color:#43d17a;font-size:22px;font-weight:800;padding:20px 0}
+.empty.mut{color:#9fb2ca}
+.foot{display:flex;justify-content:space-between;padding:0 34px 12px;font-size:13px;color:#7f93ad}
+.stale{color:#ffc247}
+.notewarn{color:#ffc247}
+</style></head><body>
+<div class="top">
+  <h1>AER <span class="a">|</span> APAC / Malaysia Order Tracker</h1>
+  <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
+</div>
+<div class="kpis" id="kpis"></div>
+<div class="bdaybanner" id="bdaybanner" style="display:none"></div>
+<div class="grid">
+  <div class="panel"><h2><span class="n">APAC</span><span class="hx" id="apachint"></span></h2><div class="scroll" id="orders_apac"></div></div>
+  <div class="panel"><h2><span class="n">MALAYSIA (PENANG)</span><span class="hx" id="penanghint"></span></h2><div class="scroll" id="orders_penang"></div></div>
+</div>
+<div class="foot"><div id="src">Makor InboundOrders — open APAC + Penang orders (Pending Receiving / Pending Financial Approval excluded)</div><div id="updated">&nbsp;</div></div>
+<script>
+function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fdate(s){if(!s)return '';var p=s.split('-');return p.length===3?(p[1]+'/'+p[2]+'/'+p[0].slice(2)):s;}
+function tickClock(){var n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('cdate').textContent=n.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});}
+setInterval(tickClock,1000);tickClock();
+
+function kpi(v,l,cls){return '<div class="kpi'+(cls?' '+cls:'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
+
+function renderOrders(list, opts){
+  opts=opts||{};
+  if(!list||!list.length) return '<div class="empty mut">'+(opts.empty||'None')+'</div>';
+  var h='';
+  list.forEach(function(o){
+    var nr=(o.days===null||o.days===undefined);
+    var acct=o.account?(' &middot; '+esc(o.account)):'';
+    var cls='ord'+(nr?' nr':'');
+    var chips='';
+    if(o.program) chips+='<span class="chip">'+esc(o.program)+'</span>';
+    if(o.carrier) chips+='<span class="chip carr">Partner: '+esc(o.carrier)+'</span>';
+    var ageHtml=nr?'<div class="age nr">not yet<br>received</div>'
+                  :'<div class="age">'+o.days+'<small>days since received</small></div>';
+    h+='<div class="'+cls+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span>'
+      +'<span class="statuschip">'+esc(o.status)+'</span></div>'+ageHtml+'</div>'
+      +(o.received?('<div class="meta">received '+fdate(o.received)+'</div>'):'')
+      +(chips?('<div class="steps">'+chips+'</div>'):'')+'</div>';
+  });
+  if(opts.more>0) h+='<div class="expline">+ '+opts.more+' more</div>';
+  return h;
+}
+
+function paint(d){
+  if(d.loading){document.getElementById('orders_apac').innerHTML='<div class="empty mut">Loading live data&hellip;</div>';return;}
+  var T=d.totals;
+  document.getElementById('kpis').innerHTML=
+    kpi(T.total_open,'Open APAC + Malaysia orders')
+    +kpi(T.apac||0,'At APAC')
+    +'<div class="kpi"><div class="v" style="color:#7fd8ff">'+(T.penang||0)+'</div><div class="l">At Malaysia (Penang)</div></div>'
+    +kpi(T.oldest,'Oldest (days)','hot')
+    +'<div class="kpi"><div class="v" style="color:#9fb2ca">'+T.not_received+'</div><div class="l">Not yet received</div></div>';
+  document.getElementById('apachint').innerHTML=(T.apac||0)+' orders &middot; oldest first';
+  document.getElementById('penanghint').innerHTML=(T.penang||0)+' orders &middot; oldest first';
+  var bd=document.getElementById('bdaybanner');
+  if(d.birthdays_today&&d.birthdays_today.length){
+    bd.innerHTML='<span class="bd-ic">&#127874;</span><span>Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span>';
+    bd.style.display='flex';
+    document.querySelector('.grid').style.height='calc(100vh - '+(252+bd.offsetHeight+12)+'px)';
+  } else {
+    bd.style.display='none';
+    document.querySelector('.grid').style.height='';
+  }
+  document.getElementById('orders_apac').innerHTML=renderOrders(d.panels.apac,{more:d.more.apac,empty:'No open APAC orders.'});
+  document.getElementById('orders_penang').innerHTML=renderOrders(d.panels.penang,{more:d.more.penang,empty:'No open Malaysia (Penang) orders.'});
+  var mins=Math.round((Date.now()-new Date(d.generated_at).getTime())/60000);
+  var el=document.getElementById('updated');
+  var api='';
+  if(d.api_fresh) api=' &middot; Makor API '+esc(String(d.api_fresh).slice(11,16));
+  var nts=(d.notes&&d.notes.length)?(' &middot; <span class="notewarn">'+esc(d.notes[0])+'</span>'):'';
+  el.innerHTML='Updated '+(mins<=0?'just now':mins+'m ago')+api+nts;
+  el.className=(mins>20)?'stale':'';
+}
+
+function poll(){fetch('apac_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});}
+poll();setInterval(poll,60000);
+
+setInterval(function(){
+  var n=new Date();
+  if(n.getHours()===3 && n.getMinutes()===0) location.reload();
+},60000);
+</script></body></html>
