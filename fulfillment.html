@@ -10,7 +10,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .top .clock{text-align:right}.top .clock .t{font-size:34px;font-weight:900;color:#F0B429;line-height:1}
 .top .clock .d{font-size:15px;color:#B8C4D4}
 .wx{display:flex;align-items:center;gap:12px}
-.wx .wxi{font-size:40px;line-height:1}
+.wx .wxi{font-size:40px;line-height:1;display:inline-block}
+@keyframes wxspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes wxfloat{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+@keyframes wxbounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes wxflash{0%,100%{opacity:1}50%{opacity:.35}}
+.wx .wxi.wx-spin{animation:wxspin 8s linear infinite}
+.wx .wxi.wx-float{animation:wxfloat 3s ease-in-out infinite}
+.wx .wxi.wx-bounce{animation:wxbounce 1.4s ease-in-out infinite}
+.wx .wxi.wx-flash{animation:wxflash 1s ease-in-out infinite}
 .wx .wxt{font-size:30px;font-weight:900;color:#F0B429;line-height:1}
 .wx .wxd{font-size:14px;color:#B8C4D4}
 .wx .wxt .wxfl{font-size:14px;color:#9fb2ca;font-weight:700;margin-left:6px}
@@ -92,7 +100,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 </style></head><body>
 <div class="top">
   <h1>AER <span class="a">|</span> Order Fulfillment</h1>
-  <div class="wx" id="weather"><span class="wxi">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
+  <div class="wx" id="weather"><span class="wxi wx-float">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
   <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
 </div>
 <div class="kpis" id="kpis"></div>
@@ -228,6 +236,7 @@ function wxEmoji(c){if(c===0)return '&#9728;';if(c<=2)return '&#9925;';if(c===3)
   if(c<=82)return '&#127782;';return '&#9928;';}
 function wxText(c){if(c===0)return 'Clear';if(c<=2)return 'Partly cloudy';if(c===3)return 'Overcast';
   if(c<=48)return 'Fog';if(c<=67)return 'Rain';if(c<=77)return 'Snow';if(c<=82)return 'Showers';return 'Storms';}
+function wxAnimClass(c){if(c===0)return 'wx-spin';if(c<=3||c<=48)return 'wx-float';if(c<=82)return 'wx-bounce';return 'wx-flash';}
 function loadWeather(){
   fetch('https://api.open-meteo.com/v1/forecast?latitude=34.938&longitude=-82.138&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&temperature_unit=fahrenheit')
     .then(function(r){return r.json();})
@@ -236,7 +245,7 @@ function loadWeather(){
       var feels=(c.apparent_temperature!=null)?Math.round(c.apparent_temperature):null;
       var hum=(c.relative_humidity_2m!=null)?Math.round(c.relative_humidity_2m):null;
       var fl=(feels!=null&&feels!==t)?('<span class="wxfl">feels '+feels+'&deg;</span>'):'';
-      document.getElementById('weather').innerHTML='<span class="wxi">'+wxEmoji(code)+'</span><div class="wxb">'
+      document.getElementById('weather').innerHTML='<span class="wxi '+wxAnimClass(code)+'">'+wxEmoji(code)+'</span><div class="wxb">'
         +'<div class="wxt">'+t+'&deg;'+fl+'</div><div class="wxd">'+wxText(code)+(hum!=null?(' &middot; '+hum+'% humidity'):'')+' &middot; Duncan, SC</div></div>';
     }).catch(function(){});
 }
