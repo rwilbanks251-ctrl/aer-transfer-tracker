@@ -1,0 +1,203 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AER EMEA Order Tracker</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;padding:18px 34px;background:#152B47;border-bottom:4px solid #F0B429}
+.top h1{font-size:32px;font-weight:900}.top h1 .a{color:#F0B429}
+.top .clock{text-align:right}.top .clock .t{font-size:34px;font-weight:900;color:#F0B429;line-height:1}
+.top .clock .d{font-size:15px;color:#B8C4D4}
+.bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px;overflow:hidden}
+.bdaybanner .bd-ic{font-size:24px;line-height:1;animation:iconpulse 1.6s ease-in-out infinite}
+.bdaybanner .bd-marq{flex:1;overflow:hidden;min-width:0}
+.bdaybanner .bd-txt{display:inline-block;white-space:nowrap;padding-left:100%;animation:bannerscroll 16s linear infinite}
+@keyframes bannerscroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@keyframes iconpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.kpis{display:flex;gap:16px;padding:16px 34px}
+.kpi{flex:1;background:#152B47;border:2px solid #24406a;border-radius:14px;padding:12px 8px;text-align:center}
+.kpi .v{font-size:44px;font-weight:900;color:#F0B429;line-height:1}
+.kpi .l{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#9fb2ca;margin-top:4px}
+.kpi.hot{border-color:#F0B429;background:#1c2f4d}.kpi.hot .v{color:#43d17a}
+.grid{padding:6px 34px 14px;height:calc(100vh - 252px);display:flex;flex-direction:column;gap:16px}
+.panel{background:#12233c;border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;overflow:hidden}
+.panel.main{flex:2 1 0}
+.panel.initiated{flex:1 1 0}
+.panel h2{font-size:20px;letter-spacing:2px;text-transform:uppercase;color:#fff;margin-bottom:12px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:baseline}
+.panel h2 .n{color:#F0B429}
+.panel h2 .hx{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none}
+.filterbar{display:flex;gap:10px;margin-bottom:12px;flex:0 0 auto}
+.filterbar input{flex:1;background:#0e1c31;border:2px solid #24406a;border-radius:8px;color:#fff;padding:9px 14px;font-size:14px;outline:none}
+.filterbar input:focus{border-color:#F0B429}
+.filterbar input::placeholder{color:#5c7089}
+.scroll{overflow-y:auto;flex:1 1 auto;scrollbar-color:#24406a #0e1c31;scrollbar-width:thin}
+.scroll::-webkit-scrollbar{width:10px}
+.scroll::-webkit-scrollbar-track{background:#0e1c31}
+.scroll::-webkit-scrollbar-thumb{background:#24406a;border-radius:6px}
+.ord{background:#0e1c31;border-left:6px solid #43d17a;border-radius:0 12px 12px 0;padding:9px 16px;margin-bottom:8px}
+.ord.nr{border-left-color:#5a6c88}
+.ord .oh{display:flex;justify-content:space-between;align-items:baseline}
+.ord .oid{font-size:19px;font-weight:800}.ord .oid .acct{font-size:14px;color:#9fb2ca;font-weight:600}
+.ord .age{font-size:22px;font-weight:900;color:#fff;white-space:nowrap}.ord .age small{font-size:12px;color:#9fb2ca;margin-left:5px}
+.ord .age.nr{font-size:14px;color:#9fb2ca;font-weight:700}
+.ord .meta{font-size:14px;color:#c7d3e2;margin:4px 0 0}
+.ord .meta b{color:#ffc247}
+.steps{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.chip{font-size:11px;font-weight:800;letter-spacing:.3px;border-radius:6px;padding:2px 8px;text-transform:uppercase;white-space:nowrap;background:#F0B429;color:#152B47}
+.chip.carr{background:#233b5c;color:#cfe0f5}
+.chip.prog{background:#3a2f52;color:#d7c6ff}
+.expline{font-size:14px;color:#9fb2ca;margin-top:6px}.expline b{color:#fff}
+.empty{color:#43d17a;font-size:22px;font-weight:800;padding:20px 0}
+.empty.mut{color:#9fb2ca}
+.foot{display:flex;justify-content:space-between;padding:0 34px 12px;font-size:13px;color:#7f93ad}
+.stale{color:#ffc247}
+.opsstale{background:#5a1616;color:#ffb0b0;border-radius:4px;padding:1px 7px;font-weight:900}
+.notewarn{color:#ffc247}
+</style></head><body>
+<div class="top">
+  <h1>AER <span class="a">|</span> EMEA Order Tracker</h1>
+  <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
+</div>
+<div class="kpis" id="kpis"></div>
+<div class="bdaybanner" id="bdaybanner" style="display:none"></div>
+<div class="grid">
+  <div class="panel main">
+    <h2><span class="n">ORDERS ON THE FLOOR</span><span class="hx" id="qhint"></span></h2>
+    <div class="filterbar">
+      <input id="q" type="text" placeholder="Filter by order id, account, program, carrier, station...">
+    </div>
+    <div class="scroll" id="orders_queue"></div>
+  </div>
+  <div class="panel initiated">
+    <h2><span class="n">INITIATED &middot; NOT YET STARTED</span><span class="hx" id="inithint"></span></h2>
+    <div class="scroll" id="orders_initiated"></div>
+  </div>
+</div>
+<div class="foot"><div id="src">Makor InboundOrders — EMEA, Operations In-Progress only</div><div id="updated">&nbsp;</div></div>
+<script>
+function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lbs(n){return Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});}
+function fdate(s){if(!s)return '';var p=s.split('-');return p.length===3?(p[1]+'/'+p[2]+'/'+p[0].slice(2)):s;}
+function tickClock(){var n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('cdate').textContent=n.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});}
+setInterval(tickClock,1000);tickClock();
+
+function kpi(v,l,cls){return '<div class="kpi'+(cls?' '+cls:'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
+function p90col(v,s){return v>=s?'#ff6b6b':(v>=s-5?'#ffd782':'#43d17a');}
+function p90kpi(v,l,s){return '<div class="kpi"><div class="v" style="color:'+p90col(v,s)+'">'+v+'<small>d</small></div><div class="l">'+l+'</div></div>';}
+
+function renderOrders(list, opts){
+  opts=opts||{};
+  if(!list||!list.length) return '<div class="empty mut">'+(opts.empty||'None')+'</div>';
+  var h='';
+  list.forEach(function(o){
+    var nr=(o.days===null||o.days===undefined);
+    var acct=o.account?(' &middot; '+esc(o.account)):'';
+    var cls='ord'+(nr?' nr':'');
+    var chips='';
+    (o.stations||[]).forEach(function(s){
+      var name=s[0], items=s[1], weight=s[2];
+      var cnt=items?(items.toLocaleString()+' items'):(weight?(lbs(weight)+' lbs'):'');
+      chips+='<span class="chip">'+esc(name)+(cnt?(' &middot; '+cnt):'')+'</span>';
+    });
+    if(o.program) chips+='<span class="chip prog">'+esc(o.program)+'</span>';
+    if(o.carrier) chips+='<span class="chip carr">Partner: '+esc(o.carrier)+'</span>';
+    var ageHtml=nr?'<div class="age nr">not yet<br>received</div>'
+                  :'<div class="age">'+o.days+'<small>days since received</small></div>';
+    var flr=o.floor_items?('<b>'+o.floor_items.toLocaleString()+'</b> items &middot; <b>'+lbs(o.floor_weight)+'</b> lbs on floor')
+       :(o.floor_weight?('<b>'+lbs(o.floor_weight)+'</b> lbs on floor'):'no in-process material on floor yet');
+    h+='<div class="'+cls+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span></div>'+ageHtml+'</div>'
+      +'<div class="meta">'+(o.received?('received '+fdate(o.received)+' &middot; '):'')+flr+'</div>'
+      +'<div class="steps">'+chips+'</div></div>';
+  });
+  return h;
+}
+
+function renderInitiated(list){
+  if(!list||!list.length) return '<div class="empty mut">No Initiated EMEA orders.</div>';
+  var h='';
+  list.forEach(function(o){
+    var nr=(o.days===null||o.days===undefined);
+    var acct=o.account?(' &middot; '+esc(o.account)):'';
+    var chips='';
+    if(o.program) chips+='<span class="chip prog">'+esc(o.program)+'</span>';
+    if(o.carrier) chips+='<span class="chip carr">Partner: '+esc(o.carrier)+'</span>';
+    var ageHtml=nr?'<div class="age nr">created date<br>unknown</div>'
+                  :'<div class="age">'+o.days+'<small>days since initiated</small></div>';
+    h+='<div class="ord'+(nr?' nr':'')+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span></div>'+ageHtml+'</div>'
+      +(o.created?('<div class="meta">created '+fdate(o.created)+'</div>'):'')
+      +'<div class="steps">'+chips+'</div></div>';
+  });
+  return h;
+}
+
+var LAST_QUEUE=[];
+
+function matchesFilter(o, q){
+  if(!q) return true;
+  var hay=[o.id,o.account,o.program,o.carrier]
+    .concat((o.stations||[]).map(function(s){return s[0];}))
+    .join(' ').toLowerCase();
+  return hay.indexOf(q)>=0;
+}
+
+function renderFiltered(){
+  var q=(document.getElementById('q').value||'').trim().toLowerCase();
+  var filtered=LAST_QUEUE.filter(function(o){ return matchesFilter(o,q); });
+  var emptyMsg=LAST_QUEUE.length?'No matching orders.':'No open EMEA orders on the floor.';
+  document.getElementById('orders_queue').innerHTML=renderOrders(filtered,{empty:emptyMsg});
+  var hint=filtered.length+' of '+LAST_QUEUE.length+' orders &middot; oldest first';
+  document.getElementById('qhint').innerHTML=hint;
+}
+
+document.getElementById('q').addEventListener('input', renderFiltered);
+function paint(d){
+  if(d.loading){document.getElementById('orders_queue').innerHTML='<div class="empty mut">Loading live data&hellip;</div>';return;}
+  var T=d.totals;
+  var sla=T.sla||45;
+  document.getElementById('kpis').innerHTML=
+    kpi(T.total_open,'On the floor (Ops In-Progress)')
+    +kpi(T.oldest,'Oldest (days)','hot')
+    +p90kpi(T.p90||0,'P90 &middot; goal &lt;'+sla+'d',sla);
+  var bd=document.getElementById('bdaybanner');
+  if(d.birthdays_today&&d.birthdays_today.length){
+    bd.innerHTML='<span class="bd-ic">&#127874;</span><span class="bd-marq"><span class="bd-txt">Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span></span>';
+    bd.style.display='flex';
+    document.querySelector('.grid').style.height='calc(100vh - '+(252+bd.offsetHeight+12)+'px)';
+  } else {
+    bd.style.display='none';
+    document.querySelector('.grid').style.height='';
+  }
+  LAST_QUEUE=d.queue||[];
+  renderFiltered();
+  var IT=d.initiated_totals||{};
+  document.getElementById('inithint').innerHTML=(IT.count||0)+' orders &middot; oldest first'
+    +(IT.count?(' &middot; oldest '+(IT.oldest||0)+'d'):'');
+  document.getElementById('orders_initiated').innerHTML=renderInitiated(d.initiated_queue);
+  var mins=Math.round((Date.now()-new Date(d.generated_at).getTime())/60000);
+  var el=document.getElementById('updated');
+  function freshBit(label, ts, staleMin){
+    if(!ts) return {html:'', stale:false};
+    var age=Math.round((Date.now()-new Date(String(ts).replace(' ','T')).getTime())/60000);
+    var hr=new Date().getHours();
+    var stale=(!isNaN(age))&&age>staleMin&&hr>=6&&hr<20;
+    return {html:' &middot; '+label+' '+esc(ts)+(stale?' <b class="opsstale">STALE</b>':''), stale:stale};
+  }
+  var emeaBit=freshBit('EMEA floor', d.emea_fresh, 40);
+  var api='';
+  if(d.api_fresh) api=' &middot; Makor API '+esc(String(d.api_fresh).slice(11,16));
+  var nts=(d.notes&&d.notes.length)?(' &middot; <span class="notewarn">'+esc(d.notes[0])+'</span>'):'';
+  el.innerHTML='Updated '+(mins<=0?'just now':mins+'m ago')+emeaBit.html+api+nts;
+  el.className=(mins>20||emeaBit.stale)?'stale':'';
+}
+
+function poll(){fetch('emea_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});}
+poll();setInterval(poll,60000);
+
+setInterval(function(){
+  var n=new Date();
+  if(n.getHours()===3 && n.getMinutes()===0) location.reload();
+},60000);
+</script></body></html>
