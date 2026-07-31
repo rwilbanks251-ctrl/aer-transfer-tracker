@@ -9,12 +9,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .top h1{font-size:32px;font-weight:900}.top h1 .a{color:#F0B429}
 .top .clock{text-align:right}.top .clock .t{font-size:34px;font-weight:900;color:#F0B429;line-height:1}
 .top .clock .d{font-size:15px;color:#B8C4D4}
-.bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px;overflow:hidden}
-.bdaybanner .bd-ic{font-size:24px;line-height:1;animation:iconpulse 1.6s ease-in-out infinite}
-.bdaybanner .bd-marq{flex:1;overflow:hidden;min-width:0}
-.bdaybanner .bd-txt{display:inline-block;white-space:nowrap;padding-left:100%;animation:bannerscroll 16s linear infinite}
-@keyframes bannerscroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}
-@keyframes iconpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 .kpis{display:flex;gap:16px;padding:16px 34px}
 .kpi{flex:1;background:#152B47;border:2px solid #24406a;border-radius:14px;padding:12px 8px;text-align:center}
 .kpi .v{font-size:44px;font-weight:900;color:#F0B429;line-height:1}
@@ -60,7 +54,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
   <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
 </div>
 <div class="kpis" id="kpis"></div>
-<div class="bdaybanner" id="bdaybanner" style="display:none"></div>
 <div class="grid">
   <div class="panel main">
     <h2><span class="n">ORDERS ON THE FLOOR</span><span class="hx" id="qhint"></span></h2>
@@ -161,15 +154,6 @@ function paint(d){
     kpi(T.total_open,'On the floor (Ops In-Progress)')
     +kpi(T.oldest,'Oldest (days)','hot')
     +p90kpi(T.p90||0,'P90 &middot; goal &lt;'+sla+'d',sla);
-  var bd=document.getElementById('bdaybanner');
-  if(d.birthdays_today&&d.birthdays_today.length){
-    bd.innerHTML='<span class="bd-ic">&#127874;</span><span class="bd-marq"><span class="bd-txt">Happy Birthday, '+esc(d.birthdays_today.join(' &amp; '))+'!</span></span>';
-    bd.style.display='flex';
-    document.querySelector('.grid').style.height='calc(100vh - '+(252+bd.offsetHeight+12)+'px)';
-  } else {
-    bd.style.display='none';
-    document.querySelector('.grid').style.height='';
-  }
   LAST_QUEUE=d.queue||[];
   renderFiltered();
   var IT=d.initiated_totals||{};
