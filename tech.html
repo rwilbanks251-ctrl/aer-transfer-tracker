@@ -64,23 +64,21 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .chips{display:flex;flex-wrap:wrap;gap:7px}
 .chip{background:#3a2f10;color:#f6d68a;border-radius:20px;padding:4px 13px;font-size:13.5px}.chip b{color:#fff}
 .chip.drv{background:#3a1420;color:#ffb0c4}.chip.drv b{color:#fff}
-.dhead{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:0 6px 6px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#7f93ad;font-weight:800}
-.dv{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:baseline;padding:7px 6px}
-.dv.grp{border-top:1px solid #24406a;padding-top:11px;margin-top:3px}
-.dv:first-of-type,.dv.grp:first-of-type{border-top:none}
-.dv .dl{min-width:0}
-.dv .dl b{font-size:20px;font-weight:900;color:#fff}
-.dv .dl .dacct{display:block;font-size:13px;color:#9fb2ca;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dv .dl .dage{display:block;font-size:12px;color:#7f93ad;margin-top:1px}
-.dv .dr{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px}
-.dv .dr .dvcont{font-weight:900;font-size:19px;color:#F0B429;letter-spacing:.5px}
-.dv .dr .dcnt{font-size:15px;color:#fff}.dv .dr .dcnt b{font-weight:900}
-.dv .dr .dtype{font-size:12.5px;color:#9fb2ca}
+.dv{display:flex;align-items:baseline;gap:12px;padding:9px 6px;border-bottom:1px solid #172a44}
+.dv .dvcont{font-weight:900;font-size:20px;color:#F0B429;letter-spacing:.5px;min-width:112px}
+.dv .dcnt{font-size:16px;color:#fff}.dv .dcnt b{font-weight:900}
+.dv .dtype{font-size:12.5px;color:#9fb2ca}
 .dvbadge{border-radius:6px;padding:1px 8px;font-size:11px;font-weight:900}
 .dvbadge.wipe{background:#14361f;color:#7fe0a0}
 .dvbadge.destroy{background:#5a1616;color:#ffd0d0}
 .dvloc{font-weight:800;font-size:14px;color:#7fd8ff;white-space:nowrap}
+.dv .dage{margin-left:auto;font-size:14px;font-weight:700;color:#7f93ad;white-space:nowrap}
 .dfresh{font-size:12px;color:#7f93ad;margin-top:8px}
+.soon{color:#7f93ad;font-style:italic}
+.soonbox{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#7f93ad;gap:6px}
+.soonbox .soonic{font-size:44px;opacity:.6}
+.soonbox .soontx{font-size:26px;font-weight:900;letter-spacing:1px;color:#9fb2ca}
+.soonbox .soonsub{font-size:14px;color:#7f93ad}
 .ordnote{margin-top:8px;padding:6px 10px;background:#2a2410;border-left:3px solid #F0B429;border-radius:0 6px 6px 0;color:#ffe08a;font-size:13px;font-weight:600}
 .mvtot{display:flex;gap:12px;background:#14361f;border:1px solid #2c6b41;border-radius:12px;padding:10px 18px;margin-bottom:12px}
 .mvtot .mvtcol{flex:1;display:flex;flex-direction:column;align-items:center}
@@ -132,7 +130,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
   </div>
   <div class="rcol">
     <div class="panel"><h2><span class="n">TESTERS TODAY</span> &mdash; Duncan &middot; MacCheck + PhoneCheck + WipeOS</h2><div class="scroll" id="testers"></div></div>
-    <div class="panel"><h2><span class="n">DRIVE MANAGEMENT</span> &mdash; drives by container</h2><div class="scroll" id="drives"></div></div>
+    <div class="panel"><h2><span class="n">DRIVE MANAGEMENT</span> &mdash; <span class="soon">coming soon</span></h2><div class="scroll" id="drives"></div></div>
   </div>
 </div>
 <div class="foot"><div id="src">Makor OPS Dashboard (Tech + Drive backlog, throughput) &middot; PhoneCheck + MacCheck + WipeOS (testers)</div><div id="updated">&nbsp;</div></div>
@@ -176,29 +174,23 @@ function renderOrders(d){
 }
 
 function renderDrives(d){
+  // Panel parked as "coming soon" (Rob, 2026-07-31). The by-container data below
+  // still computes and is ready to switch back on by removing this early return.
+  return '<div class="soonbox"><div class="soonic">&#128736;&#65039;</div>'
+    +'<div class="soontx">Coming soon</div>'
+    +'<div class="soonsub">Drive wipe queue by container</div></div>';
   var dr=d.drives||{containers:[],count:0,containers_more:0,pending_destroys:0};
   var cs=dr.containers||[];
   if(!cs.length) return '<div class="empty">No drives pending &#127881;</div>';
-  var h='<div class="dhead"><span class="dl">Order</span><span class="dr">Container</span></div>';
-  var last=null;
-  cs.forEach(function(c){
-    // Order shown once per group (blank on repeats) -> clean order-left/container-right.
-    var newOrder=c.order!==last; last=c.order;
-    var left=newOrder
-      ?('<b>'+esc(c.order)+'</b>'+(c.account?('<span class="dacct">'+esc(c.account)+'</span>'):'')+'<span class="dage">'+c.age+'d in queue</span>')
-      :'';
-    var svc=c.destroy>0
-      ?('<span class="dvbadge destroy">'+(c.wipe>0?('DESTROY +'+c.wipe+' wipe'):'DESTROY')+'</span>')
-      :'<span class="dvbadge wipe">WIPE</span>';
+  var h=cs.map(function(c){
     var loc=c.location?('<span class="dvloc">&#128205; '+esc(c.location)+'</span>'):'';
-    h+='<div class="dv'+(newOrder?' grp':'')+'">'
-      +'<span class="dl">'+left+'</span>'
-      +'<span class="dr"><span class="dvcont">'+esc(c.container)+'</span>'
-      +'<span class="dcnt"><b>'+c.count+'</b> drive'+(c.count===1?'':'s')+'</span>'
-      +(c.types?('<span class="dtype">'+esc(c.types)+'</span>'):'')+svc+loc+'</span></div>';
-  });
+    return '<div class="dv">'
+      +'<span class="dvcont">'+esc(c.container)+'</span>'
+      +'<span class="dcnt"><b>'+c.count+'</b> drive'+(c.count===1?'':'s')+' to wipe</span>'
+      +(c.types?('<span class="dtype">'+esc(c.types)+'</span>'):'')
+      +loc+'<span class="dage">'+c.age+'d</span></div>';
+  }).join('');
   if(dr.containers_more>0) h+='<div class="dfresh">+ '+dr.containers_more+' more container(s)</div>';
-  if(dr.pending_destroys>0) h+='<div class="dfresh">'+dr.pending_destroys+' drives pending destroy total</div>';
   return h;
 }
 
