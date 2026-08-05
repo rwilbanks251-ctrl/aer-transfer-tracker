@@ -50,12 +50,18 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .slatag{display:inline-block;background:#5a1616;color:#ffb0b0;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:800;margin-left:8px}
 .slatag.warn{background:#4a3a0c;color:#ffd782}
 .destag{display:inline-block;background:#3d1030;color:#ff9be2;border:1px solid #7a2a60;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:900;margin-left:8px}
+.audittag{display:inline-block;background:#F0B429;color:#152B47;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:900;margin-left:8px}
 .xftag{display:inline-block;background:#0d3a4a;color:#7fd8ff;border:1px solid #1f6b85;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:800;margin-left:8px}
 .priotag{display:inline-block;background:#F0B429;color:#152B47;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:900;margin-left:8px}
 .ord.prio{border-left-color:#F0B429 !important}
 .notebanner{margin:0 34px 12px;background:#1c2f4d;border:2px solid #F0B429;border-radius:12px;padding:11px 18px;color:#ffe08a;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px;overflow:hidden}
 .notebanner .nb-ic{font-size:24px;line-height:1;animation:iconpulse 1.6s ease-in-out infinite}
 .notebanner .nb-by{color:#9fb2ca;font-size:13px;font-weight:600;margin-left:auto;white-space:nowrap}
+.notebanner{position:relative}
+.notebanner.sparkle{background:linear-gradient(90deg,#1c2f4d,#4a3a12,#1c2f4d,#3a1c4a,#1c2f4d);background-size:300% 100%;animation:sparklebg 4s linear infinite}
+@keyframes sparklebg{0%{background-position:0% 0}100%{background-position:300% 0}}
+.nb-sparkle{position:absolute;font-size:16px;animation:twinkle 1.6s ease-in-out infinite;pointer-events:none}
+@keyframes twinkle{0%,100%{opacity:.15;transform:scale(.6) rotate(0deg)}50%{opacity:1;transform:scale(1.3) rotate(20deg)}}
 .notebanner .nb-marq{flex:1;overflow:hidden;min-width:0}
 .notebanner .nb-txt{display:inline-block;white-space:nowrap;padding-left:100%;animation:bannerscroll 16s linear infinite}
 .bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px;overflow:hidden}
@@ -155,6 +161,7 @@ function renderOrders(list, opts){
     var tag=band===2?('<span class="slatag">OVERDUE +'+(o.days-sla)+'d</span>')
            :(band===1?('<span class="slatag warn">due in '+o.due_in+'d</span>'):'');
     var des=o.destruction?'<span class="destag">&#128293; FULL DESTRUCTION</span>':'';
+    var audit=o.audit?'<span class="audittag">&#128269; AUDIT</span>':'';
     var xf=(o.xfer&&!opts.hideXfer)?('<span class="xftag">&#8644; XFER'+(o.xfer_to?(' &middot; '+esc(o.xfer_to)):'')+'</span>'):'';
     var pt=o.priority?('<span class="priotag">&#9733; PRIORITY</span>'):'';
     var acct=o.account?(' &middot; '+esc(o.account)):'';
@@ -169,7 +176,7 @@ function renderOrders(list, opts){
              :esc(s.name);
       chips+='<span class="chip '+s.state+'">'+txt+'</span>';
     });
-    h+='<div class="ord b'+band+(o.priority?' prio':'')+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span>'+pt+xf+des+tag+'</div>'
+    h+='<div class="ord b'+band+(o.priority?' prio':'')+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span>'+pt+xf+des+audit+tag+'</div>'
       +'<div class="age'+(band===2?' over':'')+'">'+o.days+'<small>days since received</small></div></div>'
       +'<div class="meta">received '+fdate(o.received)+' &middot; <span class="due'+(band>0?' hot':'')+'">due '+fdate(o.due)+'</span> &middot; '+flr+'</div>'
       +'<div class="steps">'+chips+'</div></div>';
@@ -236,10 +243,18 @@ function paint(d){
   } else { bd.style.display='none'; }
   var nb=document.getElementById('notebanner');
   if(d.note){
-    nb.innerHTML='<span class="nb-ic">&#128204;</span><span class="nb-marq"><span class="nb-txt">'+esc(d.note)+'</span></span>'
+    var sparkleHTML='';
+    if(d.sparkle){
+      var sparklePos=[[4,20],[14,75],[26,35],[40,15],[52,80],[64,25],[76,60],[88,40],[96,70]];
+      sparkleHTML=sparklePos.map(function(p,i){
+        return '<span class="nb-sparkle" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+(i*0.22)+'s">&#10024;</span>';
+      }).join('');
+    }
+    nb.innerHTML=sparkleHTML+'<span class="nb-ic">&#128204;</span><span class="nb-marq"><span class="nb-txt">'+esc(d.note)+'</span></span>'
       +(d.supervisor?('<span class="nb-by">&mdash; '+esc(d.supervisor)+'</span>'):'');
+    nb.classList.toggle('sparkle',!!d.sparkle);
     nb.style.display='flex'; bandH+=nb.offsetHeight+12;
-  } else { nb.style.display='none'; }
+  } else { nb.style.display='none'; nb.classList.remove('sparkle'); }
   document.querySelector('.grid2').style.height=bandH?('calc(100vh - '+(252+bandH)+'px)'):'';
   document.getElementById('invhint').innerHTML='';
   document.getElementById('orders_ih').innerHTML=renderOrders(d.orders_inhouse,{sla:sla,more:T.more_inhouse,hideXfer:true,empty:'No in-house orders on the floor'});
