@@ -18,6 +18,20 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .panel{background:#12233c;border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;overflow:hidden}
 .panel.main{flex:2 1 0}
 .panel.initiated{flex:1 1 0}
+.panel.inv{flex:1.3 1 0}
+.invwrap{display:flex;gap:18px;flex:1 1 auto;overflow:hidden}
+.invcol{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.invcol h3{font-size:13px;letter-spacing:1.4px;text-transform:uppercase;color:#9fb2ca;margin-bottom:7px;flex:0 0 auto}
+.invcol .scroll{overflow-y:auto;flex:1 1 auto}
+.invrow{display:flex;align-items:baseline;gap:8px;background:#0e1c31;border-left:5px solid #43d17a;border-radius:0 8px 8px 0;padding:6px 12px;margin-bottom:6px;font-size:13.5px}
+.invrow.warn{border-left-color:#F0B429}
+.invrow.hot{border-left-color:#ff5b5b}
+.invrow .k{font-weight:800;font-size:15px;white-space:nowrap}
+.invrow .sub{color:#9fb2ca;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.invrow .q{margin-left:auto;font-weight:900;font-size:16px;white-space:nowrap}
+.invrow .q small{font-size:11px;color:#9fb2ca;font-weight:700;margin-left:3px}
+.invrow .age{color:#ffc247;font-weight:800;font-size:12px;white-space:nowrap}
+.invclear{color:#43d17a;font-size:17px;font-weight:800;padding:14px 0}
 .panel h2{font-size:20px;letter-spacing:2px;text-transform:uppercase;color:#fff;margin-bottom:12px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:baseline}
 .panel h2 .n{color:#F0B429}
 .panel h2 .hx{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none}
@@ -74,6 +88,19 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
   <div class="panel initiated">
     <h2><span class="n">INITIATED &middot; NOT YET STARTED</span><span class="hx" id="inithint"></span></h2>
     <div class="scroll" id="orders_initiated"></div>
+  </div>
+  <div class="panel inv">
+    <h2><span class="n">INVENTORY ON HAND &middot; ISSUE OUT</span><span class="hx" id="invhint"></span></h2>
+    <div class="invwrap">
+      <div class="invcol">
+        <h3>Assets by work order</h3>
+        <div class="scroll" id="inv_assets"></div>
+      </div>
+      <div class="invcol">
+        <h3>Parts by SKU</h3>
+        <div class="scroll" id="inv_parts"></div>
+      </div>
+    </div>
   </div>
 </div>
 <div class="foot"><div id="src">Makor InboundOrders — APAC + Malaysia (Penang), Operations In-Progress only</div><div id="updated">&nbsp;</div></div>
@@ -169,6 +196,59 @@ document.getElementById('factabs').addEventListener('click', function(e){
   renderFiltered();
 });
 
+function invKpi(inv){
+  if(!inv) return '<div class="kpi"><div class="v" style="color:#5c7089">--</div>'
+    +'<div class="l">Inventory on hand</div></div>';
+  var a=inv.assets||0, p=inv.parts_qty||0, age=inv.oldest_asset||0;
+  // Nothing on hand is the GOOD state for this board -- it means everything
+  // has been issued out; only colour it amber/red once stock is sitting.
+  var col=(a+p)===0?'#43d17a':(age>=60?'#ff6b6b':(age>=30?'#ffd782':'#F0B429'));
+  return '<div class="kpi"><div class="v" style="color:'+col+'">'+a.toLocaleString()
+    +'</div><div class="l">Assets on hand</div></div>'
+    +'<div class="kpi"><div class="v" style="color:'+col+'">'+p.toLocaleString()
+    +'</div><div class="l">Parts on hand</div></div>';
+}
+
+function renderInvAssets(inv){
+  if(!inv) return '<div class="empty mut">Loading&hellip;</div>';
+  var rows=[];
+  Object.keys(inv.by_facility||{}).forEach(function(fac){
+    (inv.by_facility[fac].asset_orders||[]).forEach(function(e){
+      rows.push({fac:fac, e:e});
+    });
+  });
+  if(!rows.length) return '<div class="invclear">&#10003; No assets on hand &mdash; all issued out.</div>';
+  rows.sort(function(x,y){return (y.e.oldest||0)-(x.e.oldest||0);});
+  var h='';
+  rows.forEach(function(r){
+    var e=r.e, age=e.oldest||0;
+    var cls=age>=60?'hot':(age>=30?'warn':'');
+    var cats=Object.keys(e.categories||{}).map(function(c){return c+' '+e.categories[c];}).join(', ');
+    h+='<div class="invrow '+cls+'"><span class="k">'+esc(e.order||'?')+'</span>'
+      +'<span class="sub">'+esc(e.account||'')+(cats?(' &middot; '+esc(cats)):'')+'</span>'
+      +'<span class="age">'+age+'d</span>'
+      +'<span class="q">'+(e.count||0).toLocaleString()+'<small>units</small></span></div>';
+  });
+  return h;
+}
+
+function renderInvParts(inv){
+  if(!inv) return '<div class="empty mut">Loading&hellip;</div>';
+  var rows=[];
+  Object.keys(inv.by_facility||{}).forEach(function(fac){
+    (inv.by_facility[fac].part_skus||[]).forEach(function(s){ rows.push(s); });
+  });
+  if(!rows.length) return '<div class="invclear">&#10003; No parts on hand &mdash; all issued out.</div>';
+  rows.sort(function(x,y){return (y.qty||0)-(x.qty||0);});
+  var h='';
+  rows.forEach(function(s){
+    h+='<div class="invrow"><span class="k">'+esc(s.mfg||'&mdash;')+'</span>'
+      +'<span class="sub">'+esc(s.sku||'')+'</span>'
+      +'<span class="q">'+(s.qty||0).toLocaleString()+'<small>qty</small></span></div>';
+  });
+  return h;
+}
+
 function paint(d){
   if(d.loading){document.getElementById('orders_queue').innerHTML='<div class="empty mut">Loading live data&hellip;</div>';return;}
   var T=d.totals;
@@ -178,7 +258,8 @@ function paint(d){
     +kpi(T.apac||0,'At APAC')
     +'<div class="kpi"><div class="v" style="color:#7fd8ff">'+(T.penang||0)+'</div><div class="l">At Malaysia</div></div>'
     +kpi(T.oldest,'Oldest (days)','hot')
-    +p90kpi(T.p90||0,'P90 &middot; goal &lt;'+sla+'d',sla);
+    +p90kpi(T.p90||0,'P90 &middot; goal &lt;'+sla+'d',sla)
+    +invKpi(d.inventory);
   LAST_QUEUE=d.queue||[];
   renderFiltered();
   var IT=d.initiated_totals||{};
@@ -194,6 +275,13 @@ function paint(d){
     var stale=(!isNaN(age))&&age>staleMin&&hr>=6&&hr<20;
     return {html:' &middot; '+label+' '+esc(ts)+(stale?' <b class="opsstale">STALE</b>':''), stale:stale};
   }
+  var INV=d.inventory;
+  document.getElementById('inv_assets').innerHTML=renderInvAssets(INV);
+  document.getElementById('inv_parts').innerHTML=renderInvParts(INV);
+  document.getElementById('invhint').innerHTML=INV
+    ? ((INV.assets||0).toLocaleString()+' assets &middot; '+(INV.parts_qty||0).toLocaleString()
+       +' parts'+((INV.assets||0)?(' &middot; oldest '+(INV.oldest_asset||0)+'d on shelf'):''))
+    : 'awaiting first pull';
   var apacBit=freshBit('APAC floor', d.apac_fresh, 40);
   var penangBit=freshBit('Malaysia floor', d.penang_fresh, 40);
   var api='';
