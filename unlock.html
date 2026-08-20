@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>AER Worldwide — Device Unlock Request</title>
+<style>
+  :root { --navy:#152B47; --navy2:#0e1c31; --amber:#F0B429; --green:#2e9e5b; --red:#c0392b; }
+  * { box-sizing:border-box; margin:0; }
+  body { font-family:"Segoe UI",Arial,sans-serif; background:#f2f4f8; color:#1c2733; }
+  header { background:var(--navy); color:#fff; padding:16px 20px; }
+  header h1 { font-size:19px; font-weight:600; }
+  header h1 span { color:var(--amber); }
+  .sub { font-size:13px; color:#c8d2e0; margin-top:3px; }
+  main { max-width:900px; margin:0 auto; padding:16px; }
+  .card { background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(21,43,71,.12); padding:16px; margin-bottom:14px; }
+  .progress-wrap { display:flex; align-items:center; gap:12px; }
+  .bar { flex:1; height:12px; background:#e3e8f0; border-radius:6px; overflow:hidden; }
+  .bar div { height:100%; background:var(--green); width:0; transition:width .4s; }
+  .pct { font-weight:700; font-size:14px; white-space:nowrap; }
+  h2 { font-size:15px; color:var(--navy); margin-bottom:10px; }
+  .device { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 4px; border-bottom:1px solid #edf0f5; }
+  .device:last-child { border-bottom:none; }
+  .dinfo { flex:1 1 260px; min-width:220px; }
+  .dinfo .model { font-weight:600; font-size:14px; }
+  .dinfo .meta { font-size:12px; color:#5a6a7e; margin-top:2px; }
+  .dinfo .meta b { color:#2c3e50; font-weight:600; }
+  .p2 { display:inline-block; background:var(--amber); color:var(--navy); font-size:10.5px; font-weight:700;
+        border-radius:4px; padding:1px 6px; margin-left:6px; vertical-align:1px; }
+  .ack { font-size:11.5px; color:var(--red); font-weight:600; }
+  .btns { display:flex; gap:8px; }
+  button { border:none; border-radius:7px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; }
+  .b-unlock { background:var(--green); color:#fff; }
+  .b-cant { background:#eef1f6; color:#5a6a7e; }
+  button:disabled { opacity:.5; cursor:default; }
+  .done-head { display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; }
+  .done-head .chev { color:#8a97a8; font-size:12px; }
+  #doneList { display:none; margin-top:8px; }
+  #doneList .device { opacity:.75; }
+  .tick { color:var(--green); font-weight:700; font-size:13px; }
+  .bigmsg { text-align:center; padding:36px 12px; }
+  .bigmsg .icon { font-size:44px; }
+  .bigmsg h2 { font-size:20px; margin-top:10px; }
+  .bigmsg p { color:#5a6a7e; font-size:14px; margin-top:6px; }
+  footer { text-align:center; font-size:11.5px; color:#8a97a8; padding:14px; }
+  .err { color:var(--red); }
+  @media (max-width:560px){ .btns{width:100%} .btns button{flex:1} }
+</style>
+</head>
+<body>
+<header>
+  <h1>AER <span>Worldwide</span> — Device Unlock Request</h1>
+  <div class="sub" id="ordline">Loading…</div>
+</header>
+<main>
+  <div class="card" id="progressCard" style="display:none">
+    <div class="progress-wrap">
+      <div class="bar"><div id="barFill"></div></div>
+      <div class="pct" id="pctTxt"></div>
+    </div>
+  </div>
+  <div id="content"><div class="card"><p style="color:#5a6a7e">Loading your device list…</p></div></div>
+</main>
+<footer>Please unlock each device (remove activation / firmware / MDM locks), then mark it here.<br>
+Questions? Contact your AER representative.</footer>
+<script>
+const API = 'https://opfxjmqscafxfnavjbfa.supabase.co/functions/v1/unlock';
+const qs = new URLSearchParams(location.search);
+const O = qs.get('o') || '', K = qs.get('k') || '';
+let busy = false;
+
+function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fail(msg){
+  document.getElementById('ordline').textContent = 'Order lookup failed';
+  document.getElementById('progressCard').style.display = 'none';
+  document.getElementById('content').innerHTML =
+    '<div class="card bigmsg"><div class="icon">&#128274;</div><h2 class="err">' + esc(msg) + '</h2>' +
+    '<p>Please check the link you were sent, or contact your AER representative.</p></div>';
+}
+
+function deviceRow(a, done){
+  const p2 = Number(a.phase) === 2 ? '<span class="p2">PHASE 2</span>' : '';
+  const ack = (!done && a.customer_note) ? '<div class="ack">Marked "cannot unlock" — AER has been notified</div>' : '';
+  const info = '<div class="dinfo"><div class="model">' + esc(a.model || a.category || 'Device') + p2 + '</div>' +
+    '<div class="meta"><b>Serial:</b> ' + esc(a.serial || '—') + ' &nbsp; <b>Tag:</b> ' + esc(a.tag) +
+    ' &nbsp; <b>Mfg:</b> ' + esc(a.manufacturer || '—') + '</div>' + ack + '</div>';
+  const right = done
+    ? '<div class="tick">&#10003; Unlocked</div>'
+    : '<div class="btns"><button class="b-unlock" onclick="mark(\'' + esc(a.tag) + '\',\'unlock\')">UNLOCKED</button>' +
+      '<button class="b-cant" onclick="mark(\'' + esc(a.tag) + '\',\'still_locked\')">CAN\'T UNLOCK</button></div>';
+  return '<div class="device">' + info + right + '</div>';
+}
+
+function render(d){
+  document.getElementById('ordline').textContent =
+    'Order ' + d.order + ' · ' + (d.account || '') + ' · ' + d.total + ' device' + (d.total === 1 ? '' : 's');
+  const pc = document.getElementById('progressCard');
+  pc.style.display = '';
+  const pct = d.total ? Math.round(100 * d.unlocked / d.total) : 0;
+  document.getElementById('barFill').style.width = pct + '%';
+  document.getElementById('pctTxt').textContent = d.unlocked + ' of ' + d.total + ' unlocked';
+
+  const open = d.assets.filter(a => a.status !== 'unlocked');
+  const done = d.assets.filter(a => a.status === 'unlocked');
+  let html = '';
+  if (!open.length) {
+    html += '<div class="card bigmsg"><div class="icon">&#127881;</div>' +
+      '<h2 style="color:var(--green)">All devices unlocked — thank you!</h2>' +
+      '<p>AER has been notified and will continue processing your order.</p></div>';
+  } else {
+    html += '<div class="card"><h2>Devices awaiting unlock (' + open.length + ')</h2>' +
+      open.map(a => deviceRow(a, false)).join('') + '</div>';
+  }
+  if (done.length) {
+    html += '<div class="card"><div class="done-head" onclick="toggleDone()">' +
+      '<h2 style="margin:0">Unlocked (' + done.length + ')</h2><span class="chev" id="chev">show &#9662;</span></div>' +
+      '<div id="doneList">' + done.map(a => deviceRow(a, true)).join('') + '</div></div>';
+  }
+  document.getElementById('content').innerHTML = html;
+}
+
+function toggleDone(){
+  const el = document.getElementById('doneList'), ch = document.getElementById('chev');
+  const show = el.style.display !== 'block';
+  el.style.display = show ? 'block' : 'none';
+  ch.innerHTML = show ? 'hide &#9652;' : 'show &#9662;';
+}
+
+async function load(){
+  if (!O || !K) return fail('This link is missing its access code.');
+  try {
+    const r = await fetch(API + '?o=' + encodeURIComponent(O) + '&k=' + encodeURIComponent(K), {cache:'no-store'});
+    const d = await r.json();
+    if (!r.ok || !d.ok) return fail(d.error === 'Unauthorized' ? 'This link is not valid.' : (d.error || 'Something went wrong.'));
+    render(d);
+  } catch (e) { fail('Could not reach AER right now — please try again shortly.'); }
+}
+
+async function mark(tag, action){
+  if (busy) return;
+  const msg = action === 'unlock'
+    ? 'Confirm this device has been UNLOCKED?\n\nTag ' + tag
+    : 'Mark this device as CANNOT be unlocked?\n\nTag ' + tag + '\nAER will follow up with you about it.';
+  if (!confirm(msg)) return;
+  busy = true;
+  try {
+    const r = await fetch(API, { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ o:O, k:K, tag:tag, action:action }) });
+    const d = await r.json();
+    if (r.ok && d.ok) render(d); else alert(d.error || 'Update failed — please try again.');
+  } catch (e) { alert('Could not reach AER right now — please try again shortly.'); }
+  busy = false;
+}
+
+load();
+</script>
+</body>
+</html>
