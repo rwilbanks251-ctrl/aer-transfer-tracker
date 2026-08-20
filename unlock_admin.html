@@ -58,7 +58,9 @@
 </main>
 <script>
 const API = 'https://opfxjmqscafxfnavjbfa.supabase.co/functions/v1/unlock';
-const K = new URLSearchParams(location.search).get('k') || '';
+// Supervisor key baked in (Rob 2026-08-20: "just put the key in") — a ?k= URL
+// param still overrides it, e.g. after a key rotation.
+const K = new URLSearchParams(location.search).get('k') || 'YY9V9LDkxOLhIm5bBiVnULDV';
 const openSet = new Set();   // which order cards are expanded (survives refresh)
 let DATA = null, busy = false;
 
