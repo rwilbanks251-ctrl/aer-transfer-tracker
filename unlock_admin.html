@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>AER — Device Unlocks (Tech Supervisor)</title>
+<style>
+  :root { --navy:#152B47; --navy2:#0e1c31; --amber:#F0B429; --green:#2e9e5b; --red:#c0392b; }
+  * { box-sizing:border-box; margin:0; }
+  body { font-family:"Segoe UI",Arial,sans-serif; background:var(--navy2); color:#e8edf5; }
+  header { background:var(--navy); padding:14px 20px; display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px; }
+  header h1 { font-size:18px; font-weight:600; color:#fff; }
+  header h1 span { color:var(--amber); }
+  #stamp { font-size:12px; color:#8fa2bd; }
+  main { max-width:1100px; margin:0 auto; padding:16px; }
+  .order { background:#1b3050; border:1px solid #27405f; border-radius:10px; margin-bottom:12px; overflow:hidden; }
+  .ohead { display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer; flex-wrap:wrap; }
+  .oid { font-size:17px; font-weight:700; color:var(--amber); }
+  .oacct { font-size:14px; color:#dbe4f0; flex:1 1 180px; }
+  .chip { font-size:11px; font-weight:700; border-radius:5px; padding:2px 8px; white-space:nowrap; }
+  .c-p1 { background:#31507c; color:#cfe0f5; }
+  .c-p2 { background:var(--amber); color:var(--navy); }
+  .c-ok { background:var(--green); color:#fff; }
+  .c-locked { background:#5a2c2c; color:#f2c2bd; }
+  .c-days { background:#22395c; color:#9fb3cf; font-weight:600; }
+  .obtns { display:flex; gap:6px; }
+  .obtns button, .abtns button { border:none; border-radius:6px; padding:6px 10px; font-size:12px; font-weight:700; cursor:pointer; }
+  .b-link { background:#31507c; color:#fff; }
+  .b-arch { background:#22395c; color:#9fb3cf; }
+  .b-p2 { background:var(--amber); color:var(--navy); }
+  .b-unl { background:var(--green); color:#fff; }
+  button:disabled { opacity:.4; cursor:default; }
+  .odetail { display:none; border-top:1px solid #27405f; padding:10px 14px 14px; }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; color:#8fa2bd; font-weight:600; padding:5px 8px; border-bottom:1px solid #27405f; }
+  td { padding:5px 8px; border-bottom:1px solid #223a5c; }
+  tr.unlocked td { color:#7d94b5; }
+  .st-locked { color:#f2988d; font-weight:700; }
+  .st-unlocked { color:#6fcf97; font-weight:700; }
+  .note { color:var(--amber); font-size:11px; }
+  .abtns { margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .abtns .hint { font-size:11.5px; color:#8fa2bd; }
+  .empty { text-align:center; color:#8fa2bd; padding:40px 10px; font-size:15px; }
+  .err { color:#f2988d; }
+  #arcline { text-align:center; color:#5f7392; font-size:12px; padding:8px; }
+  .twrap { overflow-x:auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AER <span>Worldwide</span> — Device Unlocks</h1>
+  <div id="stamp">Loading…</div>
+</header>
+<main>
+  <div id="orders"><div class="empty">Loading…</div></div>
+  <div id="arcline"></div>
+</main>
+<script>
+const API = 'https://opfxjmqscafxfnavjbfa.supabase.co/functions/v1/unlock';
+const K = new URLSearchParams(location.search).get('k') || '';
+const openSet = new Set();   // which order cards are expanded (survives refresh)
+let DATA = null, busy = false;
+
+function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function days(iso){ const d = (Date.now() - new Date(iso).getTime()) / 86400000; return Math.max(0, Math.floor(d)); }
+
+function customerLink(o){
+  return new URL('unlock.html?o=' + encodeURIComponent(o.order) + '&k=' + encodeURIComponent(o.token), location.href).href;
+}
+
+function orderCard(o){
+  const doneChip = o.locked === 0
+    ? '<span class="chip c-ok">&#128275; UNLOCKED</span>'
+    : '<span class="chip c-locked">&#128274; ' + o.locked + ' of ' + o.total + ' locked</span>';
+  const phaseChip = '<span class="chip ' + (o.phase === 2 ? 'c-p2' : 'c-p1') + '">PHASE ' + o.phase + '</span>';
+  const rows = o.assets.map(a => {
+    const un = a.status === 'unlocked';
+    return '<tr class="' + (un ? 'unlocked' : '') + '">' +
+      '<td><input type="checkbox" data-o="' + esc(o.order) + '" value="' + esc(a.tag) + '"></td>' +
+      '<td>' + esc(a.tag) + '</td><td>' + esc(a.serial || '') + '</td><td>' + esc(a.model || '') + '</td>' +
+      '<td>' + esc(a.manufacturer || '') + '</td><td>' + esc(a.category || '') + '</td>' +
+      '<td>P' + esc(a.phase) + '</td>' +
+      '<td class="' + (un ? 'st-unlocked' : 'st-locked') + '">' + (un ? 'UNLOCKED' : 'LOCKED') +
+      (a.customer_note ? '<div class="note">customer: ' + esc(a.customer_note) + '</div>' : '') + '</td>' +
+      '<td>' + esc(a.updated_by || '') + '</td></tr>';
+  }).join('');
+  const shown = openSet.has(o.order);
+  return '<div class="order" id="ord-' + esc(o.order) + '">' +
+    '<div class="ohead" onclick="toggle(\'' + esc(o.order) + '\')">' +
+      '<span class="oid">' + esc(o.order) + '</span>' +
+      '<span class="oacct">' + esc(o.account || '') + '</span>' +
+      phaseChip + doneChip +
+      '<span class="chip c-days">' + days(o.created_at) + 'd open</span>' +
+      '<span class="obtns" onclick="event.stopPropagation()">' +
+        '<button class="b-link" onclick="copyLink(\'' + esc(o.order) + '\')">&#128203; Customer link</button>' +
+        '<button class="b-arch" onclick="archive(\'' + esc(o.order) + '\')">Archive</button>' +
+      '</span>' +
+    '</div>' +
+    '<div class="odetail" style="display:' + (shown ? 'block' : 'none') + '"><div class="twrap">' +
+      '<table><tr><th></th><th>Tag</th><th>Serial</th><th>Model</th><th>Mfg</th><th>Category</th><th>Phase</th><th>Status</th><th>By</th></tr>' +
+      rows + '</table></div>' +
+      '<div class="abtns">' +
+        '<button class="b-p2" onclick="act(\'' + esc(o.order) + '\',\'flag_p2\')">&#128274; Flag selected Phase 2</button>' +
+        '<button class="b-unl" onclick="act(\'' + esc(o.order) + '\',\'mark_unlocked\')">&#10003; Mark selected unlocked</button>' +
+        '<span class="hint">Phase 2 puts a device back on the customer sheet (still/newly locked at testing).</span>' +
+      '</div>' +
+    '</div></div>';
+}
+
+function render(){
+  const d = DATA;
+  document.getElementById('stamp').textContent =
+    d.orders.length + ' open order' + (d.orders.length === 1 ? '' : 's') + ' · updated ' + new Date().toLocaleTimeString();
+  document.getElementById('orders').innerHTML = d.orders.length
+    ? d.orders.map(orderCard).join('')
+    : '<div class="empty">No open unlock orders — new ones appear automatically when Data Capture completes.</div>';
+  document.getElementById('arcline').textContent = d.archived ? d.archived + ' archived order(s) hidden' : '';
+}
+
+function toggle(oid){
+  if (openSet.has(oid)) openSet.delete(oid); else openSet.add(oid);
+  const el = document.querySelector('#ord-' + CSS.escape(oid) + ' .odetail');
+  if (el) el.style.display = openSet.has(oid) ? 'block' : 'none';
+}
+
+function copyLink(oid){
+  const o = DATA.orders.find(x => x.order === oid);
+  if (!o) return;
+  navigator.clipboard.writeText(customerLink(o)).then(
+    () => alert('Customer link copied:\n\n' + customerLink(o)),
+    () => prompt('Copy the customer link:', customerLink(o)));
+}
+
+async function post(body){
+  const r = await fetch(API, { method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify(Object.assign({ k:K }, body)) });
+  const d = await r.json();
+  if (!r.ok || !d.ok) throw new Error(d.error || 'request failed');
+}
+
+async function act(oid, action){
+  if (busy) return;
+  const tags = [...document.querySelectorAll('#ord-' + CSS.escape(oid) + ' input:checked')].map(c => c.value);
+  if (!tags.length) return alert('Select one or more devices first (checkboxes).');
+  const verb = action === 'flag_p2' ? 'flag as PHASE 2 (locked)' : 'mark UNLOCKED';
+  if (!confirm(verb + ' — ' + tags.length + ' device(s) on order ' + oid + '?')) return;
+  busy = true;
+  try { await post({ action, o: oid, tags }); await load(); }
+  catch (e) { alert('Failed: ' + e.message); }
+  busy = false;
+}
+
+async function archive(oid){
+  if (busy) return;
+  if (!confirm('Archive order ' + oid + '? It disappears from this list and its customer link stops accepting changes.')) return;
+  busy = true;
+  try { await post({ action:'archive', o: oid }); openSet.delete(oid); await load(); }
+  catch (e) { alert('Failed: ' + e.message); }
+  busy = false;
+}
+
+async function load(){
+  if (!K) {
+    document.getElementById('orders').innerHTML = '<div class="empty err">Missing supervisor key — open this page from your saved link (…unlock_admin.html?k=YOUR-KEY).</div>';
+    return;
+  }
+  try {
+    const r = await fetch(API + '?view=all&k=' + encodeURIComponent(K), {cache:'no-store'});
+    const d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || 'request failed');
+    DATA = d; render();
+  } catch (e) {
+    document.getElementById('stamp').innerHTML = '<span class="err">Load failed: ' + esc(e.message) + '</span>';
+  }
+}
+
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>
