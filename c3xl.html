@@ -10,6 +10,20 @@
   var m = document.querySelector('meta[name="viewport"]');
   if (!m){ m = document.createElement("meta"); m.name = "viewport"; document.head.appendChild(m); }
   m.setAttribute("content", "width=device-width, initial-scale=1, viewport-fit=cover");
+
+  // Safari opens the page horizontally offset, which reads as "cut off".
+  // Pin it to the left edge on every way in, including bfcache restores.
+  function pinLeft(){
+    try {
+      if (window.scrollX) window.scrollTo(0, window.scrollY);
+      document.documentElement.scrollLeft = 0;
+      if (document.body) document.body.scrollLeft = 0;
+    } catch (e) {}
+  }
+  ["DOMContentLoaded","load","pageshow","orientationchange","resize"].forEach(function(ev){
+    window.addEventListener(ev, pinLeft, {passive:true});
+  });
+  [0, 60, 200, 600].forEach(function(d){ setTimeout(pinLeft, d); });
 })();
 </script>
 <title>C3XL 8/29 Layout Banger for Dark Corner by RW</title>
@@ -34,7 +48,7 @@
   --shadow:0 1px 2px rgba(0,0,0,.5), 0 14px 34px -16px rgba(0,0,0,.8);
 }
 *{box-sizing:border-box}
-html,body{max-width:100%; overflow-x:hidden}
+html,body{width:100%; max-width:100%; overflow-x:hidden; overflow-x:clip}
 body{
   margin:0; background:var(--ground); color:var(--cream);
   font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
@@ -166,7 +180,7 @@ body{
 }
 .field{
   position:absolute; top:0; left:0; width:100%; height:100%;
-  display:block; touch-action:pinch-zoom;
+  display:block; touch-action:manipulation;   /* taps only - a stray pinch used to leave the board zoomed and panned */
 }
 .sheet-foot{
   display:flex; justify-content:flex-end; padding:2px 6px 4px;
