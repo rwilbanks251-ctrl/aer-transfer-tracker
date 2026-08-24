@@ -229,6 +229,18 @@ body{
   display:block; margin-top:3px; font-family:"IBM Plex Mono",monospace;
   font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
 }
+.slot-row .job{
+  display:block; margin-top:6px; padding-top:6px; border-top:1px solid rgba(46,55,41,.8);
+  font-style:normal; font-family:"IBM Plex Sans",sans-serif; font-size:12px;
+  line-height:1.5; letter-spacing:0; text-transform:none; color:var(--cream);
+}
+.steps{
+  margin:12px 0 0; padding:11px 0 0 18px; border-top:1px solid var(--edge);
+  font-size:12px; line-height:1.55; color:var(--muted);
+}
+.steps li{margin-bottom:7px}
+.steps li:last-child{margin-bottom:0}
+.steps li::marker{color:var(--amber); font-family:"IBM Plex Mono",monospace; font-size:10px}
 .plans-empty{
   margin:0; padding:8px 6px; font-family:"IBM Plex Mono",monospace;
   font-size:10.5px; line-height:1.6; letter-spacing:.04em; color:var(--muted);
@@ -1025,11 +1037,21 @@ var PLANNER = "Robert";        /* only the planner gets the Plans menu */
 /* Each slot is one body: p = primary bunker off the break, s = the secondary
    they rotate to. Callouts mirror, so a plan marks both sides of the 50. */
 var PLANS = [
-  {name:"Default", slots:[
-    {c:1, p:"ALPHA",   s:"CHARLIE", shoot:["DENVER","LIMA","ALPHA"]},
-    {c:1, p:"HOME",    s:"ROCKET",  shoot:["HOME"]},
-    {c:1, p:"SEATTLE", s:"S3",      shoot:["SEATTLE","CALI","S1"]}
-  ]}
+  {name:"Default",
+   slots:[
+     {c:1, p:"ALPHA",   s:"CHARLIE", shoot:["DENVER","LIMA","ALPHA"],
+      job:"Hold D-side. Glance mid for info."},
+     {c:1, p:"HOME",    s:"ROCKET",  shoot:["HOME"],
+      job:"Hold the snake. Nothing moves up snake side. Feed snake info."},
+     {c:1, p:"SEATTLE", s:"S3",      shoot:["SEATTLE","CALI","S1"],
+      job:"Hold Alpha. Wait for him to peek at Home baiting him."}
+   ],
+   steps:[
+     "Get a body, then rotate to secondaries. Home moves first unless the kill opens a gap.",
+     "Everyone at secondary. Hold. Nobody goes forward until positions are called.",
+     "Positions called and clear: Rocket pushes to Cobra, gun up into mid when he can.",
+     "Cobra taken: snake side and D-side push carefully, bunker to bunker."
+   ]}
 ];
 var planOn = null, planPick = null;
 window.__plan = function(){ return {planOn:planOn, mode:st.mode, marks:svg.querySelectorAll(".plan-mark").length}; };
@@ -1131,8 +1153,11 @@ function renderPlanCard(){
            (planPick === i ? ' aria-pressed="true"' : '') + '>' +
            "<b>" + sl.p + (sl.s ? ' <i>&rarr; ' + sl.s + "</i>" : "") + "</b>" +
            (sl.shoot ? "<span>" + sl.shoot.join(" &middot; ") + "</span>" : "") +
+           (planPick === i && sl.job ? '<em class="job">' + sl.job + "</em>" : "") +
            "</button>";
-  }).join("");
+  }).join("") +
+  (plan.steps ? '<ol class="steps">' + plan.steps.map(function(t){
+     return "<li>" + t + "</li>"; }).join("") + "</ol>" : "");
   body.querySelectorAll(".slot-row").forEach(function(btn){
     btn.addEventListener("click", function(){
       var i = +btn.dataset.i;
