@@ -179,6 +179,54 @@ body{
 .stat b{font-size:18px; font-weight:600; line-height:1; font-variant-numeric:tabular-nums}
 .stat span{font-size:9px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted)}
 .stat.miss b{color:var(--bad)}
+.who-box{display:flex; align-items:center; gap:8px; min-width:0}
+.plans{position:relative; flex:0 0 auto}
+.plans[hidden]{display:none}
+#plans-btn{
+  display:flex; align-items:center; gap:6px; cursor:pointer;
+  background:var(--panel-2); border:1px solid var(--edge); border-radius:10px;
+  padding:7px 11px; color:var(--cream);
+  font-family:"Chakra Petch",sans-serif; font-weight:600; font-size:13px;
+  letter-spacing:.05em; text-transform:uppercase;
+}
+#plans-btn:hover{border-color:var(--amber)}
+#plans-btn[aria-expanded="true"]{background:var(--amber); border-color:var(--amber); color:#17190F}
+#plans-btn i{font-style:normal; font-size:10px; opacity:.8}
+.plans-menu{
+  position:absolute; top:calc(100% + 6px); right:0; z-index:90;
+  min-width:210px; max-width:74vw; padding:8px;
+  background:var(--panel); border:1px solid var(--edge); border-radius:11px;
+  box-shadow:var(--shadow);
+}
+.plans-menu[hidden]{display:none}
+.plans-menu button{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  width:100%; cursor:pointer; margin-bottom:4px; padding:9px 10px;
+  background:var(--panel-2); border:1px solid var(--edge); border-radius:8px;
+  color:var(--cream); font-family:"Chakra Petch",sans-serif; font-weight:600;
+  font-size:13px; letter-spacing:.05em; text-transform:uppercase; text-align:left;
+}
+.plans-menu button:hover{border-color:var(--amber)}
+.plans-menu button[aria-pressed="true"]{background:var(--amber); border-color:var(--amber); color:#17190F}
+.plans-menu button em{
+  font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:9.5px;
+  letter-spacing:.06em; text-transform:none; opacity:.75; white-space:nowrap;
+}
+.slot-row{padding:7px 0; border-bottom:1px solid rgba(46,55,41,.55)}
+.slot-row:last-child{border-bottom:0}
+.slot-row b{
+  display:block; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:13px;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--amber); margin-bottom:2px;
+}
+.slot-row span{
+  display:block; font-family:"IBM Plex Mono",monospace; font-size:10.5px;
+  line-height:1.65; letter-spacing:.03em; color:var(--muted);
+}
+.slot-row span i{font-style:normal; color:var(--cream)}
+.plans-empty{
+  margin:0; padding:8px 6px; font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px; line-height:1.6; letter-spacing:.04em; color:var(--muted);
+}
 .me-chip{
   display:flex; align-items:center; background:var(--panel-2);
   border:1px solid var(--edge); border-radius:10px; padding:7px 11px;
@@ -238,6 +286,15 @@ body{
 }
 .slot.named rect{stroke:#9B2E7C; stroke-width:1.8; stroke-dasharray:none}
 .slot.named text{opacity:1}
+.plan-ring{fill:none; stroke:#C8912F; stroke-width:3; opacity:.9}
+.plan-ring.sec{stroke-width:2.2; stroke-dasharray:6 5; opacity:.75}
+.plan-move{stroke:#C8912F; stroke-width:2; stroke-dasharray:7 6; opacity:.65; stroke-linecap:round}
+.plan-lane{stroke:#D2402F; stroke-width:1.6; opacity:.5; stroke-linecap:round}
+.plan-tag{
+  font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:15px;
+  fill:#17190F; text-anchor:middle; dominant-baseline:middle;
+}
+.plan-tag-bg{fill:#C8912F}
 .slot.hot rect{stroke:#D94FB0; stroke-width:2.4; stroke-dasharray:none; fill:#FDEBF7}
 .slot.flash rect{stroke:#128F6B; stroke-width:2.4; stroke-dasharray:none; fill:#E3F5EE}
 .slot.wrong rect{stroke:#D2402F; stroke-width:2.4; stroke-dasharray:none; fill:#FBE8E5}
@@ -411,7 +468,9 @@ body{
   .brand p{display:none}
   .modes{grid-area:modes; justify-self:stretch}
   .modes button{flex:1 1 0; padding:8px 6px; font-size:12px}
-  .me-chip{grid-area:chip; padding:6px 9px; justify-self:end; max-width:40vw}
+  .who-box{grid-area:chip; justify-self:end; gap:6px}
+  #plans-btn{padding:6px 9px; font-size:11.5px}
+  .me-chip{padding:6px 9px; max-width:34vw}
   .me-chip b{font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .stats{grid-area:stats; gap:8px; justify-content:space-between}
   .stat{min-width:0; flex:1 1 0}
@@ -471,7 +530,16 @@ body{
     <div class="stat miss"><b id="s-miss">0</b><span>Misses</span></div>
     <div class="stat" id="stat-time"><b id="s-time">0:00</b><span>Time</span></div>
   </div>
-  <div class="me-chip"><b id="me-name">&mdash;</b></div>
+  <div class="who-box">
+    <div class="plans" id="plans" hidden>
+      <button type="button" id="plans-btn" aria-expanded="false" aria-haspopup="true">Plans <i>&#9662;</i></button>
+      <div class="plans-menu" id="plans-menu" hidden>
+        <div id="plans-list"></div>
+        <p class="plans-empty" id="plans-note">Shown on the layout in Study.</p>
+      </div>
+    </div>
+    <div class="me-chip"><b id="me-name">&mdash;</b></div>
+  </div>
 </header>
 
 <div class="wrap">
@@ -521,6 +589,10 @@ body{
   </div>
 
   <aside class="rail">
+    <div class="card" id="plan-card" hidden>
+      <h2 id="plan-card-title">Plan</h2>
+      <div id="plan-card-body"></div>
+    </div>
     <div class="card">
       <h2>Controls</h2>
       <div class="btns">
@@ -921,7 +993,7 @@ function setMode(m){
   });
   document.getElementById("callout").dataset.show = (m === "blitz") ? "1" : "0";
   if (m === "blitz") nextPrompt();
-  paint(); stats();
+  paint(); drawPlan(); renderPlanCard(); stats();
 }
 document.querySelectorAll(".modes button").forEach(function(b){
   b.addEventListener("click", function(){ setMode(b.dataset.mode); });
@@ -931,6 +1003,7 @@ document.getElementById("btn-logout").addEventListener("click", function(){
   me = null; pw = null;
   try { localStorage.removeItem(LS_USER); localStorage.removeItem(LS_PW); } catch (e) {}
   document.getElementById("me-name").textContent = "—";
+  refreshPlans();
   document.getElementById("pw").value = "";
   document.getElementById("gate-err").textContent = "";
   document.getElementById("gate").hidden = false;
@@ -948,9 +1021,136 @@ USERS.forEach(function(u){
   o.value = u; o.textContent = u;
   sel.appendChild(o);
 });
+var PLANNER = "Robert";        /* only the planner gets the Plans menu */
+
+/* A plan is who stands where off the break. Spots are callouts, so a plan
+   marks both sides of the 50 - it reads the same whichever end you break from. */
+/* Each slot is one body: p = primary bunker off the break, s = the secondary
+   they rotate to. Callouts mirror, so a plan marks both sides of the 50. */
+var PLANS = [
+  {name:"Default", slots:[
+    {c:1, p:"ALPHA",   s:"CHARLIE", shoot:["DENVER","LIMA","ALPHA"]},
+    {c:1, p:"HOME",    s:"ROCKET",  shoot:["HOME"]},
+    {c:1, p:"SEATTLE", s:"S3",      shoot:["SEATTLE","CALI","S1"]}
+  ]}
+];
+var planOn = null;
+window.__plan = function(){ return {planOn:planOn, mode:st.mode, marks:svg.querySelectorAll(".plan-mark").length}; };
+function refreshPlans(){
+  var mine = (me === PLANNER);
+  document.getElementById("plans").hidden = !mine;
+  if (!mine){ closePlans(); planOn = null; drawPlan(); }
+  renderPlanList();
+}
+function renderPlanList(){
+  var list = document.getElementById("plans-list");
+  if (!list) return;
+  list.innerHTML = "";
+  PLANS.forEach(function(pl){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("aria-pressed", planOn === pl.name ? "true" : "false");
+    b.innerHTML = "<span>" + pl.name + "</span><em>" +
+      pl.slots.map(function(sl){
+        return sl.c + " " + sl.p.toLowerCase() + (sl.s ? " → " + sl.s.toLowerCase() : "");
+      }).join(", ") + "</em>";
+    b.addEventListener("click", function(){
+      planOn = (planOn === pl.name) ? null : pl.name;
+      renderPlanList(); drawPlan(); closePlans();
+    });
+    list.appendChild(b);
+  });
+  document.getElementById("plans-note").textContent = planOn
+    ? "Marked on the layout in Study." : "Pick a plan to mark it on the layout.";
+  renderPlanCard();
+}
+function renderPlanCard(){
+  var card = document.getElementById("plan-card");
+  var plan = PLANS.filter(function(p){ return p.name === planOn; })[0];
+  if (!plan || me !== PLANNER || st.mode !== "study"){ card.hidden = true; return; }
+  card.hidden = false;
+  document.getElementById("plan-card-title").textContent = plan.name + " plan";
+  document.getElementById("plan-card-body").innerHTML = plan.slots.map(function(sl){
+    return '<div class="slot-row"><b>' + sl.c + " × " + sl.p + "</b><span>" +
+      (sl.shoot ? "Shoot <i>" + sl.shoot.join(", ") + "</i> off the break<br>" : "") +
+      (sl.s ? "Then rotate to <i>" + sl.s + "</i>" : "Hold it") +
+      "</span></div>";
+  }).join("");
+}
+function clearPlanMarks(){
+  var old = svg.querySelectorAll(".plan-mark");
+  for (var i = 0; i < old.length; i++) old[i].remove();
+}
+function drawPlan(){
+  clearPlanMarks();
+  if (!planOn || st.mode !== "study") return;
+  var plan = PLANS.filter(function(p){ return p.name === planOn; })[0];
+  if (!plan) return;
+  function spotsNamed(n){ return TARGETS.filter(function(t){ return t.n === n; }); }
+  function side(t){ return t.cx < 469; }
+  function facing(from, n){        /* the same callout on the far side of the 50 */
+    return TARGETS.filter(function(t){ return t.n === n && side(t) !== side(from); });
+  }
+
+  plan.slots.forEach(function(sl){
+    /* the rotation line, primary -> secondary, per side of the 50 */
+    if (sl.s){
+      spotsNamed(sl.p).forEach(function(a){
+        var all = spotsNamed(sl.s);
+        var mates = all.filter(function(b){ return side(a) === side(b); });
+        if (!mates.length) mates = all;      /* centreline spots serve both sides */
+        mates.forEach(function(b){
+          var ln = el("line", {x1:a.cx, y1:a.cy, x2:b.cx, y2:b.cy, "class":"plan-move plan-mark"});
+          svg.appendChild(ln);
+        });
+      });
+      spotsNamed(sl.s).forEach(function(t){
+        var g2 = el("g", {"class":"plan-mark"});
+        g2.appendChild(el("circle", {cx:t.cx, cy:t.cy, r:Math.max(15, t.br + 6), "class":"plan-ring sec"}));
+        svg.appendChild(g2);
+      });
+    }
+    /* break lanes: run to your primary and shoot these */
+    if (sl.shoot){
+      spotsNamed(sl.p).forEach(function(a){
+        sl.shoot.forEach(function(n){
+          facing(a, n).forEach(function(b){
+            svg.appendChild(el("line", {x1:a.cx, y1:a.cy, x2:b.cx, y2:b.cy,
+                                        "class":"plan-lane plan-mark"}));
+          });
+        });
+      });
+    }
+    spotsNamed(sl.p).forEach(function(t){
+      var g = el("g", {"class":"plan-mark"});
+      g.appendChild(el("circle", {cx:t.cx, cy:t.cy, r:Math.max(16, t.br + 7), "class":"plan-ring"}));
+      g.appendChild(el("circle", {cx:t.cx + t.br + 6, cy:t.cy - t.br - 4, r:10, "class":"plan-tag-bg"}));
+      var tx = el("text", {x:t.cx + t.br + 6, y:t.cy - t.br - 3, "class":"plan-tag"});
+      tx.textContent = sl.c;
+      g.appendChild(tx);
+      svg.appendChild(g);
+    });
+  });
+}
+function closePlans(){
+  document.getElementById("plans-menu").hidden = true;
+  document.getElementById("plans-btn").setAttribute("aria-expanded", "false");
+}
+document.getElementById("plans-btn").addEventListener("click", function(e){
+  e.stopPropagation();
+  var menu = document.getElementById("plans-menu");
+  var open = menu.hidden;
+  menu.hidden = !open;
+  this.setAttribute("aria-expanded", open ? "true" : "false");
+});
+document.addEventListener("click", function(e){
+  if (!e.target.closest("#plans")) closePlans();
+});
+
 function signIn(u, p){
   me = u; pw = p;
   document.getElementById("me-name").textContent = u;
+  refreshPlans();
   document.getElementById("gate").hidden = true;
   ls(LS_USER, u); ls(LS_PW, p);
   renderBoard();
