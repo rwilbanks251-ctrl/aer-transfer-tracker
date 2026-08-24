@@ -212,17 +212,23 @@ body{
   font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:9.5px;
   letter-spacing:.06em; text-transform:none; opacity:.75; white-space:nowrap;
 }
-.slot-row{padding:7px 0; border-bottom:1px solid rgba(46,55,41,.55)}
-.slot-row:last-child{border-bottom:0}
+.slot-row{
+  display:block; width:100%; text-align:left; cursor:pointer;
+  margin:0 0 5px; padding:8px 9px; border-radius:8px;
+  background:var(--panel-2); border:1px solid var(--edge);
+}
+.slot-row:last-child{margin-bottom:0}
+.slot-row:hover{border-color:var(--amber)}
+.slot-row[aria-pressed="true"]{border-color:var(--bad); background:rgba(210,64,47,.12)}
 .slot-row b{
   display:block; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:13px;
-  letter-spacing:.05em; text-transform:uppercase; color:var(--amber); margin-bottom:2px;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--cream);
 }
+.slot-row b i{font-style:normal; color:var(--amber); font-weight:600}
 .slot-row span{
-  display:block; font-family:"IBM Plex Mono",monospace; font-size:10.5px;
-  line-height:1.65; letter-spacing:.03em; color:var(--muted);
+  display:block; margin-top:3px; font-family:"IBM Plex Mono",monospace;
+  font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
 }
-.slot-row span i{font-style:normal; color:var(--cream)}
 .plans-empty{
   margin:0; padding:8px 6px; font-family:"IBM Plex Mono",monospace;
   font-size:10.5px; line-height:1.6; letter-spacing:.04em; color:var(--muted);
@@ -286,20 +292,11 @@ body{
 }
 .slot.named rect{stroke:#9B2E7C; stroke-width:1.8; stroke-dasharray:none}
 .slot.named text{opacity:1}
-.plan-ring{fill:none; stroke:#C8912F; stroke-width:3; opacity:.9}
-.plan-ring.sec{stroke-width:2.2; stroke-dasharray:6 5; opacity:.75}
-.plan-move{stroke:#C8912F; stroke-width:2; stroke-dasharray:7 6; opacity:.65; stroke-linecap:round}
-.plan-lane{stroke:#D2402F; stroke-width:1.6; opacity:.5; stroke-linecap:round}
-.plan-tag{
-  font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:15px;
-  fill:#17190F; text-anchor:middle; dominant-baseline:middle;
-}
-.plan-tag-bg{fill:#C8912F}
-.slot.hot rect{stroke:#D94FB0; stroke-width:2.4; stroke-dasharray:none; fill:#FDEBF7}
-.slot.flash rect{stroke:#128F6B; stroke-width:2.4; stroke-dasharray:none; fill:#E3F5EE}
-.slot.wrong rect{stroke:#D2402F; stroke-width:2.4; stroke-dasharray:none; fill:#FBE8E5}
-.slot.wrong,.slot.shakeit{animation:shake .34s ease}
-@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-3px)}45%{transform:translateX(3px)}70%{transform:translateX(-2px)}}
+.plan-dot{fill:#C8912F; stroke:#FFFFFF; stroke-width:2}
+.plan-dot.sec{fill:none; stroke:#C8912F; stroke-width:2.5}
+.plan-dot.live{fill:#D2402F}
+.plan-move{stroke:#C8912F; stroke-width:2; stroke-dasharray:6 5; opacity:.85; stroke-linecap:round}
+.plan-lane{stroke:#D2402F; stroke-width:1.8; opacity:.6; stroke-linecap:round}
 .hit{fill:transparent; stroke:none; cursor:pointer}
 .tgt:focus{outline:none}
 .tgt:focus-visible .hit{stroke:#D94FB0; stroke-width:2.5; stroke-dasharray:5 4}
@@ -1034,7 +1031,7 @@ var PLANS = [
     {c:1, p:"SEATTLE", s:"S3",      shoot:["SEATTLE","CALI","S1"]}
   ]}
 ];
-var planOn = null;
+var planOn = null, planPick = null;
 window.__plan = function(){ return {planOn:planOn, mode:st.mode, marks:svg.querySelectorAll(".plan-mark").length}; };
 function refreshPlans(){
   var mine = (me === PLANNER);
@@ -1056,6 +1053,7 @@ function renderPlanList(){
       }).join(", ") + "</em>";
     b.addEventListener("click", function(){
       planOn = (planOn === pl.name) ? null : pl.name;
+      planPick = null;
       renderPlanList(); drawPlan(); closePlans();
     });
     list.appendChild(b);
@@ -1081,71 +1079,69 @@ function clearPlanMarks(){
   var old = svg.querySelectorAll(".plan-mark");
   for (var i = 0; i < old.length; i++) old[i].remove();
 }
+
+/* One side only, and only the marks you actually need:
+   a filled dot on each primary, a hollow one on its secondary, one thin line
+   between them. Break lanes stay hidden until you tap a body in the card. */
 function drawPlan(){
   clearPlanMarks();
   if (!planOn || st.mode !== "study") return;
   var plan = PLANS.filter(function(p){ return p.name === planOn; })[0];
   if (!plan) return;
-  function spotsNamed(n){ return TARGETS.filter(function(t){ return t.n === n; }); }
-  function side(t){ return t.cx < 469; }
-  function facing(from, n){        /* the same callout on the far side of the 50 */
-    return TARGETS.filter(function(t){ return t.n === n && side(t) !== side(from); });
-  }
 
-  plan.slots.forEach(function(sl){
-    /* the rotation line, primary -> secondary, per side of the 50 */
-    if (sl.s){
-      spotsNamed(sl.p).forEach(function(a){
-        var all = spotsNamed(sl.s);
-        var mates = all.filter(function(b){ return side(a) === side(b); });
-        if (!mates.length) mates = all;      /* centreline spots serve both sides */
-        mates.forEach(function(b){
-          var ln = el("line", {x1:a.cx, y1:a.cy, x2:b.cx, y2:b.cy, "class":"plan-move plan-mark"});
-          svg.appendChild(ln);
-        });
-      });
-      spotsNamed(sl.s).forEach(function(t){
-        var g2 = el("g", {"class":"plan-mark"});
-        g2.appendChild(el("circle", {cx:t.cx, cy:t.cy, r:Math.max(15, t.br + 6), "class":"plan-ring sec"}));
-        svg.appendChild(g2);
-      });
-    }
-    /* break lanes: run to your primary and shoot these */
-    if (sl.shoot){
-      spotsNamed(sl.p).forEach(function(a){
-        sl.shoot.forEach(function(n){
-          facing(a, n).forEach(function(b){
-            svg.appendChild(el("line", {x1:a.cx, y1:a.cy, x2:b.cx, y2:b.cy,
-                                        "class":"plan-lane plan-mark"}));
-          });
-        });
+  function spot(n){
+    var all = TARGETS.filter(function(t){ return t.n === n; });
+    var mine = all.filter(function(t){ return t.cx < 469; });
+    return (mine.length ? mine : all)[0];
+  }
+  function far(n){
+    var all = TARGETS.filter(function(t){ return t.n === n; });
+    var other = all.filter(function(t){ return t.cx >= 469; });
+    return (other.length ? other : all)[0];
+  }
+  function add(node){ node.setAttribute("class", node.getAttribute("class") + " plan-mark"); svg.appendChild(node); }
+
+  plan.slots.forEach(function(sl, i){
+    var a = spot(sl.p);
+    if (!a) return;
+    var b = sl.s ? spot(sl.s) : null;
+
+    if (planPick === i && sl.shoot){
+      sl.shoot.forEach(function(n){
+        var t = far(n);
+        if (t) add(el("line", {x1:a.cx, y1:a.cy, x2:t.cx, y2:t.cy, "class":"plan-lane"}));
       });
     }
-    spotsNamed(sl.p).forEach(function(t){
-      var g = el("g", {"class":"plan-mark"});
-      g.appendChild(el("circle", {cx:t.cx, cy:t.cy, r:Math.max(16, t.br + 7), "class":"plan-ring"}));
-      g.appendChild(el("circle", {cx:t.cx + t.br + 6, cy:t.cy - t.br - 4, r:10, "class":"plan-tag-bg"}));
-      var tx = el("text", {x:t.cx + t.br + 6, y:t.cy - t.br - 3, "class":"plan-tag"});
-      tx.textContent = sl.c;
-      g.appendChild(tx);
-      svg.appendChild(g);
+    if (b) add(el("line", {x1:a.cx, y1:a.cy, x2:b.cx, y2:b.cy, "class":"plan-move"}));
+    if (b) add(el("circle", {cx:b.cx, cy:b.cy, r:7, "class":"plan-dot sec"}));
+    add(el("circle", {cx:a.cx, cy:a.cy, r:9, "class":"plan-dot" + (planPick === i ? " live" : "")}));
+  });
+}
+
+function renderPlanCard(){
+  var card = document.getElementById("plan-card");
+  var plan = PLANS.filter(function(p){ return p.name === planOn; })[0];
+  if (!plan || me !== PLANNER || st.mode !== "study"){ card.hidden = true; return; }
+  card.hidden = false;
+  document.getElementById("plan-card-title").textContent = plan.name;
+
+  var body = document.getElementById("plan-card-body");
+  body.innerHTML = plan.slots.map(function(sl, i){
+    return '<button type="button" class="slot-row" data-i="' + i + '"' +
+           (planPick === i ? ' aria-pressed="true"' : '') + '>' +
+           "<b>" + sl.p + (sl.s ? ' <i>&rarr; ' + sl.s + "</i>" : "") + "</b>" +
+           (sl.shoot ? "<span>" + sl.shoot.join(" &middot; ") + "</span>" : "") +
+           "</button>";
+  }).join("");
+  body.querySelectorAll(".slot-row").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var i = +btn.dataset.i;
+      planPick = (planPick === i) ? null : i;
+      renderPlanCard(); drawPlan();
     });
   });
 }
-function closePlans(){
-  document.getElementById("plans-menu").hidden = true;
-  document.getElementById("plans-btn").setAttribute("aria-expanded", "false");
-}
-document.getElementById("plans-btn").addEventListener("click", function(e){
-  e.stopPropagation();
-  var menu = document.getElementById("plans-menu");
-  var open = menu.hidden;
-  menu.hidden = !open;
-  this.setAttribute("aria-expanded", open ? "true" : "false");
-});
-document.addEventListener("click", function(e){
-  if (!e.target.closest("#plans")) closePlans();
-});
+
 
 function signIn(u, p){
   me = u; pw = p;
