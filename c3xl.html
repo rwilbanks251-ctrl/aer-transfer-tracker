@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#12160F">
 <meta name="robots" content="noindex, nofollow">
 <script>
 (function(){
   var m = document.querySelector('meta[name="viewport"]');
   if (!m){ m = document.createElement("meta"); m.name = "viewport"; document.head.appendChild(m); }
-  m.setAttribute("content", "width=device-width, initial-scale=1, viewport-fit=cover");
+  m.setAttribute("content", "width=device-width, initial-scale=1");
 
   // Safari opens the page horizontally offset, which reads as "cut off".
   // Pin it to the left edge on every way in, including bfcache restores.
@@ -24,6 +24,39 @@
     window.addEventListener(ev, pinLeft, {passive:true});
   });
   [0, 60, 200, 600].forEach(function(d){ setTimeout(pinLeft, d); });
+
+  // ?debug=1 -> readout of what (if anything) is wider than the screen
+  if (/[?&]debug/.test(location.search)){
+    window.addEventListener("load", function(){
+      setTimeout(function(){
+        var vv = window.visualViewport || {};
+        var wide = [];
+        document.querySelectorAll("body *").forEach(function(e){
+          var r = e.getBoundingClientRect();
+          if (r.width > 0 && (r.right > innerWidth + 0.5 || r.left < -0.5)){
+            wide.push((String(e.className).split(" ")[0] || e.tagName) +
+                      " [" + Math.round(r.left) + ".." + Math.round(r.right) + "]");
+          }
+        });
+        var d = document.createElement("div");
+        d.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:999;background:#000;color:#0f0;" +
+          "font:11px/1.45 monospace;padding:8px;white-space:pre-wrap;max-height:45vh;overflow:auto";
+        d.textContent =
+          "inner " + innerWidth + "x" + innerHeight +
+          "  docSW " + document.documentElement.scrollWidth +
+          "  bodySW " + document.body.scrollWidth +
+          "
+scrollX " + window.scrollX +
+          "  vv.scale " + (vv.scale || "-") + "  vv.offL " + Math.round(vv.offsetLeft || 0) +
+          "  vv.w " + Math.round(vv.width || 0) +
+          "
+dpr " + window.devicePixelRatio +
+          "
+OVER EDGE (" + wide.length + "): " + (wide.slice(0, 8).join("  |  ") || "none");
+        document.body.appendChild(d);
+      }, 900);
+    });
+  }
 })();
 </script>
 <title>C3XL 8/29 Layout Banger for Dark Corner by RW</title>
@@ -347,7 +380,8 @@ body{
 @media (max-width:760px){
   /* explicit grid: three fixed rows, so nothing can ever push past the edge */
   .bar{
-    display:grid; gap:7px 9px; padding:8px 10px;
+    display:grid; gap:7px 9px;
+    padding:8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
     grid-template-columns:minmax(0,1fr) auto;
     grid-template-areas:"brand brand" "modes chip" "stats stats";
   }
@@ -363,7 +397,7 @@ body{
   .stat{min-width:0; flex:1 1 0}
   .stat b{font-size:15px}
   .stat span{font-size:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .wrap{gap:10px; padding:8px 8px 16px}
+  .wrap{gap:10px; padding:8px max(8px, env(safe-area-inset-right)) 16px max(8px, env(safe-area-inset-left))}
   .sheet{padding:4px 4px 0; border-radius:10px}
   /* in blitz the called name must stay put while you hunt the board */
   .callout{position:sticky; top:0; z-index:40; padding:9px 12px; border-radius:11px}
@@ -633,7 +667,7 @@ function renderBoard(){
       row.innerHTML =
         '<div class="top"><span class="nm">' + u + '</span>' +
         '<span class="ct">' + best + "</span></div>" +
-        '<div class="donebar">&#10003; Complete</div>';
+        '<div class="donebar">&#10003; Complete &middot; ' + s.n + ' runs</div>';
     } else {
       var pips = "";
       for (var i = 0; i < GOAL; i++) pips += '<i class="' + (i < s.n ? "on" : "") + '"></i>';
@@ -787,7 +821,7 @@ function finish(){
   var inTime  = secs < LIMIT;
   var qualifies = isBlitz && perfect && inTime;
 
-  var mine = (scores[me] ? Math.min(scores[me].n, GOAL) : 0);
+  var mine = (scores[me] ? scores[me].n : 0);
   var timeEl = document.getElementById("done-time");
   timeEl.textContent = isBlitz ? fmt(ms) : "—";
   timeEl.className = qualifies ? "ok" : "";
@@ -811,7 +845,7 @@ function finish(){
 
   call("record", {secs:secs}).then(function(j){
     applyBoard(j);
-    var got = (scores[me] ? Math.min(scores[me].n, GOAL) : 0);
+    var got = (scores[me] ? scores[me].n : 0);
     document.getElementById("done-prog").textContent = got + "/" + GOAL;
     if (j && j.counted){
       document.getElementById("done-sub").textContent = got >= GOAL
