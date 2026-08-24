@@ -7,9 +7,15 @@
 <meta name="robots" content="noindex, nofollow">
 <script>
 (function(){
-  var m = document.querySelector('meta[name="viewport"]');
-  if (!m){ m = document.createElement("meta"); m.name = "viewport"; document.head.appendChild(m); }
-  m.setAttribute("content", "width=device-width, initial-scale=1");
+  try {
+    var m = document.querySelector('meta[name="viewport"]');
+    if (!m){
+      m = document.createElement("meta");
+      m.name = "viewport";
+      (document.head || document.documentElement).appendChild(m);
+    }
+    m.setAttribute("content", "width=device-width, initial-scale=1");
+  } catch (e) {}
 
   // Safari opens the page horizontally offset, which reads as "cut off".
   // Pin it to the left edge on every way in, including bfcache restores.
@@ -376,6 +382,20 @@ body{
 .score b{font-size:21px; font-weight:600; font-variant-numeric:tabular-nums}
 .score b.ok{color:var(--good)}
 .score span{font-size:9px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted)}
+.workon{
+  margin:0 0 14px; padding:9px 10px; border-radius:8px; text-align:left;
+  background:rgba(219,75,57,.12); border:1px solid rgba(219,75,57,.4);
+  font-family:"IBM Plex Mono",monospace; font-size:11px; line-height:1.7; color:var(--muted);
+}
+.workon[hidden]{display:none}
+.workon em{
+  font-style:normal; font-size:8.5px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--bad); display:block; margin-bottom:4px;
+}
+.workon b{
+  font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:12.5px;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--cream);
+}
 
 @media (max-width:760px){
   /* explicit grid: three fixed rows, so nothing can ever push past the edge */
@@ -474,6 +494,7 @@ body{
             <div><b id="done-miss">0</b><span>Misses</span></div>
             <div><b id="done-prog">0/10</b><span>Clean runs</span></div>
           </div>
+          <p class="workon" id="done-workon" hidden></p>
           <div class="btns">
             <button type="button" class="btn primary" data-again>Run it again</button>
             <button type="button" class="btn" data-study>Study mode</button>
@@ -557,7 +578,7 @@ var NAMES = [];
 TARGETS.forEach(function(t){ if (NAMES.indexOf(t.n) < 0) NAMES.push(t.n); });
 var TOTAL = TARGETS.length;
 
-var st = {mode:"study", filled:{}, miss:0, tries:0, start:0, streak:0, best:0, prompt:null};
+var st = {mode:"study", filled:{}, miss:0, tries:0, start:0, streak:0, best:0, prompt:null, missed:{}};
 var me = null, pw = null;
 var scores = {};
 var online = false;
@@ -743,6 +764,7 @@ function fill(t){
 function miss(t){
   st.miss++;
   st.streak = 0;
+  if (st.prompt) st.missed[st.prompt] = (st.missed[st.prompt] || 0) + 1;
   if (t){
     var s = slots[t.id];
     s.classList.add("wrong");
@@ -839,6 +861,19 @@ function finish(){
   else if (!perfect) sub = st.miss + (st.miss === 1 ? " miss" : " misses") + " - a run only counts if it is perfect.";
   else sub = "Clean, but " + fmt(ms) + " is over the minute. Go again.";
   document.getElementById("done-sub").textContent = sub;
+
+  var wo = document.getElementById("done-workon");
+  var missedNames = Object.keys(st.missed);
+  if (missedNames.length){
+    missedNames.sort(function(a, b){ return st.missed[b] - st.missed[a]; });
+    wo.innerHTML = "<em>Work on these</em>" + missedNames.map(function(n){
+      return "<b>" + n + "</b>" + (st.missed[n] > 1 ? " &times;" + st.missed[n] : "");
+    }).join(",&nbsp; ");
+    wo.hidden = false;
+  } else {
+    wo.hidden = true;
+  }
+
   document.getElementById("done").dataset.show = "1";
 
   if (!qualifies) return;
@@ -869,10 +904,11 @@ function finish(){
 /* ---------------- modes ---------------- */
 function setMode(m){
   st.mode = m;
-  st.filled = {}; st.miss = 0; st.tries = 0;
+  st.filled = {}; st.miss = 0; st.tries = 0; st.missed = {};
   st.streak = 0; st.best = 0; st.prompt = null;
   st.start = (m === "blitz") ? Date.now() : 0;
   document.getElementById("done").dataset.show = "0";
+  document.getElementById("done-workon").hidden = true;
   clearInterval(tick); tick = null;
   if (m === "blitz") tick = setInterval(stats, 500);
   document.getElementById("stat-time").hidden = (m !== "blitz");
