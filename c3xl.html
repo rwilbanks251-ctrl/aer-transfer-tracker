@@ -238,21 +238,28 @@ body{
 .row{display:flex; flex-direction:column; gap:3px; min-width:0}
 .row .top{display:flex; align-items:baseline; justify-content:space-between; gap:6px}
 .row .nm{
+  flex:1 1 auto; min-width:4.2em;
   font-family:"Chakra Petch",sans-serif; font-weight:600; font-size:11.5px;
   letter-spacing:.03em; text-transform:uppercase; color:var(--muted);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .row .ct{
+  flex:0 1 auto; min-width:0; overflow:hidden;
   font-family:"IBM Plex Mono",monospace; font-size:9.5px; font-weight:600;
   color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap;
 }
 .pips{display:flex; gap:2px}
 .pips i{flex:1 1 0; height:5px; border-radius:1px; background:#161B13; border:1px solid rgba(200,145,47,.16)}
 .pips i.on{background:var(--amber); border-color:var(--amber)}
+.row .donebar{
+  font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:8.5px;
+  letter-spacing:.16em; text-transform:uppercase; color:#0E1A13;
+  background:var(--good); border-radius:2px; text-align:center; line-height:1.7;
+}
 .row.me .nm{color:var(--cream)}
 .row.me .ct{color:var(--amber)}
-.row.done .ct{color:var(--good)}
-.row.done .pips i.on{background:var(--good); border-color:var(--good)}
+.row.finished .nm{color:var(--good)}
+.row.finished .ct{color:var(--good)}
 .board-foot{
   margin-top:8px; padding-top:6px; border-top:1px solid var(--edge);
   display:flex; align-items:center; gap:6px;
@@ -315,7 +322,7 @@ body{
   padding:20px 24px; text-align:center; box-shadow:var(--shadow); max-width:340px;
 }
 .done-card h3{margin:0 0 4px; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:23px; letter-spacing:.05em; text-transform:uppercase}
-.done-card h3.hit{color:var(--good)}
+.done-card h3.won{color:var(--good)}
 .done-card p{margin:0 0 14px; color:var(--muted); font-size:13px; line-height:1.5}
 .score{display:flex; justify-content:center; gap:20px; margin:0 0 15px; font-family:"IBM Plex Mono",monospace}
 .score div{display:flex; flex-direction:column; gap:2px}
@@ -600,14 +607,21 @@ function renderBoard(){
     var s = scores[u] || {n:0, best:0};
     var done = s.n >= GOAL;
     var row = document.createElement("div");
-    row.className = "row" + (u === me ? " me" : "") + (done ? " done" : "");
-    var pips = "";
-    for (var i = 0; i < GOAL; i++) pips += '<i class="' + (i < Math.min(s.n, GOAL) ? "on" : "") + '"></i>';
-    row.innerHTML =
-      '<div class="top"><span class="nm">' + u + '</span>' +
-      '<span class="ct">' + (done ? "&#10003; " : "") + Math.min(s.n, GOAL) + "/" + GOAL +
-      (s.best ? " &middot; " + fmt(s.best * 1000) : "") + "</span></div>" +
-      '<div class="pips">' + pips + "</div>";
+    row.className = "row" + (u === me ? " me" : "") + (done ? " finished" : "");
+    var best = s.best ? fmt(s.best * 1000) : "";
+    if (done){
+      row.innerHTML =
+        '<div class="top"><span class="nm">' + u + '</span>' +
+        '<span class="ct">' + best + "</span></div>" +
+        '<div class="donebar">&#10003; Complete</div>';
+    } else {
+      var pips = "";
+      for (var i = 0; i < GOAL; i++) pips += '<i class="' + (i < s.n ? "on" : "") + '"></i>';
+      row.innerHTML =
+        '<div class="top"><span class="nm">' + u + '</span>' +
+        '<span class="ct">' + s.n + "/" + GOAL + (best ? " &middot; " + best : "") + "</span></div>" +
+        '<div class="pips">' + pips + "</div>";
+    }
     grid.appendChild(row);
   });
 }
@@ -762,7 +776,7 @@ function finish(){
 
   var h3 = document.getElementById("done-title");
   h3.textContent = qualifies ? "Banger" : (isBlitz ? "No good" : "Field clear");
-  h3.className = qualifies ? "hit" : "";
+  h3.className = qualifies ? "won" : "";
 
   var sub;
   if (!isBlitz) sub = "All 26 named. Blitz is the one that counts.";
