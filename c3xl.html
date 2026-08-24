@@ -443,6 +443,7 @@ body{
       <h2>Controls</h2>
       <div class="btns">
         <button type="button" class="btn" id="btn-reset">Reset</button>
+        <button type="button" class="btn" id="btn-logout">Log out</button>
       </div>
     </div>
   </aside>
@@ -819,6 +820,17 @@ document.querySelectorAll(".modes button").forEach(function(b){
   b.addEventListener("click", function(){ setMode(b.dataset.mode); });
 });
 document.getElementById("btn-reset").addEventListener("click", function(){ setMode(st.mode); });
+document.getElementById("btn-logout").addEventListener("click", function(){
+  me = null; pw = null;
+  try { localStorage.removeItem(LS_USER); localStorage.removeItem(LS_PW); } catch (e) {}
+  document.getElementById("me-name").textContent = "—";
+  document.getElementById("pw").value = "";
+  document.getElementById("gate-err").textContent = "";
+  document.getElementById("gate").hidden = false;
+  setMode("study");
+  syncNote("", "signed out");
+  renderBoard();
+});
 document.querySelector("[data-again]").addEventListener("click", function(){ setMode("blitz"); });
 document.querySelector("[data-study]").addEventListener("click", function(){ setMode("study"); });
 
