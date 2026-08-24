@@ -140,28 +140,6 @@ body{
 }
 .gate button:hover{filter:brightness(1.08)}
 .gate button[disabled]{opacity:.5; cursor:default}
-.viewer-unlock{margin-top:6px; padding-top:11px; border-top:1px solid var(--edge)}
-.viewer-unlock > button{
-  margin:0; background:none; border:0; padding:0; cursor:pointer; width:100%;
-  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.18em;
-  text-transform:uppercase; color:var(--muted); text-decoration:underline; text-underline-offset:3px;
-}
-.viewer-unlock > button:hover{color:var(--amber)}
-#viewer-box{display:flex; gap:6px; margin-top:9px}
-#viewer-box[hidden]{display:none}
-#viewer-box input{flex:1 1 auto; font-size:13px; padding:9px 10px}
-#viewer-box button{
-  flex:0 0 auto; margin:0; padding:9px 13px; font-size:12px;
-  background:var(--panel-2); color:var(--cream); border:1px solid var(--edge);
-  border-radius:9px; cursor:pointer; font-family:"Chakra Petch",sans-serif;
-  font-weight:600; letter-spacing:.08em; text-transform:uppercase;
-}
-#viewer-box button:hover{border-color:var(--amber)}
-.viewer-note{
-  margin:7px 0 0; min-height:13px; font-family:"IBM Plex Mono",monospace;
-  font-size:10px; letter-spacing:.06em; color:var(--good);
-}
-.viewer-note.bad{color:var(--bad)}
 .gate .err{
   margin:0; min-height:15px; font-family:"IBM Plex Mono",monospace; font-size:11px;
   color:var(--bad); letter-spacing:.04em;
@@ -265,10 +243,6 @@ body{
 .slot.wrong rect{stroke:#D2402F; stroke-width:2.4; stroke-dasharray:none; fill:#FBE8E5}
 .slot.wrong,.slot.shakeit{animation:shake .34s ease}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-3px)}45%{transform:translateX(3px)}70%{transform:translateX(-2px)}}
-.lane-line{stroke-linecap:round; pointer-events:none}
-.lane-line.open{stroke:#128F6B; stroke-width:2.2; opacity:.85}
-.lane-line.shut{stroke:#8B9AAC; stroke-width:1.4; stroke-dasharray:5 5; opacity:.45}
-.slot.picked rect{stroke:#C8912F; stroke-width:2.6; stroke-dasharray:none; fill:#FBF0DC}
 .hit{fill:transparent; stroke:none; cursor:pointer}
 .tgt:focus{outline:none}
 .tgt:focus-visible .hit{stroke:#D94FB0; stroke-width:2.5; stroke-dasharray:5 4}
@@ -377,33 +351,6 @@ body{
   font-size:9.5px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
 }
 .modes button:focus-visible,.btn:focus-visible{outline:2px solid var(--amber); outline-offset:2px}
-.lane-group{margin:0 0 10px}
-.lane-group > b{
-  display:block; margin-bottom:5px; font-family:"IBM Plex Mono",monospace;
-  font-size:8.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted);
-}
-.lane{
-  display:flex; align-items:baseline; justify-content:space-between; gap:8px;
-  padding:3px 0; font-size:12px; border-bottom:1px solid rgba(46,55,41,.55);
-}
-.lane:last-child{border-bottom:0}
-.lane span{
-  font-family:"Chakra Petch",sans-serif; font-weight:600; letter-spacing:.04em;
-  text-transform:uppercase; color:var(--cream);
-}
-.lane em{
-  font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:10px;
-  color:var(--muted); white-space:nowrap;
-}
-.lane.open span{color:var(--good)}
-.lane.shut span{color:var(--muted)}
-.angles-empty{margin:0; font-size:12.5px; line-height:1.55; color:var(--muted)}
-.walk{
-  display:block; margin-top:11px; padding-top:10px; border-top:1px solid var(--edge);
-  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em;
-  text-transform:uppercase; color:var(--amber); text-decoration:none;
-}
-.walk:hover{text-decoration:underline}
 .btns{display:flex; gap:8px; flex-wrap:wrap}
 .btn{
   appearance:none; cursor:pointer; flex:1 1 auto;
@@ -507,14 +454,6 @@ body{
     <input type="password" id="pw" autocomplete="current-password" placeholder="&bull;&bull;&bull;&bull;&bull;">
     <button type="submit" id="gate-go">Enter the field</button>
     <p class="err" id="gate-err"></p>
-    <div class="viewer-unlock">
-      <button type="button" id="viewer-link">Viewer</button>
-      <div id="viewer-box" hidden>
-        <input type="password" id="viewer-pw" placeholder="viewer password">
-        <button type="button" id="viewer-go">Unlock</button>
-      </div>
-      <p class="viewer-note" id="viewer-note"></p>
-    </div>
   </form>
 </div>
 
@@ -582,12 +521,6 @@ body{
   </div>
 
   <aside class="rail">
-    <div class="card" id="angles-card" hidden>
-      <h2 id="angles-title">Angles</h2>
-      <div id="angles-body"></div>
-      <a class="walk" target="_blank" rel="noopener noreferrer"
-         href="https://gunzup.com/player/695c0c5c91006d113a2e9f2e/">Open the 3D walkthrough &rarr;</a>
-    </div>
     <div class="card">
       <h2>Controls</h2>
       <div class="btns">
@@ -640,9 +573,7 @@ var USERS   = ["Decharyian","Gerard","Lathan","Robert","Will","Matt","Phillip","
 var GOAL    = 10;
 var LIMIT   = 60;
 var TOURNEY = "2026-08-29";
-var LS_USER = "c3xl_user", LS_PW = "c3xl_pw", LS_SCORES = "c3xl_scores", LS_VIEW = "c3xl_viewer";
-var VIEWER_PW = "paintball";
-var viewerOn = false, picked = null;
+var LS_USER = "c3xl_user", LS_PW = "c3xl_pw", LS_SCORES = "c3xl_scores";
 
 TARGETS.forEach(function(t, i){ t.id = "t" + i; });
 var NAMES = [];
@@ -772,100 +703,6 @@ function renderBoard(){
   });
 }
 
-/* ---------------- sightlines ----------------
-   Every solid prop is a circular blocker sized from the layout art; the snake
-   wall is a rectangle. A lane is open when the segment between two bunkers
-   clears every other body. The S positions are gaps, so they block nothing. */
-function segPointDist(ax, ay, bx, by, px_, py_){
-  var dx = bx - ax, dy = by - ay;
-  var L = dx*dx + dy*dy;
-  var t = L ? ((px_-ax)*dx + (py_-ay)*dy) / L : 0;
-  t = Math.max(0, Math.min(1, t));
-  var qx = ax + t*dx, qy = ay + t*dy;
-  return Math.sqrt((px_-qx)*(px_-qx) + (py_-qy)*(py_-qy));
-}
-function segHitsRect(ax, ay, bx, by, R){
-  function side(x, y){
-    return (x < R.x1 ? 1 : 0) | (x > R.x2 ? 2 : 0) | (y < R.y1 ? 4 : 0) | (y > R.y2 ? 8 : 0);
-  }
-  var o1 = side(ax, ay), o2 = side(bx, by);   /* Cohen-Sutherland */
-  for (var guard = 0; guard < 12; guard++){
-    if (!(o1 | o2)) return true;
-    if (o1 & o2) return false;
-    var o = o1 || o2, x, y;
-    if (o & 8){ x = ax + (bx-ax)*(R.y2-ay)/(by-ay); y = R.y2; }
-    else if (o & 4){ x = ax + (bx-ax)*(R.y1-ay)/(by-ay); y = R.y1; }
-    else if (o & 2){ y = ay + (by-ay)*(R.x2-ax)/(bx-ax); x = R.x2; }
-    else { y = ay + (by-ay)*(R.x1-ax)/(bx-ax); x = R.x1; }
-    if (o === o1){ ax = x; ay = y; o1 = side(ax, ay); } else { bx = x; by = y; o2 = side(bx, by); }
-  }
-  return false;
-}
-function feet(px_){ return Math.round(px_ / PX_PER_FT); }
-
-function lanesFrom(t){
-  var out = [];
-  TARGETS.forEach(function(o){
-    if (o.id === t.id) return;
-    var blocker = null;
-    for (var i = 0; i < TARGETS.length && !blocker; i++){
-      var b = TARGETS[i];
-      if (b.id === t.id || b.id === o.id || !b.br) continue;
-      if (segPointDist(t.cx, t.cy, o.cx, o.cy, b.cx, b.cy) < b.br) blocker = b.d;
-    }
-    if (!blocker && segHitsRect(t.cx, t.cy, o.cx, o.cy, SNAKE)) blocker = "the snake";
-    var d = Math.sqrt((t.cx-o.cx)*(t.cx-o.cx) + (t.cy-o.cy)*(t.cy-o.cy));
-    out.push({t:o, name:o.d, ft:feet(d), blocker:blocker});
-  });
-  out.sort(function(a, b){ return a.ft - b.ft; });
-  return out;
-}
-
-function clearLanes(){
-  [...svg.querySelectorAll(".lane-line")].forEach(function(n){ n.remove(); });
-  TARGETS.forEach(function(t){ slots[t.id].classList.remove("picked"); });
-}
-function showAngles(t){
-  clearLanes();
-  picked = t;
-  slots[t.id].classList.add("picked");
-  var list = lanesFrom(t);
-
-  list.forEach(function(l){
-    var ln = el("line", {x1:t.cx, y1:t.cy, x2:l.t.cx, y2:l.t.cy,
-                         "class":"lane-line " + (l.blocker ? "shut" : "open")});
-    svg.insertBefore(ln, svg.querySelector(".tgt"));
-  });
-
-  var open = list.filter(function(l){ return !l.blocker; });
-  var shut = list.filter(function(l){ return l.blocker; });
-  var mirror = TARGETS.filter(function(o){ return o.n === t.n && o.id !== t.id; })[0];
-
-  var html = "";
-  html += '<div class="lane-group"><b>Open lanes &middot; ' + open.length + '</b>' +
-    (open.length ? open.map(function(l){
-      return '<div class="lane open"><span>' + l.name + '</span><em>' + l.ft + ' ft</em></div>';
-    }).join("") : '<p class="angles-empty">Nothing clean from here.</p>') + "</div>";
-  if (shut.length){
-    html += '<div class="lane-group"><b>Blocked &middot; ' + shut.length + '</b>' +
-      shut.slice(0, 8).map(function(l){
-        return '<div class="lane shut"><span>' + l.name + '</span><em>by ' + l.blocker + '</em></div>';
-      }).join("") +
-      (shut.length > 8 ? '<div class="lane shut"><span>+' + (shut.length-8) + ' more</span><em></em></div>' : "") +
-      "</div>";
-  }
-  if (mirror) html += '<p class="angles-empty">Mirrors <b style="color:var(--cream)">' + mirror.d + '</b> on the other side of the 50.</p>';
-
-  document.getElementById("angles-title").textContent = t.d + " — angles";
-  document.getElementById("angles-body").innerHTML = html;
-  document.getElementById("angles-card").hidden = false;
-}
-function hideAngles(){
-  clearLanes();
-  picked = null;
-  document.getElementById("angles-card").hidden = true;
-}
-
 /* ---------------- board ---------------- */
 function drawBoard(){
   while (svg.firstChild) svg.removeChild(svg.firstChild);
@@ -970,29 +807,8 @@ function highlight(hit){
   TARGETS.forEach(function(t){ slots[t.id].classList.toggle("hot", !!hit && hit.id === t.id); });
 }
 
-function nearestAny(x, y){
-  var best = null, bd = Infinity;
-  TARGETS.forEach(function(t){
-    var d = Math.sqrt((t.hx-x)*(t.hx-x) + (t.hy-y)*(t.hy-y));
-    if (d <= t.r + 14 && d < bd){ bd = d; best = t; }
-  });
-  return best;
-}
 function onBoard(e){
   var g = e.target.closest(".tgt, .slot");
-
-  if (st.mode === "study"){
-    if (!viewerOn) return;
-    var t0 = g ? byId(g.dataset.id) : null;
-    if (!t0){
-      var f0 = toBoard(e.clientX, e.clientY);
-      t0 = f0 ? nearestAny(f0.x, f0.y) : null;
-    }
-    if (!t0) hideAngles();
-    else if (picked && picked.id === t0.id) hideAngles();
-    else showAngles(t0);
-    return;
-  }
 
   if (st.mode !== "blitz" || !st.prompt) return;
   var t = g ? byId(g.dataset.id) : null;
@@ -1104,13 +920,6 @@ function setMode(m){
     b.setAttribute("aria-pressed", b.dataset.mode === m ? "true" : "false");
   });
   document.getElementById("callout").dataset.show = (m === "blitz") ? "1" : "0";
-  hideAngles();
-  if (m === "study" && viewerOn){
-    document.getElementById("angles-card").hidden = false;
-    document.getElementById("angles-title").textContent = "Angles";
-    document.getElementById("angles-body").innerHTML =
-      '<p class="angles-empty">Tap any bunker to see what it can see, and what is blocking the rest.</p>';
-  }
   if (m === "blitz") nextPrompt();
   paint(); stats();
 }
@@ -1118,39 +927,6 @@ document.querySelectorAll(".modes button").forEach(function(b){
   b.addEventListener("click", function(){ setMode(b.dataset.mode); });
 });
 document.getElementById("btn-reset").addEventListener("click", function(){ setMode(st.mode); });
-(function(){
-  var link = document.getElementById("viewer-link");
-  var box  = document.getElementById("viewer-box");
-  var note = document.getElementById("viewer-note");
-  function setNote(msg, bad){
-    note.textContent = msg;
-    note.className = "viewer-note" + (bad ? " bad" : "");
-  }
-  function unlock(){
-    viewerOn = true;
-    ls(LS_VIEW, "1");
-    box.hidden = true;
-    link.textContent = "Viewer unlocked";
-    setNote("Tap any bunker in Study to see its angles.", false);
-  }
-  if (ls(LS_VIEW) === "1"){ viewerOn = true; link.textContent = "Viewer unlocked"; }
-
-  link.addEventListener("click", function(){
-    if (viewerOn){ setNote("Already unlocked - tap a bunker in Study.", false); return; }
-    box.hidden = !box.hidden;
-    if (!box.hidden) document.getElementById("viewer-pw").focus();
-  });
-  function tryPw(){
-    var v = document.getElementById("viewer-pw").value.trim().toLowerCase();
-    if (v === VIEWER_PW) unlock();
-    else { setNote("Wrong viewer password.", true); document.getElementById("viewer-pw").value = ""; }
-  }
-  document.getElementById("viewer-go").addEventListener("click", tryPw);
-  document.getElementById("viewer-pw").addEventListener("keydown", function(e){
-    if (e.key === "Enter"){ e.preventDefault(); tryPw(); }
-  });
-})();
-
 document.getElementById("btn-logout").addEventListener("click", function(){
   me = null; pw = null;
   try { localStorage.removeItem(LS_USER); localStorage.removeItem(LS_PW); } catch (e) {}
@@ -1158,7 +934,6 @@ document.getElementById("btn-logout").addEventListener("click", function(){
   document.getElementById("pw").value = "";
   document.getElementById("gate-err").textContent = "";
   document.getElementById("gate").hidden = false;
-  hideAngles();
   setMode("study");
   syncNote("", "signed out");
   renderBoard();
