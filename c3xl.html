@@ -179,72 +179,6 @@ body{
 .stat b{font-size:18px; font-weight:600; line-height:1; font-variant-numeric:tabular-nums}
 .stat span{font-size:9px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted)}
 .stat.miss b{color:var(--bad)}
-.who-box{display:flex; align-items:center; gap:8px; min-width:0}
-.plans{position:relative; flex:0 0 auto}
-.plans[hidden]{display:none}
-#plans-btn{
-  display:flex; align-items:center; gap:6px; cursor:pointer;
-  background:var(--panel-2); border:1px solid var(--edge); border-radius:10px;
-  padding:7px 11px; color:var(--cream);
-  font-family:"Chakra Petch",sans-serif; font-weight:600; font-size:13px;
-  letter-spacing:.05em; text-transform:uppercase;
-}
-#plans-btn:hover{border-color:var(--amber)}
-#plans-btn[aria-expanded="true"]{background:var(--amber); border-color:var(--amber); color:#17190F}
-#plans-btn i{font-style:normal; font-size:10px; opacity:.8}
-.plans-menu{
-  position:absolute; top:calc(100% + 6px); right:0; z-index:90;
-  min-width:210px; max-width:74vw; padding:8px;
-  background:var(--panel); border:1px solid var(--edge); border-radius:11px;
-  box-shadow:var(--shadow);
-}
-.plans-menu[hidden]{display:none}
-.plans-menu button{
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  width:100%; cursor:pointer; margin-bottom:4px; padding:9px 10px;
-  background:var(--panel-2); border:1px solid var(--edge); border-radius:8px;
-  color:var(--cream); font-family:"Chakra Petch",sans-serif; font-weight:600;
-  font-size:13px; letter-spacing:.05em; text-transform:uppercase; text-align:left;
-}
-.plans-menu button:hover{border-color:var(--amber)}
-.plans-menu button[aria-pressed="true"]{background:var(--amber); border-color:var(--amber); color:#17190F}
-.plans-menu button em{
-  font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:9.5px;
-  letter-spacing:.06em; text-transform:none; opacity:.75; white-space:nowrap;
-}
-.slot-row{
-  display:block; width:100%; text-align:left; cursor:pointer;
-  margin:0 0 5px; padding:8px 9px; border-radius:8px;
-  background:var(--panel-2); border:1px solid var(--edge);
-}
-.slot-row:last-child{margin-bottom:0}
-.slot-row:hover{border-color:var(--amber)}
-.slot-row[aria-pressed="true"]{border-color:var(--bad); background:rgba(210,64,47,.12)}
-.slot-row b{
-  display:block; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:13px;
-  letter-spacing:.05em; text-transform:uppercase; color:var(--cream);
-}
-.slot-row b i{font-style:normal; color:var(--amber); font-weight:600}
-.slot-row span{
-  display:block; margin-top:3px; font-family:"IBM Plex Mono",monospace;
-  font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
-}
-.slot-row .job{
-  display:block; margin-top:6px; padding-top:6px; border-top:1px solid rgba(46,55,41,.8);
-  font-style:normal; font-family:"IBM Plex Sans",sans-serif; font-size:12px;
-  line-height:1.5; letter-spacing:0; text-transform:none; color:var(--cream);
-}
-.steps{
-  margin:12px 0 0; padding:11px 0 0 18px; border-top:1px solid var(--edge);
-  font-size:12px; line-height:1.55; color:var(--muted);
-}
-.steps li{margin-bottom:7px}
-.steps li:last-child{margin-bottom:0}
-.steps li::marker{color:var(--amber); font-family:"IBM Plex Mono",monospace; font-size:10px}
-.plans-empty{
-  margin:0; padding:8px 6px; font-family:"IBM Plex Mono",monospace;
-  font-size:10.5px; line-height:1.6; letter-spacing:.04em; color:var(--muted);
-}
 .me-chip{
   display:flex; align-items:center; background:var(--panel-2);
   border:1px solid var(--edge); border-radius:10px; padding:7px 11px;
@@ -304,11 +238,6 @@ body{
 }
 .slot.named rect{stroke:#9B2E7C; stroke-width:1.8; stroke-dasharray:none}
 .slot.named text{opacity:1}
-.plan-dot{fill:#C8912F; stroke:#FFFFFF; stroke-width:2}
-.plan-dot.sec{fill:none; stroke:#C8912F; stroke-width:2.5}
-.plan-dot.live{fill:#D2402F}
-.plan-move{stroke:#C8912F; stroke-width:2; stroke-dasharray:6 5; opacity:.85; stroke-linecap:round}
-.plan-lane{stroke:#D2402F; stroke-width:1.8; opacity:.6; stroke-linecap:round}
 .hit{fill:transparent; stroke:none; cursor:pointer}
 .tgt:focus{outline:none}
 .tgt:focus-visible .hit{stroke:#D94FB0; stroke-width:2.5; stroke-dasharray:5 4}
@@ -385,6 +314,12 @@ body{
   font-family:"IBM Plex Mono",monospace; font-size:8.5px; letter-spacing:.1em;
   text-transform:uppercase; color:var(--muted);
 }
+.offline-note{
+  margin:8px 0 0; padding:8px 9px; border-radius:8px;
+  background:rgba(219,75,57,.12); border:1px solid rgba(219,75,57,.4);
+  font-family:"IBM Plex Sans",sans-serif; font-size:11.5px; line-height:1.5; color:var(--cream);
+}
+.offline-note[hidden]{display:none}
 .board-foot i{width:6px; height:6px; border-radius:50%; background:var(--muted); flex:none}
 .board-foot.live i{background:var(--good)}
 .board-foot.off i{background:var(--bad)}
@@ -477,9 +412,7 @@ body{
   .brand p{display:none}
   .modes{grid-area:modes; justify-self:stretch}
   .modes button{flex:1 1 0; padding:8px 6px; font-size:12px}
-  .who-box{grid-area:chip; justify-self:end; gap:6px}
-  #plans-btn{padding:6px 9px; font-size:11.5px}
-  .me-chip{padding:6px 9px; max-width:34vw}
+  .me-chip{grid-area:chip; justify-self:end; padding:6px 9px; max-width:40vw}
   .me-chip b{font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .stats{grid-area:stats; gap:8px; justify-content:space-between}
   .stat{min-width:0; flex:1 1 0}
@@ -539,16 +472,7 @@ body{
     <div class="stat miss"><b id="s-miss">0</b><span>Misses</span></div>
     <div class="stat" id="stat-time"><b id="s-time">0:00</b><span>Time</span></div>
   </div>
-  <div class="who-box">
-    <div class="plans" id="plans" hidden>
-      <button type="button" id="plans-btn" aria-expanded="false" aria-haspopup="true">Plans <i>&#9662;</i></button>
-      <div class="plans-menu" id="plans-menu" hidden>
-        <div id="plans-list"></div>
-        <p class="plans-empty" id="plans-note">Shown on the layout in Study.</p>
-      </div>
-    </div>
-    <div class="me-chip"><b id="me-name">&mdash;</b></div>
-  </div>
+  <div class="me-chip"><b id="me-name">&mdash;</b></div>
 </header>
 
 <div class="wrap">
@@ -592,16 +516,16 @@ body{
       </div>
       <div class="board-grid" id="board-grid"></div>
       <div class="board-foot" id="board-foot"><i></i><span id="board-sync">connecting</span></div>
+      <p class="offline-note" id="offline-note" hidden>
+        Can&rsquo;t reach the scoreboard, so runs won&rsquo;t be saved. Practice still works.
+        If you opened this from a claude.ai link, use the GitHub link instead.
+      </p>
     </div>
 
     <div class="sheet-foot">C3XL &middot; 8/29</div>
   </div>
 
   <aside class="rail">
-    <div class="card" id="plan-card" hidden>
-      <h2 id="plan-card-title">Plan</h2>
-      <div id="plan-card-body"></div>
-    </div>
     <div class="card">
       <h2>Controls</h2>
       <div class="btns">
@@ -704,7 +628,12 @@ function normalise(raw){
   return o;
 }
 function cacheScores(){ ls(LS_SCORES, JSON.stringify(scores)); }
+function offlineBanner(show){
+  var b = document.getElementById("offline-note");
+  if (b) b.hidden = !show;
+}
 function syncNote(state, text){
+  offlineBanner(state === "off");
   var f = document.getElementById("board-foot");
   f.className = "board-foot" + (state === "live" ? " live" : state === "off" ? " off" : "");
   document.getElementById("board-sync").textContent = text;
@@ -1002,7 +931,7 @@ function setMode(m){
   });
   document.getElementById("callout").dataset.show = (m === "blitz") ? "1" : "0";
   if (m === "blitz") nextPrompt();
-  paint(); drawPlan(); renderPlanCard(); stats();
+  paint(); stats();
 }
 document.querySelectorAll(".modes button").forEach(function(b){
   b.addEventListener("click", function(){ setMode(b.dataset.mode); });
@@ -1012,7 +941,6 @@ document.getElementById("btn-logout").addEventListener("click", function(){
   me = null; pw = null;
   try { localStorage.removeItem(LS_USER); localStorage.removeItem(LS_PW); } catch (e) {}
   document.getElementById("me-name").textContent = "—";
-  refreshPlans();
   document.getElementById("pw").value = "";
   document.getElementById("gate-err").textContent = "";
   document.getElementById("gate").hidden = false;
@@ -1030,148 +958,9 @@ USERS.forEach(function(u){
   o.value = u; o.textContent = u;
   sel.appendChild(o);
 });
-var PLANNER = "Robert";        /* only the planner gets the Plans menu */
-
-/* A plan is who stands where off the break. Spots are callouts, so a plan
-   marks both sides of the 50 - it reads the same whichever end you break from. */
-/* Each slot is one body: p = primary bunker off the break, s = the secondary
-   they rotate to. Callouts mirror, so a plan marks both sides of the 50. */
-var PLANS = [
-  {name:"Default",
-   slots:[
-     {c:1, p:"ALPHA",   s:"CHARLIE", shoot:["DENVER","LIMA","ALPHA"],
-      job:"Hold D-side. Glance mid for info."},
-     {c:1, p:"HOME",    s:"ROCKET",  shoot:["HOME"],
-      job:"Hold the snake. Nothing moves up snake side. Feed snake info."},
-     {c:1, p:"SEATTLE", s:"S3",      shoot:["SEATTLE","CALI","S1"],
-      job:"Hold Alpha. Wait for him to peek at Home baiting him."}
-   ],
-   steps:[
-     "Get a body, then rotate to secondaries. Home moves first unless the kill opens a gap.",
-     "Everyone at secondary. Hold. Nobody goes forward until positions are called.",
-     "Positions called and clear: Rocket pushes to Cobra, gun up into mid when he can.",
-     "Cobra taken: snake side and D-side push carefully, bunker to bunker."
-   ]}
-];
-var planOn = null, planPick = null;
-window.__plan = function(){ return {planOn:planOn, mode:st.mode, marks:svg.querySelectorAll(".plan-mark").length}; };
-function refreshPlans(){
-  var mine = (me === PLANNER);
-  document.getElementById("plans").hidden = !mine;
-  if (!mine){ closePlans(); planOn = null; drawPlan(); }
-  renderPlanList();
-}
-function renderPlanList(){
-  var list = document.getElementById("plans-list");
-  if (!list) return;
-  list.innerHTML = "";
-  PLANS.forEach(function(pl){
-    var b = document.createElement("button");
-    b.type = "button";
-    b.setAttribute("aria-pressed", planOn === pl.name ? "true" : "false");
-    b.innerHTML = "<span>" + pl.name + "</span><em>" +
-      pl.slots.map(function(sl){
-        return sl.c + " " + sl.p.toLowerCase() + (sl.s ? " → " + sl.s.toLowerCase() : "");
-      }).join(", ") + "</em>";
-    b.addEventListener("click", function(){
-      planOn = (planOn === pl.name) ? null : pl.name;
-      planPick = null;
-      renderPlanList(); drawPlan(); closePlans();
-    });
-    list.appendChild(b);
-  });
-  document.getElementById("plans-note").textContent = planOn
-    ? "Marked on the layout in Study." : "Pick a plan to mark it on the layout.";
-  renderPlanCard();
-}
-function renderPlanCard(){
-  var card = document.getElementById("plan-card");
-  var plan = PLANS.filter(function(p){ return p.name === planOn; })[0];
-  if (!plan || me !== PLANNER || st.mode !== "study"){ card.hidden = true; return; }
-  card.hidden = false;
-  document.getElementById("plan-card-title").textContent = plan.name + " plan";
-  document.getElementById("plan-card-body").innerHTML = plan.slots.map(function(sl){
-    return '<div class="slot-row"><b>' + sl.c + " × " + sl.p + "</b><span>" +
-      (sl.shoot ? "Shoot <i>" + sl.shoot.join(", ") + "</i> off the break<br>" : "") +
-      (sl.s ? "Then rotate to <i>" + sl.s + "</i>" : "Hold it") +
-      "</span></div>";
-  }).join("");
-}
-function clearPlanMarks(){
-  var old = svg.querySelectorAll(".plan-mark");
-  for (var i = 0; i < old.length; i++) old[i].remove();
-}
-
-/* One side only, and only the marks you actually need:
-   a filled dot on each primary, a hollow one on its secondary, one thin line
-   between them. Break lanes stay hidden until you tap a body in the card. */
-function drawPlan(){
-  clearPlanMarks();
-  if (!planOn || st.mode !== "study") return;
-  var plan = PLANS.filter(function(p){ return p.name === planOn; })[0];
-  if (!plan) return;
-
-  function spot(n){
-    var all = TARGETS.filter(function(t){ return t.n === n; });
-    var mine = all.filter(function(t){ return t.cx < 469; });
-    return (mine.length ? mine : all)[0];
-  }
-  function far(n){
-    var all = TARGETS.filter(function(t){ return t.n === n; });
-    var other = all.filter(function(t){ return t.cx >= 469; });
-    return (other.length ? other : all)[0];
-  }
-  function add(node){ node.setAttribute("class", node.getAttribute("class") + " plan-mark"); svg.appendChild(node); }
-
-  plan.slots.forEach(function(sl, i){
-    var a = spot(sl.p);
-    if (!a) return;
-    var b = sl.s ? spot(sl.s) : null;
-
-    if (planPick === i && sl.shoot){
-      sl.shoot.forEach(function(n){
-        var t = far(n);
-        if (t) add(el("line", {x1:a.cx, y1:a.cy, x2:t.cx, y2:t.cy, "class":"plan-lane"}));
-      });
-    }
-    if (b) add(el("line", {x1:a.cx, y1:a.cy, x2:b.cx, y2:b.cy, "class":"plan-move"}));
-    if (b) add(el("circle", {cx:b.cx, cy:b.cy, r:7, "class":"plan-dot sec"}));
-    add(el("circle", {cx:a.cx, cy:a.cy, r:9, "class":"plan-dot" + (planPick === i ? " live" : "")}));
-  });
-}
-
-function renderPlanCard(){
-  var card = document.getElementById("plan-card");
-  var plan = PLANS.filter(function(p){ return p.name === planOn; })[0];
-  if (!plan || me !== PLANNER || st.mode !== "study"){ card.hidden = true; return; }
-  card.hidden = false;
-  document.getElementById("plan-card-title").textContent = plan.name;
-
-  var body = document.getElementById("plan-card-body");
-  body.innerHTML = plan.slots.map(function(sl, i){
-    return '<button type="button" class="slot-row" data-i="' + i + '"' +
-           (planPick === i ? ' aria-pressed="true"' : '') + '>' +
-           "<b>" + sl.p + (sl.s ? ' <i>&rarr; ' + sl.s + "</i>" : "") + "</b>" +
-           (sl.shoot ? "<span>" + sl.shoot.join(" &middot; ") + "</span>" : "") +
-           (planPick === i && sl.job ? '<em class="job">' + sl.job + "</em>" : "") +
-           "</button>";
-  }).join("") +
-  (plan.steps ? '<ol class="steps">' + plan.steps.map(function(t){
-     return "<li>" + t + "</li>"; }).join("") + "</ol>" : "");
-  body.querySelectorAll(".slot-row").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      var i = +btn.dataset.i;
-      planPick = (planPick === i) ? null : i;
-      renderPlanCard(); drawPlan();
-    });
-  });
-}
-
-
 function signIn(u, p){
   me = u; pw = p;
   document.getElementById("me-name").textContent = u;
-  refreshPlans();
   document.getElementById("gate").hidden = true;
   ls(LS_USER, u); ls(LS_PW, p);
   renderBoard();
@@ -1194,14 +983,11 @@ document.getElementById("gate-form").addEventListener("submit", function(e){
       document.getElementById("pw").value = "";
     }
   }).catch(function(){
+    /* Can't reach the board - let them in to practise anyway, clearly marked.
+       Runs can't be recorded while offline, so nothing can pollute the board. */
     go.disabled = false; go.textContent = "Enter the field";
-    if (ls(LS_PW) && p === ls(LS_PW)){
-      syncNote("off", "offline - showing last seen");
-      signIn(u, p);
-    } else {
-      me = null; pw = null;
-      err.textContent = "No connection to the scoreboard.";
-    }
+    syncNote("off", "offline - runs will not count");
+    signIn(u, p);
   });
 });
 
