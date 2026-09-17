@@ -1,0 +1,690 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AER Stations</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;padding:18px 34px;background:#152B47;border-bottom:4px solid #F0B429}
+.top h1{font-size:34px;font-weight:900}.top h1 .a{color:#F0B429}
+.top .tl{display:flex;align-items:center;gap:18px}
+.deptsel{background:#0e1c31;color:#fff;border:1.5px solid #24406a;border-radius:9px;padding:8px 12px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer}
+.deptsel:focus{outline:none;border-color:#F0B429}
+.deptsel option{background:#12233c;color:#fff}
+.resetbtn{background:transparent;color:#ffd782;border:1.5px solid #6a5410;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px}
+.resetbtn:hover{background:#F0B429;color:#152B47;border-color:#F0B429}
+.resetbtn:active{transform:translateY(1px)}
+.lockbtn{background:transparent;color:#8fe0a8;border:1.5px solid #2c6b41;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px}
+.lockbtn:hover{background:#14361f}
+.lockbtn.on{color:#ff9b9b;border-color:#6a1616}
+.lockbtn.on:hover{background:#2a1414}
+body.locked .ec{cursor:default}
+.xferbtn{background:transparent;color:#7fd8ff;border:1.5px solid #1f6b85;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px;white-space:nowrap}
+.xferbtn:hover{background:#0d3a4a}
+.xferbtn.off{color:#7f93ad;border-color:#2a3a50}
+.p90{display:flex;align-items:center;gap:12px;background:#0e1c31;border:1px solid #24406a;border-radius:9px;padding:5px 13px}
+.p90 .tag{font-size:9.5px;color:#9fb2ca;text-transform:uppercase;letter-spacing:1px;font-weight:800}
+.p90 .grp{display:flex;flex-direction:column;line-height:1}
+.p90 .grp .gl{font-size:9px;color:#9fb2ca;text-transform:uppercase;letter-spacing:.4px}
+.p90 .grp .gv{font-size:19px;font-weight:900}.p90 .grp .gv small{font-size:11px;font-weight:700}
+.top .clock{text-align:right}.top .clock .t{font-size:34px;font-weight:900;color:#F0B429;line-height:1}
+.top .clock .d{font-size:15px;color:#B8C4D4}
+.wx{display:flex;align-items:center;gap:12px}
+.wx .wxi{font-size:40px;line-height:1;display:inline-block}
+@keyframes wxspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes wxfloat{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+@keyframes wxbounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes wxflash{0%,100%{opacity:1}50%{opacity:.35}}
+.wx .wxi.wx-spin{animation:wxspin 8s linear infinite}
+.wx .wxi.wx-float{animation:wxfloat 3s ease-in-out infinite}
+.wx .wxi.wx-bounce{animation:wxbounce 1.4s ease-in-out infinite}
+.wx .wxi.wx-flash{animation:wxflash 1s ease-in-out infinite}
+.wx .wxt{font-size:30px;font-weight:900;color:#F0B429;line-height:1}
+.wx .wxd{font-size:14px;color:#B8C4D4}
+.wx .wxt .wxfl{font-size:14px;color:#9fb2ca;font-weight:700;margin-left:6px}
+.kpis{display:flex;gap:16px;padding:16px 34px}
+.kpi{flex:1;background:#152B47;border:2px solid #24406a;border-radius:14px;padding:12px 8px;text-align:center}
+.kpi .v{font-size:44px;font-weight:900;color:#F0B429;line-height:1}
+.kpi .v small{font-size:18px;color:#9fb2ca;font-weight:700}
+.kpi .l{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#9fb2ca;margin-top:4px}
+.kpi.hot{border-color:#F0B429;background:#1c2f4d}.kpi.hot .v{color:#43d17a}
+.grid2{display:flex;flex-direction:column;gap:14px;padding:6px 34px 14px;height:calc(100vh - 150px)}
+.ordersrow{display:flex;gap:16px;flex:3 1 0;min-height:0}
+.ordersrow .panel{flex:1 1 0;min-height:0}
+/* HOLD box in the header (between weather and clock) */
+.holdbox{display:flex;align-items:center;gap:10px;background:#0e1c31;border:1.5px solid #6a5410;border-radius:12px;padding:7px 15px;cursor:pointer;user-select:none}
+.holdbox:hover{background:#161d2e}
+.holdbox.dragover{border-color:#F0B429;background:#1c2f4d;outline:2px dashed #F0B429;outline-offset:2px}
+.holdbox .hb-ic{font-size:26px;color:#ffd782;line-height:1}
+.holdbox .hb-n{font-size:26px;font-weight:900;color:#ffd782;line-height:1}
+.holdbox .hb-l{font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:#9fb2ca;line-height:1.15}
+.holdpop{position:fixed;top:76px;right:180px;z-index:50;width:340px;max-height:72vh;overflow-y:auto;background:#12233c;border:1.5px solid #6a5410;border-radius:12px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.holdpop .hp-h{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#ffd782;font-weight:800;margin:2px 4px 8px}
+.holdpop .hp-row{display:flex;align-items:center;gap:8px;background:#0e1c31;border-left:4px solid #ffd782;border-radius:0 8px 8px 0;padding:7px 10px;margin-bottom:6px}
+.holdpop .hp-row .hp-main{flex:1;min-width:0}
+.holdpop .hp-row .hp-id{font-size:14px;font-weight:800}
+.holdpop .hp-row .hp-sub{font-size:11px;color:#9fb2ca;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.holdpop .hp-row .hp-rel{background:#14361f;color:#43d17a;border:1px solid #2c6b41;border-radius:7px;padding:5px 10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}
+.holdpop .hp-row .hp-rel:hover{background:#1c4a2a}
+.holdpop .hp-empty{color:#9fb2ca;font-size:13px;text-align:center;padding:14px}
+.inforow{display:flex;gap:16px;flex:0.85 1 0;min-height:0}
+.inforow .panel.flow{flex:1.25 1 0;min-height:0}
+.inforow .panel.inv{flex:1 1 0;min-height:0}
+.inforow .panel.cord{flex:1.15 1 0;min-height:0}
+.panel{background:#12233c;border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;overflow:hidden}
+.panel h2{font-size:20px;letter-spacing:2px;text-transform:uppercase;color:#fff;margin-bottom:12px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:baseline}
+.panel h2 .n{color:#F0B429}
+.panel h2 .hx{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none}
+.scroll{overflow:hidden;flex:1 1 auto}
+.ord{background:#0e1c31;border-left:6px solid #43d17a;border-radius:0 12px 12px 0;padding:4px 13px;margin-bottom:4px}
+.ord.b1{border-left-color:#F0B429}
+.ord.b2{border-left-color:#ff5b5b}
+.ord .oh{display:flex;justify-content:space-between;align-items:baseline}
+.ord .oid{font-size:17px;font-weight:800}.ord .oid .acct{font-size:12.5px;color:#9fb2ca;font-weight:600}
+.ord .age{font-size:18px;font-weight:900;color:#fff;white-space:nowrap}.ord .age small{font-size:10.5px;color:#9fb2ca;margin-left:5px}
+.ord .age.over{color:#ff6b6b}
+.slatag{display:inline-block;background:#5a1616;color:#ffb0b0;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:800;margin-left:8px}
+.slatag.warn{background:#4a3a0c;color:#ffd782}
+.destag{display:inline-block;background:#3d1030;color:#ff9be2;border:1px solid #7a2a60;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:900;margin-left:8px}
+.audittag{display:inline-block;background:#F0B429;color:#152B47;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:900;margin-left:8px}
+.xftag{display:inline-block;background:#0d3a4a;color:#7fd8ff;border:1px solid #1f6b85;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:800;margin-left:8px}
+.priotag{display:inline-block;background:#F0B429;color:#152B47;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:900;margin-left:8px}
+.ord.prio{border-left-color:#F0B429 !important}
+/* ── station section (Regular | EZ two-column split) ── */
+.panel.sec{padding:12px 14px}
+.secgrid{display:flex;gap:10px;flex:1 1 auto;min-height:0}
+.subcol{flex:1 1 0;display:flex;flex-direction:column;min-height:0;background:#0e1c31;border-radius:10px;padding:6px 6px 4px}
+.subcol .sublbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;text-align:center;padding:2px 0 6px;color:#9fb2ca;flex:0 0 auto}
+.subcol .sublbl.ez{color:#43d17a}
+.subcol .sublbl.uns{color:#c9a2ff}
+.subcol .sublbl b{color:#fff}
+.subcol .scroll{overflow:hidden;flex:1 1 auto}
+/* interactive board: columns scroll so every order is reachable */
+.scroll.drop{overflow-y:auto;overflow-x:hidden}
+.scroll.drop::-webkit-scrollbar{width:9px}
+.scroll.drop::-webkit-scrollbar-track{background:transparent}
+.scroll.drop::-webkit-scrollbar-thumb{background:#2a4064;border-radius:5px}
+.scroll.drop::-webkit-scrollbar-thumb:hover{background:#3a5a8c}
+.scroll.drop{scrollbar-width:thin;scrollbar-color:#2a4064 transparent}
+.scroll.drop.dragover{outline:2px dashed #F0B429;outline-offset:-3px;border-radius:8px;background:#12233c}
+.panel.hold{padding:12px 14px}
+.panel.hold h2 .n{color:#ffb86b}
+.holdzone{flex:1 1 auto;overflow:hidden;background:#0e1c31;border-radius:10px;padding:6px}
+.ec .ecfrom{display:inline-block;background:#26324a;color:#9fb2ca;border-radius:4px;padding:1px 5px;font-size:9px;font-weight:700;margin-left:4px;text-transform:uppercase;letter-spacing:.3px}
+.ec{background:#12233c;border-left:5px solid #43d17a;border-radius:0 8px 8px 0;padding:4px 8px;margin-bottom:4px;cursor:grab}
+.ec.b1{border-left-color:#F0B429}.ec.b2{border-left-color:#ff5b5b}
+.ec.prio{border-left-color:#F0B429 !important}
+.ec.dragging{opacity:.4}
+.ec.dropbefore{box-shadow:0 -3px 0 0 #F0B429}
+.ec.dropafter{box-shadow:0 3px 0 0 #F0B429}
+.ec .ecr{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.ec .ecid{font-size:14px;font-weight:800;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ec .ecid .ecac{font-size:11px;color:#9fb2ca;font-weight:600}
+.ec .ecage{font-size:14px;font-weight:900;white-space:nowrap;flex:0 0 auto}.ec .ecage.over{color:#ff6b6b}
+.ec .ecm{font-size:10.5px;color:#c7d3e2;margin-top:1px;line-height:1.45}
+.ec .ecm b{color:#ffc247}
+.mb{display:inline-block;border-radius:4px;padding:1px 5px;font-size:9.5px;font-weight:800;margin-left:4px;vertical-align:middle}
+.mb.prio{background:#F0B429;color:#152B47}
+.mb.xf{background:#0d3a4a;color:#7fd8ff;border:1px solid #1f6b85}
+.mb.des{background:#3d1030;color:#ff9be2;border:1px solid #7a2a60}
+.mb.aud{background:#F0B429;color:#152B47}
+.ezmt{color:#5c7089;font-size:13px;text-align:center;padding:16px 6px}
+.ezmore{font-size:11px;color:#9fb2ca;margin-top:3px;text-align:center}
+/* per-order note icon + modal */
+.notebtn{background:transparent;border:none;cursor:pointer;font-size:12px;line-height:1;padding:0 3px;opacity:.28;flex:0 0 auto}
+.notebtn.has{opacity:1;filter:drop-shadow(0 0 3px #ffc247)}
+.notebtn:hover{opacity:.95}
+.hp-row .notebtn{font-size:14px}
+.notemodal{position:fixed;inset:0;z-index:100;background:rgba(6,12,22,.72);display:flex;align-items:center;justify-content:center}
+.notemodal .nm-box{width:520px;max-width:92vw;background:#12233c;border:1.5px solid #24406a;border-radius:16px;padding:18px 20px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.nm-h{display:flex;justify-content:space-between;align-items:center;font-size:19px;font-weight:800;color:#fff;margin-bottom:12px}
+.nm-h .nm-x{background:transparent;border:none;color:#9fb2ca;font-size:26px;cursor:pointer;line-height:1;font-family:inherit}
+.nm-h .nm-x:hover{color:#fff}
+#nm-text{width:100%;height:160px;resize:vertical;background:#0e1c31;border:1.5px solid #24406a;border-radius:10px;color:#fff;font-family:inherit;font-size:15px;padding:10px 12px;line-height:1.5}
+#nm-text:focus{outline:none;border-color:#F0B429}
+#nm-text[readonly]{color:#c7d3e2;cursor:default}
+.nm-ro{color:#ffd782;font-size:13px;margin-top:10px}
+.nm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+.nm-actions .nm-del{background:transparent;color:#ff9b9b;border:1.5px solid #6a1616;border-radius:9px;padding:9px 16px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
+.nm-actions .nm-del:hover{background:#2a1414}
+.nm-actions .nm-save{background:#F0B429;color:#152B47;border:none;border-radius:9px;padding:9px 18px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
+.nm-actions .nm-save:hover{filter:brightness(1.08)}
+.notebanner{margin:0 34px 12px;background:#1c2f4d;border:2px solid #F0B429;border-radius:12px;padding:11px 18px;color:#ffe08a;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px;overflow:hidden}
+.notebanner .nb-ic{font-size:24px;line-height:1;animation:iconpulse 1.6s ease-in-out infinite}
+.notebanner .nb-by{color:#9fb2ca;font-size:13px;font-weight:600;margin-left:auto;white-space:nowrap}
+.notebanner{position:relative}
+.notebanner.sparkle{background:linear-gradient(90deg,#1c2f4d,#4a3a12,#1c2f4d,#3a1c4a,#1c2f4d);background-size:300% 100%;animation:sparklebg 4s linear infinite}
+@keyframes sparklebg{0%{background-position:0% 0}100%{background-position:300% 0}}
+.nb-sparkle{position:absolute;font-size:16px;animation:twinkle 1.6s ease-in-out infinite;pointer-events:none}
+@keyframes twinkle{0%,100%{opacity:.15;transform:scale(.6) rotate(0deg)}50%{opacity:1;transform:scale(1.3) rotate(20deg)}}
+.notebanner .nb-marq{flex:1;overflow:hidden;min-width:0}
+.notebanner .nb-txt{display:inline-block;white-space:nowrap;padding-left:100%;animation:bannerscroll 16s linear infinite}
+.bdaybanner{margin:0 34px 12px;background:linear-gradient(90deg,#3a1c4a,#1c2f4d);border:2px solid #ff6fae;border-radius:12px;padding:11px 18px;color:#ffd1ea;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px;overflow:hidden}
+.bdaybanner .bd-ic{font-size:24px;line-height:1;animation:iconpulse 1.6s ease-in-out infinite}
+.bdaybanner .bd-marq{flex:1;overflow:hidden;min-width:0}
+.bdaybanner .bd-txt{display:inline-block;white-space:nowrap;padding-left:100%;animation:bannerscroll 16s linear infinite}
+.bdaybanner .bd-static{flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes bannerscroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@keyframes iconpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.ord .meta{font-size:12.5px;color:#c7d3e2;margin:2px 0 0}
+.ord .meta b{color:#ffc247}
+.steps{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.chip{font-size:10px;font-weight:800;letter-spacing:.2px;border-radius:5px;padding:2px 7px;text-transform:uppercase;white-space:nowrap}
+.chip.active{background:#F0B429;color:#152B47}
+.chip.done{background:#14361f;color:#43d17a;border:1px solid #2c6b41}
+.chip.pending{background:#0a1626;color:#5c7089;border:1px solid #1c3050}
+.chip.skip{background:#0a1626;color:#3f4f63;border:1px dashed #2a3a50;text-decoration:line-through}
+.ord .meta .due{color:#9fb2ca}
+.ord .meta .due.hot{color:#ff9b9b;font-weight:700}
+.expline{font-size:14px;color:#9fb2ca;margin-top:6px}.expline b{color:#fff}
+.flowrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.flowcell{background:#0e1c31;border-radius:12px;padding:9px 12px;text-align:center;overflow:hidden}
+.flowcell .fl{font-size:11.5px;color:#9fb2ca;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
+.flowcell .fv{font-size:24px;font-weight:900;color:#43d17a;line-height:1.1;white-space:nowrap}
+.flowcell .fv small{font-size:12px;color:#9fb2ca;font-weight:700}
+.flowcell .fw{font-size:12.5px;color:#7fd8ff;margin-top:2px;white-space:nowrap}
+.mvtot{display:flex;gap:12px;background:#14361f;border:1px solid #2c6b41;border-radius:12px;padding:8px 18px;margin-bottom:10px}
+.mvtot .mvtcol{flex:1;display:flex;flex-direction:column;align-items:center}
+.mvtot .mvtcol.wk{border-left:1px solid #2c6b41}
+.mvtot .mvtv{font-size:30px;font-weight:900;color:#43d17a;line-height:1}
+.mvtot .mvtv small{font-size:14px;color:#bfe6cd;font-weight:700}
+.mvtot .mvtcol.wk .mvtv{color:#7fd8ff}
+.mvtot .mvtl{font-size:12px;color:#bfe6cd;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.pgrow{display:flex;align-items:center;gap:18px}
+.pgpct{font-size:44px;font-weight:900;color:#F0B429;line-height:1;min-width:110px;text-align:center}
+.pgmain{flex:1}
+.pgbar{height:22px;background:#0e1c31;border-radius:11px;overflow:hidden;border:1px solid #24406a}
+.pgbar i{display:block;height:100%;background:linear-gradient(90deg,#8a6a12,#F0B429);border-radius:11px}
+.pgnums{font-size:14px;color:#c7d3e2;margin-top:6px}.pgnums b{color:#ffc247}
+.cbar{margin-bottom:5px}
+.cbar .ct{display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px;color:#c7d3e2}
+.cbar .ct .cw{font-weight:800;color:#ffc247}
+.cbar .bar{height:8px;background:#0e1c31;border-radius:4px;overflow:hidden}
+.cbar .bar i{display:block;height:100%;background:linear-gradient(90deg,#8a6a12,#F0B429);border-radius:4px}
+.gross{font-size:13px;color:#9fb2ca;margin-top:4px}
+.co{background:#0e1c31;border-left:6px solid #7fd8ff;border-radius:0 12px 12px 0;padding:8px 14px;margin-bottom:8px}
+.co .oh{display:flex;justify-content:space-between;align-items:baseline}
+.co .oid{font-size:18px;font-weight:800}.co .oid .acct{font-size:13.5px;color:#9fb2ca;font-weight:600}
+.co .age{font-size:20px;font-weight:900;white-space:nowrap}.co .age small{font-size:12px;color:#9fb2ca;margin-left:5px}
+.co .meta{font-size:13.5px;color:#c7d3e2;margin:3px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co .meta b{color:#7fd8ff}.co .meta .ntx{color:#9fb2ca}
+.empty{color:#43d17a;font-size:22px;font-weight:800;padding:20px 0}
+.empty.mut{color:#9fb2ca}
+.foot{display:flex;justify-content:space-between;padding:0 34px 12px;font-size:13px;color:#7f93ad}
+.stale{color:#ffc247}
+.opsstale{background:#5a1616;color:#ffb0b0;border-radius:4px;padding:1px 7px;font-weight:900}
+.notewarn{color:#ffc247}
+</style></head><body>
+<div class="top">
+  <div class="tl"><h1>AER <span class="a">|</span> Stations</h1>
+    <select class="deptsel" id="deptsel" title="Show one department full-width, or all three">
+      <option value="all">All Departments</option>
+      <option value="dc">Data Capture</option>
+      <option value="tech">Tech</option>
+      <option value="tr">Tracked Recycling</option>
+    </select>
+    <button class="lockbtn" id="lockbtn" title="Lock / unlock drag-and-drop for this screen"></button>
+    <button class="resetbtn" id="resetbtn" title="Move every card back to its department's Unsorted column, sorted by date received (clears To Process, EZ, Hold and manual order)">&#8635; Reset order</button>
+    <button class="xferbtn" id="xferbtn" title="Show or hide transfer (XFER / Livermore) orders on this screen"></button>
+    <div class="p90" id="p90" title="90th-percentile age (days since received) of all open orders; goal under the 45-day SLA"></div></div>
+  <div class="wx" id="weather"><span class="wxi wx-float">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
+  <div class="holdbox drop" id="holdbox" data-bucket="hold" title="Drag an order here for Hold / Special Projects. Click to see them and release.">
+    <div class="hb-ic">&#9208;</div><div class="hb-t"><div class="hb-n" id="holdcount">0</div><div class="hb-l">Hold /<br>Special Projects</div></div>
+  </div>
+  <div class="holdpop" id="holdpop" style="display:none"></div>
+  <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
+</div>
+<div class="notebanner" id="notebanner" style="display:none"></div>
+<div class="grid2">
+  <div class="ordersrow">
+    <div class="panel sec" id="sec_dc"><h2><span class="n">DATA CAPTURE</span><span class="hx" id="dchint"></span></h2>
+      <div class="secgrid">
+        <div class="subcol"><div class="sublbl">To Process</div><div class="scroll drop" id="dc_regular" data-station="Data Capture" data-bucket="regular"></div></div>
+        <div class="subcol"><div class="sublbl ez">&#9889; EZ</div><div class="scroll drop" id="dc_ez" data-station="Data Capture" data-bucket="ez"></div></div>
+        <div class="subcol"><div class="sublbl uns">Unsorted</div><div class="scroll drop" id="dc_unsorted" data-station="Data Capture" data-bucket="unsorted"></div></div>
+      </div></div>
+    <div class="panel sec" id="sec_tech"><h2><span class="n">TECH</span><span class="hx" id="techhint"></span></h2>
+      <div class="secgrid">
+        <div class="subcol"><div class="sublbl">To Process</div><div class="scroll drop" id="tech_regular" data-station="Tech" data-bucket="regular"></div></div>
+        <div class="subcol"><div class="sublbl ez">&#9889; EZ</div><div class="scroll drop" id="tech_ez" data-station="Tech" data-bucket="ez"></div></div>
+        <div class="subcol"><div class="sublbl uns">Unsorted</div><div class="scroll drop" id="tech_unsorted" data-station="Tech" data-bucket="unsorted"></div></div>
+      </div></div>
+    <div class="panel sec" id="sec_tr"><h2><span class="n">TRACKED RECYCLING</span><span class="hx" id="trhint"></span></h2>
+      <div class="secgrid">
+        <div class="subcol"><div class="sublbl">To Process</div><div class="scroll drop" id="tr_regular" data-station="Tracked Recycling" data-bucket="regular"></div></div>
+        <div class="subcol"><div class="sublbl ez">&#9889; EZ</div><div class="scroll drop" id="tr_ez" data-station="Tracked Recycling" data-bucket="ez"></div></div>
+        <div class="subcol"><div class="sublbl uns">Unsorted</div><div class="scroll drop" id="tr_unsorted" data-station="Tracked Recycling" data-bucket="unsorted"></div></div>
+      </div></div>
+  </div>
+</div>
+<div class="notemodal" id="notemodal" style="display:none">
+  <div class="nm-box">
+    <div class="nm-h"><span id="nm-title">Note</span><button class="nm-x" id="nm-close" title="Close">&times;</button></div>
+    <textarea id="nm-text" placeholder="Type a note for this order&hellip;"></textarea>
+    <div class="nm-ro" id="nm-ro" style="display:none">&#128274; Notes are read-only &mdash; unlock the board to edit.</div>
+    <div class="nm-actions" id="nm-actions"><button class="nm-del" id="nm-del">&#128465; Delete</button><button class="nm-save" id="nm-save">Save note</button></div>
+  </div>
+</div>
+<div class="foot"><div id="src">Makor InboundOrders / commodity containers + OPS Dashboard movements</div><div id="updated">&nbsp;</div></div>
+<script>
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lbs(n){return Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});}
+function fdate(s){if(!s)return '';var p=s.split('-');return p.length===3?(p[1]+'/'+p[2]+'/'+p[0].slice(2)):s;}
+function tickClock(){var n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('cdate').textContent=n.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});}
+setInterval(tickClock,1000);tickClock();
+
+function kpi(v,l,cls){return '<div class="kpi'+(cls?' '+cls:'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
+function p90col(v,s){return v>=s?'#ff6b6b':(v>=s-5?'#ffd782':'#43d17a');}
+function p90kpi(v,l,s){return '<div class="kpi"><div class="v" style="color:'+p90col(v,s)+'">'+v+'<small>d</small></div><div class="l">'+l+'</div></div>';}
+
+// Per-station workload line for a card in a station column — pulls THAT
+// station's own active count from the order's pipeline steps (DC works in
+// containers pre-capture, Tech in items, Tracked Recycling in lbs).
+function stationHere(o, station){
+  var s=(o.steps||[]).filter(function(x){return x.step===station;})[0];
+  if(!s) return 'no material here';
+  var parts=[];
+  if(station==='Data Capture'){
+    if(s.ctn) parts.push('<b>'+s.ctn+'</b> ctn');
+    if(s.items) parts.push('<b>'+s.items.toLocaleString()+'</b> items');
+    if(s.lbs) parts.push('<b>'+lbs(s.lbs)+'</b> lbs');
+  } else if(station==='Tech'){
+    if(s.items) parts.push('<b>'+s.items.toLocaleString()+'</b> items');
+    if(s.lbs) parts.push('<b>'+lbs(s.lbs)+'</b> lbs');
+  } else {  // Tracked Recycling
+    if(s.lbs) parts.push('<b>'+lbs(s.lbs)+'</b> lbs');
+    if(s.items) parts.push('<b>'+s.items.toLocaleString()+'</b> items');
+  }
+  return (parts.join(' &middot; ')||'in process')+' here';
+}
+
+// Compact, DRAGGABLE order card for a station column. Drag a card into the EZ
+// column (or back to To Process) to (un)tag it EZ — persisted server-side.
+function renderCards(list, station, more){
+  if(!list||!list.length) return '<div class="ezmt">&mdash;</div>';
+  var sla=45, h='';
+  list.forEach(function(o){
+    var band=o.days>sla?2:(o.days>sla-10?1:0);
+    var badges='';
+    if(o.priority)    badges+='<span class="mb prio">&#9733;</span>';
+    if(o.xfer)        badges+='<span class="mb xf">XFER</span>';
+    if(o.destruction) badges+='<span class="mb des">&#128293;</span>';
+    if(o.audit)       badges+='<span class="mb aud">AUDIT</span>';
+    h+='<div class="ec b'+band+(o.priority?' prio':'')+'" draggable="true" data-id="'+esc(o.id)+'" data-station="'+esc(station)+'">'
+      +'<div class="ecr"><span class="ecid">'+esc(o.id)+(o.account?(' <span class="ecac">&middot; '+esc(o.account)+'</span>'):'')+'</span>'
+      +'<button class="notebtn'+(o.note?' has':'')+'" data-note="'+esc(o.id)+'" title="'+(o.note?'View / edit note':'Add note')+'">&#128221;</button>'
+      +'<span class="ecage'+(band===2?' over':'')+'">'+o.days+'d</span></div>'
+      +'<div class="ecm">'+stationHere(o,station)+badges+'</div></div>';
+  });
+  if(more>0) h+='<div class="ezmore">+ '+more+' more</div>';
+  return h;
+}
+
+// HOLD cards — parked orders. No single station, so show which station(s) the
+// order was pulled from + its floor total. Drag back to a station's To Process
+// to un-hold it.
+// HOLD popover — the list of held orders shown when the header HOLD box is
+// clicked; each row has a Release button (un-hold -> back to its dept queue).
+function renderHoldPop(){
+  var pop=document.getElementById('holdpop'); if(!pop) return;
+  var list=window._held||[];
+  var h='<div class="hp-h">&#9208; Hold / Special Projects ('+list.length+')</div>';
+  if(!list.length){
+    h+='<div class="hp-empty">Nothing here.<br>Drag an order onto the box to add it.</div>';
+  } else list.forEach(function(o){
+    var from=(o.held_from||[]).join(' &middot; ');
+    h+='<div class="hp-row"><div class="hp-main">'
+      +'<div class="hp-id">'+esc(o.id)+' <span style="font-size:11px;color:#9fb2ca;font-weight:600">'+esc(o.account||'')+'</span></div>'
+      +'<div class="hp-sub">'+o.days+'d &middot; from '+esc(from)+(o.xfer?' &middot; XFER':'')+'</div></div>'
+      +'<button class="notebtn'+(o.note?' has':'')+'" data-note="'+esc(o.id)+'" title="'+(o.note?'View / edit note':'Add note')+'">&#128221;</button>'
+      +'<button class="hp-rel" data-id="'+esc(o.id)+'">&#8617; Release</button></div>';
+  });
+  pop.innerHTML=h;
+}
+
+// ── drag-and-drop ── EZ is per-station (drag within a section); HOLD is global
+// (drag any card to HOLD; drag a held card back to any To Process to release).
+var dragOrder=null, locked=false, hideXfer=false, lastData=null;
+function vis(list){ return hideXfer ? (list||[]).filter(function(o){return !o.xfer;}) : (list||[]); }
+document.addEventListener('dragstart',function(e){
+  if(locked){e.preventDefault();return;}          // drag-and-drop locked for this screen
+  if(e.target&&e.target.closest&&e.target.closest('.notebtn')){e.preventDefault();return;}  // grabbing the note icon
+  var c=e.target&&e.target.closest?e.target.closest('.ec'):null;
+  if(!c){dragOrder=null;return;}
+  dragOrder={id:c.getAttribute('data-id'),station:c.getAttribute('data-station')||'',hold:c.hasAttribute('data-hold')};
+  c.classList.add('dragging');
+  try{e.dataTransfer.setData('text/plain',dragOrder.id);e.dataTransfer.effectAllowed='move';}catch(_){}
+});
+document.addEventListener('dragend',function(e){
+  var c=e.target&&e.target.closest?e.target.closest('.ec'):null; if(c)c.classList.remove('dragging');
+  dragOrder=null; clearIndic();
+  document.querySelectorAll('.drop').forEach(function(z){z.classList.remove('dragover');});
+});
+function dropAllowed(z){
+  if(locked||!dragOrder) return false;
+  var bucket=z.getAttribute('data-bucket');
+  if(bucket==='hold') return true;               // anything can be held
+  if(dragOrder.hold) return true;                // a held card releases into any station
+  return dragOrder.station===z.getAttribute('data-station');  // else same section only
+}
+// cards in a column EXCLUDING the one being dragged (so slot math is stable)
+function colCards(z){
+  return Array.prototype.filter.call(z.querySelectorAll('.ec'),
+    function(c){return !dragOrder||c.getAttribute('data-id')!==dragOrder.id;});
+}
+function insertIndex(z,y){
+  var cs=colCards(z);
+  for(var i=0;i<cs.length;i++){var r=cs[i].getBoundingClientRect(); if(y<r.top+r.height/2) return i;}
+  return cs.length;
+}
+function clearIndic(){
+  document.querySelectorAll('.ec.dropbefore,.ec.dropafter').forEach(function(c){c.classList.remove('dropbefore','dropafter');});
+}
+function showIndic(z,idx){
+  clearIndic(); var cs=colCards(z); if(!cs.length) return;
+  if(idx>=cs.length) cs[cs.length-1].classList.add('dropafter');
+  else cs[idx].classList.add('dropbefore');
+}
+function wireDrops(){
+  document.querySelectorAll('.drop').forEach(function(z){
+    if(z._wired) return; z._wired=true;
+    z.addEventListener('dragover',function(e){
+      if(!dropAllowed(z)) return;
+      e.preventDefault(); e.dataTransfer.dropEffect='move';
+      z.classList.add('dragover'); showIndic(z, insertIndex(z, e.clientY));
+    });
+    z.addEventListener('dragleave',function(){z.classList.remove('dragover');});
+    z.addEventListener('drop',function(e){
+      if(!dropAllowed(z)) return;
+      e.preventDefault(); z.classList.remove('dragover');
+      var idx=insertIndex(z, e.clientY);
+      var order=colCards(z).map(function(c){return c.getAttribute('data-id');});
+      order.splice(idx,0,dragOrder.id);          // full top->bottom order after the drop
+      clearIndic();
+      var bucket=z.getAttribute('data-bucket');
+      var station=(bucket==='hold')?'':z.getAttribute('data-station');
+      fetch('/place',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({station:station,id:dragOrder.id,bucket:bucket,order:order})})
+        .then(function(){poll();}).catch(function(){});
+    });
+  });
+}
+wireDrops();
+
+// Department selector — show one department full-width, or all three.
+var dept='all';
+function applyDept(){
+  ['dc','tech','tr'].forEach(function(k){
+    var p=document.getElementById('sec_'+k);
+    if(p) p.style.display=(dept==='all'||dept===k)?'':'none';
+  });
+}
+(function(){
+  var sel=document.getElementById('deptsel');
+  try{ dept=localStorage.getItem('stations_dept')||'all'; }catch(_){}
+  if(sel){ sel.value=dept; sel.addEventListener('change',function(){
+    dept=sel.value; try{localStorage.setItem('stations_dept',dept);}catch(_){}
+    applyDept();
+  }); }
+  applyDept();
+})();
+
+// HOLD box — click to open the popover of held orders; each has a Release
+// button (un-hold -> order returns to its department's To Process column).
+(function(){
+  var box=document.getElementById('holdbox'), pop=document.getElementById('holdpop');
+  if(box) box.addEventListener('click',function(){
+    pop.style.display = (pop.style.display==='none'||!pop.style.display) ? 'block' : 'none';
+  });
+  document.addEventListener('click',function(e){
+    if(!pop||pop.style.display==='none') return;
+    if(e.target.closest && (e.target.closest('#holdpop')||e.target.closest('#holdbox'))) return;
+    pop.style.display='none';
+  });
+  if(pop) pop.addEventListener('click',function(e){
+    var b=e.target.closest?e.target.closest('.hp-rel'):null; if(!b) return;
+    if(locked) return;                     // read-only when locked
+    fetch('/place',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({station:'',id:b.getAttribute('data-id'),bucket:'regular'})})
+      .then(function(){poll();}).catch(function(){});
+  });
+})();
+
+// Lock / unlock drag-and-drop for THIS screen (per-browser, persisted). Locked
+// = read-only display (no drag, Reset hidden) so a kiosk can't be rearranged.
+(function(){
+  var b=document.getElementById('lockbtn');
+  try{ locked = localStorage.getItem('stations_locked')==='1'; }catch(_){}
+  function apply(){
+    document.body.classList.toggle('locked', locked);
+    if(b){ b.innerHTML = locked ? '&#128274; Locked' : '&#128275; Unlocked'; b.classList.toggle('on', locked); }
+    var r=document.getElementById('resetbtn'); if(r) r.style.display = locked ? 'none' : '';
+  }
+  // Password gate — light deterrent so the board isn't toggled casually (the
+  // password is in the page source, so it's not real security).
+  var LOCK_PW='layla';
+  if(b) b.addEventListener('click',function(){
+    var pw=prompt(locked?'Password to UNLOCK drag-and-drop:':'Password to LOCK drag-and-drop:');
+    if(pw===null) return;                                   // cancelled
+    if(pw.trim().toLowerCase()!==LOCK_PW){ alert('Incorrect password.'); return; }
+    locked=!locked;
+    try{ localStorage.setItem('stations_locked', locked?'1':'0'); }catch(_){}
+    apply();
+  });
+  apply();
+})();
+
+// Show / hide transfer (XFER) orders — per-browser view filter, persisted.
+(function(){
+  var b=document.getElementById('xferbtn');
+  try{ hideXfer = localStorage.getItem('stations_hidexfer')==='1'; }catch(_){}
+  function apply(){ if(b){ b.innerHTML = hideXfer ? '&#8644; Transfers: Hidden' : '&#8644; Transfers: Shown'; b.classList.toggle('off', hideXfer); } }
+  if(b) b.addEventListener('click',function(){
+    hideXfer=!hideXfer;
+    try{ localStorage.setItem('stations_hidexfer', hideXfer?'1':'0'); }catch(_){}
+    apply(); if(lastData) paint(lastData); else poll();
+  });
+  apply();
+})();
+
+// Reset button — everything back to Unsorted (arrival state), by date received.
+(function(){
+  var b=document.getElementById('resetbtn');
+  if(b) b.addEventListener('click',function(){
+    if(locked) return;
+    if(!confirm('Move every card back to its department’s Unsorted column, sorted by date received?\n\nThis clears all To Process, EZ, Hold / Special Projects and manual ordering.')) return;
+    fetch('/reset',{method:'POST'}).then(function(){poll();}).catch(function(){});
+  });
+})();
+
+// Per-order NOTES — editable when the board is unlocked, read-only when locked.
+function openNote(id){
+  var o=(window._byId||{})[id]||{id:id};
+  document.getElementById('nm-title').innerHTML='&#128221; #'+esc(id)+(o.account?(' <span style="color:#9fb2ca;font-weight:600;font-size:14px">'+esc(o.account)+'</span>'):'');
+  var ta=document.getElementById('nm-text'); ta.value=o.note||''; ta.readOnly=locked;
+  document.getElementById('nm-ro').style.display=locked?'block':'none';
+  document.getElementById('nm-actions').style.display=locked?'none':'flex';
+  document.getElementById('nm-del').style.display=(o.note&&!locked)?'':'none';
+  document.getElementById('notemodal').style.display='flex';
+  window._noteId=id;
+  if(!locked){ ta.focus(); }
+}
+function closeNote(){ document.getElementById('notemodal').style.display='none'; }
+function saveNote(text){
+  if(locked) return;
+  fetch('/note',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id:window._noteId,text:text})}).then(function(){poll();}).catch(function(){});
+  closeNote();
+}
+(function(){
+  document.addEventListener('click',function(e){
+    var nb=e.target.closest?e.target.closest('.notebtn'):null;
+    if(nb){ e.stopPropagation(); openNote(nb.getAttribute('data-note')); }
+  });
+  var m=document.getElementById('notemodal');
+  document.getElementById('nm-close').addEventListener('click',closeNote);
+  m.addEventListener('click',function(e){ if(e.target===m) closeNote(); });
+  document.getElementById('nm-save').addEventListener('click',function(){ saveNote(document.getElementById('nm-text').value); });
+  document.getElementById('nm-del').addEventListener('click',function(){ saveNote(''); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeNote(); });
+})();
+
+function renderFlow(d){
+  var T=d.totals||{};
+  function cell(l,today,week,unit){
+    var u=unit||'lbs';
+    return '<div class="flowcell"><div class="fl">'+l+'</div>'
+      +'<div class="fv">'+lbs(today)+'<small> '+u+' today</small></div>'
+      +'<div class="fw">'+lbs(week)+' '+u+' this week</div></div>';
+  }
+  return '<div class="flowrow">'
+    +cell('Receiving',T.recv_today,T.recv_week)
+    +cell('Sorting',T.sort_today,T.sort_week)
+    +cell('Tracked Recycling',T.tr_today,T.tr_week)
+    +cell('Data Capture',T.dc_today,T.dc_week,'items')
+    +'</div>';
+}
+
+function renderInv(d){
+  var O=d.ousei||{total:0,containers:0,pct:0,goal_lbs:40000,goal_ctn:40};
+  var pct=O.pct||0;
+  return '<div class="pgrow"><div class="pgpct">'+pct+'%</div>'
+    +'<div class="pgmain"><div class="pgbar"><i style="width:'+Math.min(100,pct)+'%"></i></div>'
+    +'<div class="pgnums"><b>'+lbs(O.total)+'</b> / '+lbs(O.goal_lbs)+' lbs &middot; <b>'+O.containers+'</b> / '+O.goal_ctn+' containers</div></div></div>';
+}
+
+function renderCord(d){
+  var rows=d.commodity_orders||[];
+  if(!rows.length) return '<div class="empty mut">Nothing awaiting customer invoice.</div>';
+  var h='';
+  rows.forEach(function(o){
+    h+='<div class="co"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct"> &middot; '+esc(o.account)+'</span></div>'
+      +'<div class="age">'+(o.waiting!=null?o.waiting:'?')+'<small>days waiting</small></div></div>'
+      +'<div class="meta">shipped '+fdate(o.shipped)+(o.notes?(' &middot; <span class="ntx">'+esc(o.notes)+'</span>'):'')+'</div></div>';
+  });
+  return h;
+}
+
+function paint(d){
+  if(d.loading){document.getElementById('dc_regular').innerHTML='<div class="ezmt">Loading live data&hellip;</div>';return;}
+  lastData=d;                          // cached so view toggles repaint without a refetch
+  var T=d.totals, sla=d.sla||45;
+  function p90grp(lbl,v,n){return '<div class="grp"><span class="gl">'+lbl+' ('+(n||0)+')</span>'
+    +'<span class="gv" style="color:'+p90col(v,sla)+'">'+(v||0)+'<small>d</small></span></div>';}
+  document.getElementById('p90').innerHTML='<span class="tag">P90 age<br>&lt;'+sla+'d</span>'
+    +p90grp('In-house',T.p90_inhouse,T.open_inhouse)
+    +p90grp('XFER',T.p90_xfer,T.open_xfer);
+  function hint(n,ez,uns){return n+' order'+(n===1?'':'s')
+    +(ez?(' &middot; <b style="color:#43d17a">'+ez+' EZ</b>'):'')
+    +(uns?(' &middot; <b style="color:#c9a2ff">'+uns+' uns</b>'):'')
+    +(hideXfer?' &middot; <span style="color:#7f93ad">xfers hidden</span>':'');}
+  // Birthday banner + supervisor floor note (Afshan) -> banners; grid shrinks
+  // by each visible banner's ACTUAL rendered height (measured, not guessed --
+  // note text length varies, so a fixed pixel constant would drift).
+  var bandH=0;
+  var nb=document.getElementById('notebanner');
+  if(d.note){
+    var sparkleHTML='';
+    if(d.sparkle){
+      var sparklePos=[[4,20],[14,75],[26,35],[40,15],[52,80],[64,25],[76,60],[88,40],[96,70]];
+      sparkleHTML=sparklePos.map(function(p,i){
+        return '<span class="nb-sparkle" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+(i*0.22)+'s">&#10024;</span>';
+      }).join('');
+    }
+    nb.innerHTML=sparkleHTML+'<span class="nb-ic">&#128204;</span><span class="nb-marq"><span class="nb-txt">'+esc(d.note)+'</span></span>'
+      +(d.supervisor?('<span class="nb-by">&mdash; '+esc(d.supervisor)+'</span>'):'');
+    nb.classList.toggle('sparkle',!!d.sparkle);
+    nb.style.display='flex'; bandH+=nb.offsetHeight+12;
+  } else { nb.style.display='none'; nb.classList.remove('sparkle'); }
+  document.querySelector('.grid2').style.height=bandH?('calc(100vh - '+(150+bandH)+'px)'):'';
+  // keep each column's scroll position across the 60s repaint
+  var sp={}; document.querySelectorAll('.scroll.drop').forEach(function(z){sp[z.id]=z.scrollTop;});
+  var S=d.sections||{};
+  [['dc','Data Capture','dchint'],['tech','Tech','techhint'],['tr','Tracked Recycling','trhint']].forEach(function(p){
+    var s=S[p[0]]||{regular:[],ez:[],unsorted:[]};
+    var reg=vis(s.regular), ezl=vis(s.ez), unl=vis(s.unsorted);   // show/hide-transfers filter
+    document.getElementById(p[0]+'_regular').innerHTML=renderCards(reg,p[1],0);
+    document.getElementById(p[0]+'_ez').innerHTML=renderCards(ezl,p[1],0);
+    document.getElementById(p[0]+'_unsorted').innerHTML=renderCards(unl,p[1],0);
+    document.getElementById(p[2]).innerHTML=hint(reg.length+ezl.length+unl.length, ezl.length, unl.length);
+  });
+  var ho=vis(d.hold_orders);
+  window._held=ho;
+  document.getElementById('holdcount').innerHTML=ho.length;
+  renderHoldPop();
+  // id -> order map for the note modal
+  var by={};
+  ['dc','tech','tr'].forEach(function(k){var s=S[k]||{};['regular','ez','unsorted'].forEach(function(bk){(s[bk]||[]).forEach(function(o){by[o.id]=o;});});});
+  (d.hold_orders||[]).forEach(function(o){by[o.id]=o;});
+  window._byId=by;
+  Object.keys(sp).forEach(function(id){var z=document.getElementById(id); if(z)z.scrollTop=sp[id];});
+  var mins=Math.round((Date.now()-new Date(d.generated_at).getTime())/60000);
+  var el=document.getElementById('updated');
+  // Ops-data staleness alarm — same rule as the sibling dashboards: puller runs
+  // every 10 min 06:00-20:00; >30 min old inside those hours = red STALE.
+  var ops='', opsStale=false;
+  if(d.opsdash_fresh){
+    var ot=new Date(String(d.opsdash_fresh).replace(' ','T'));
+    var oAge=Math.round((Date.now()-ot.getTime())/60000);
+    var hr=new Date().getHours();
+    opsStale=(!isNaN(oAge))&&oAge>30&&hr>=6&&hr<20;
+    ops=' &middot; ops data '+esc(d.opsdash_fresh)+(opsStale?' <b class="opsstale">STALE</b>':'');
+  }
+  var api='';
+  if(d.api_fresh) api=' &middot; Makor API '+esc(String(d.api_fresh).slice(11,16));
+  var nts=(d.notes&&d.notes.length)?(' &middot; <span class="notewarn">'+esc(d.notes[0])+'</span>'):'';
+  el.innerHTML='Updated '+(mins<=0?'just now':mins+'m ago')+ops+api+nts;
+  el.className=(mins>20||opsStale)?'stale':'';
+}
+
+// ── Weather (Duncan, SC) via Open-Meteo — free, no key, browser-side fetch ──
+function wxEmoji(c){
+  if(c===0) return '&#9728;';
+  if(c<=2)  return '&#9925;';
+  if(c===3) return '&#9729;';
+  if(c<=48) return '&#127787;';
+  if(c<=67) return '&#127783;';
+  if(c<=77) return '&#127784;';
+  if(c<=82) return '&#127782;';
+  return '&#9928;';
+}
+function wxText(c){
+  if(c===0) return 'Clear'; if(c<=2) return 'Partly cloudy'; if(c===3) return 'Overcast';
+  if(c<=48) return 'Fog'; if(c<=67) return 'Rain'; if(c<=77) return 'Snow';
+  if(c<=82) return 'Showers'; return 'Storms';
+}
+function wxAnimClass(c){
+  if(c===0) return 'wx-spin';
+  if(c<=3||c<=48) return 'wx-float';
+  if(c<=82) return 'wx-bounce';
+  return 'wx-flash';
+}
+function loadWeather(){
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=34.938&longitude=-82.138&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&temperature_unit=fahrenheit')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var c=(d&&d.current)||{}; if(c.temperature_2m==null) return;
+      var code=c.weather_code||0, t=Math.round(c.temperature_2m);
+      var feels=(c.apparent_temperature!=null)?Math.round(c.apparent_temperature):null;
+      var hum=(c.relative_humidity_2m!=null)?Math.round(c.relative_humidity_2m):null;
+      var fl=(feels!=null&&feels!==t)?('<span class="wxfl">feels '+feels+'&deg;</span>'):'';
+      document.getElementById('weather').innerHTML=
+        '<span class="wxi '+wxAnimClass(code)+'">'+wxEmoji(code)+'</span><div class="wxb">'
+        +'<div class="wxt">'+t+'&deg;'+fl+'</div>'
+        +'<div class="wxd">'+wxText(code)+(hum!=null?(' &middot; '+hum+'% humidity'):'')+' &middot; Duncan, SC</div></div>';
+    }).catch(function(){});
+}
+loadWeather(); setInterval(loadWeather, 900000);
+
+function poll(){fetch('stations_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});}
+poll();setInterval(poll,60000);
+
+// Kiosk hygiene: reload the page once a night (~3 AM) so a TV left on for
+// months never accumulates browser memory bloat.
+setInterval(function(){
+  var n=new Date();
+  if(n.getHours()===3 && n.getMinutes()===0) location.reload();
+},60000);
+</script></body></html>
