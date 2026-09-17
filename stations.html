@@ -22,6 +22,16 @@ body.locked .ec{cursor:default}
 .xferbtn{background:transparent;color:#7fd8ff;border:1.5px solid #1f6b85;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px;white-space:nowrap}
 .xferbtn:hover{background:#0d3a4a}
 .xferbtn.off{color:#7f93ad;border-color:#2a3a50}
+.compbtn{background:transparent;color:#43d17a;border:1.5px solid #2c6b41;border-radius:9px;padding:8px 14px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}
+.compbtn:hover{background:#14361f}
+.comppop{position:fixed;top:76px;left:34px;z-index:50;width:390px;max-height:72vh;overflow-y:auto;background:#12233c;border:1.5px solid #2c6b41;border-radius:12px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.comppop .cp-h{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#43d17a;font-weight:800;margin:2px 4px 8px}
+.comppop .cp-row{display:flex;align-items:center;gap:8px;background:#0e1c31;border-left:4px solid #43d17a;border-radius:0 8px 8px 0;padding:7px 10px;margin-bottom:6px}
+.comppop .cp-main{flex:1;min-width:0}
+.comppop .cp-id{font-size:14px;font-weight:800}
+.comppop .cp-sub{font-size:11px;color:#9fb2ca;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.comppop .cp-date{font-size:12px;color:#43d17a;font-weight:800;white-space:nowrap}
+.comppop .cp-empty{color:#9fb2ca;font-size:13px;text-align:center;padding:16px}
 .p90{display:flex;align-items:center;gap:12px;background:#0e1c31;border:1px solid #24406a;border-radius:9px;padding:5px 13px}
 .p90 .tag{font-size:9.5px;color:#9fb2ca;text-transform:uppercase;letter-spacing:1px;font-weight:800}
 .p90 .grp{display:flex;flex-direction:column;line-height:1}
@@ -226,7 +236,9 @@ body.locked .ec{cursor:default}
     <button class="lockbtn" id="lockbtn" title="Lock / unlock drag-and-drop for this screen"></button>
     <button class="resetbtn" id="resetbtn" title="Move every card back to its department's Unsorted column, sorted by date received (clears To Process, EZ, Hold and manual order)">&#8635; Reset order</button>
     <button class="xferbtn" id="xferbtn" title="Show or hide transfer (XFER / Livermore) orders on this screen"></button>
+    <button class="compbtn" id="compbtn" title="Orders marked ops-complete this week (left Operations In-Progress)">&#10003; Completed this wk (0)</button>
     <div class="p90" id="p90" title="90th-percentile age (days since received) of all open orders; goal under the 45-day SLA"></div></div>
+  <div class="comppop" id="comppop" style="display:none"></div>
   <div class="wx" id="weather"><span class="wxi wx-float">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
   <div class="holdbox drop" id="holdbox" data-bucket="hold" title="Drag an order here for Hold / Special Projects. Click to see them and release.">
     <div class="hb-ic">&#9208;</div><div class="hb-t"><div class="hb-n" id="holdcount">0</div><div class="hb-l">Hold /<br>Special Projects</div></div>
@@ -431,6 +443,34 @@ function applyDept(){
   applyDept();
 })();
 
+// Completed-this-week dropdown — read-only list of orders that left Operations
+// In-Progress (ops complete) since Monday.
+function renderCompPop(){
+  var pop=document.getElementById('comppop'); if(!pop) return;
+  var list=(lastData&&lastData.completed_week)||[];
+  var h='<div class="cp-h">&#10003; Ops Complete This Week ('+list.length+')</div>';
+  if(!list.length){ h+='<div class="cp-empty">No orders marked ops-complete yet this week.</div>'; }
+  else list.forEach(function(o){
+    h+='<div class="cp-row"><div class="cp-main">'
+      +'<div class="cp-id">'+esc(o.id)+' <span style="font-size:11px;color:#9fb2ca;font-weight:600">'+esc(o.account||'')+'</span></div>'
+      +'<div class="cp-sub">'+(o.days!=null?(o.days+'d on floor &middot; '):'')+esc(o.status||'')+'</div></div>'
+      +'<div class="cp-date">'+fdate(o.date)+'</div></div>';
+  });
+  pop.innerHTML=h;
+}
+(function(){
+  var b=document.getElementById('compbtn'), pop=document.getElementById('comppop');
+  if(b) b.addEventListener('click',function(){
+    var open=pop.style.display!=='none'&&pop.style.display;
+    renderCompPop(); pop.style.display=open?'none':'block';
+  });
+  document.addEventListener('click',function(e){
+    if(!pop||pop.style.display==='none') return;
+    if(e.target.closest&&(e.target.closest('#comppop')||e.target.closest('#compbtn'))) return;
+    pop.style.display='none';
+  });
+})();
+
 // HOLD box — click to open the popover of held orders; each has a Release
 // button (un-hold -> order returns to its department's To Process column).
 (function(){
@@ -614,6 +654,9 @@ function paint(d){
   window._held=ho;
   document.getElementById('holdcount').innerHTML=ho.length;
   renderHoldPop();
+  var cw=(d.completed_week||[]).length;
+  document.getElementById('compbtn').innerHTML='&#10003; Completed this wk ('+cw+')';
+  if(document.getElementById('comppop').style.display==='block') renderCompPop();
   // id -> order map for the note modal
   var by={};
   ['dc','tech','tr'].forEach(function(k){var s=S[k]||{};['regular','ez','unsorted'].forEach(function(bk){(s[bk]||[]).forEach(function(o){by[o.id]=o;});});});
