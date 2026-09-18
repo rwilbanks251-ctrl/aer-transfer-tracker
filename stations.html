@@ -279,6 +279,19 @@ body.locked .ec{cursor:default}
 </div>
 <div class="foot"><div id="src">Makor InboundOrders / commodity containers + OPS Dashboard movements</div><div id="updated">&nbsp;</div></div>
 <script>
+// When the board is served from GitHub Pages / Supabase (not the local Python
+// server), it reads AND writes through the `stations` edge function so the
+// public URL is fully interactive (shared, live). Served locally, it uses the
+// same-origin /data + /place|/note|/reset endpoints.
+var EDGE='https://opfxjmqscafxfnavjbfa.supabase.co/functions/v1/stations';
+var EDGE_MODE=(location.hostname.indexOf('github.io')>=0)||(location.hostname.indexOf('supabase.co')>=0)||location.protocol==='file:';
+function ctlWrite(action,payload){
+  if(EDGE_MODE){
+    var body={action:action};for(var k in (payload||{}))body[k]=payload[k];
+    return fetch(EDGE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  }
+  return fetch('/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload||{})});
+}
 function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function lbs(n){return Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});}
 function fdate(s){if(!s)return '';var p=s.split('-');return p.length===3?(p[1]+'/'+p[2]+'/'+p[0].slice(2)):s;}
@@ -417,8 +430,7 @@ function wireDrops(){
       clearIndic();
       var bucket=z.getAttribute('data-bucket');
       var station=(bucket==='hold')?'':z.getAttribute('data-station');
-      fetch('/place',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({station:station,id:dragOrder.id,bucket:bucket,order:order})})
+      ctlWrite('place',{station:station,id:dragOrder.id,bucket:bucket,order:order})
         .then(function(){poll();}).catch(function(){});
     });
   });
@@ -486,8 +498,7 @@ function renderCompPop(){
   if(pop) pop.addEventListener('click',function(e){
     var b=e.target.closest?e.target.closest('.hp-rel'):null; if(!b) return;
     if(locked) return;                     // read-only when locked
-    fetch('/place',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({station:'',id:b.getAttribute('data-id'),bucket:'regular'})})
+    ctlWrite('place',{station:'',id:b.getAttribute('data-id'),bucket:'regular'})
       .then(function(){poll();}).catch(function(){});
   });
 })();
@@ -535,7 +546,7 @@ function renderCompPop(){
   if(b) b.addEventListener('click',function(){
     if(locked) return;
     if(!confirm('Move every card back to its department’s Unsorted column, sorted by date received?\n\nThis clears all To Process, EZ, Hold / Special Projects and manual ordering.')) return;
-    fetch('/reset',{method:'POST'}).then(function(){poll();}).catch(function(){});
+    ctlWrite('reset',{}).then(function(){poll();}).catch(function(){});
   });
 })();
 
@@ -554,8 +565,7 @@ function openNote(id){
 function closeNote(){ document.getElementById('notemodal').style.display='none'; }
 function saveNote(text){
   if(locked) return;
-  fetch('/note',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({id:window._noteId,text:text})}).then(function(){poll();}).catch(function(){});
+  ctlWrite('note',{id:window._noteId,text:text}).then(function(){poll();}).catch(function(){});
   closeNote();
 }
 (function(){
@@ -721,7 +731,10 @@ function loadWeather(){
 }
 loadWeather(); setInterval(loadWeather, 900000);
 
-function poll(){fetch('stations_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});}
+function poll(){
+  if(EDGE_MODE){fetch(EDGE+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});return;}
+  fetch('stations_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});
+}
 poll();setInterval(poll,60000);
 
 // Kiosk hygiene: reload the page once a night (~3 AM) so a TV left on for
