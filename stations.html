@@ -511,7 +511,7 @@ function renderCompPop(){
   function apply(){
     document.body.classList.toggle('locked', locked);
     if(b){ b.innerHTML = locked ? '&#128274; Locked' : '&#128275; Unlocked'; b.classList.toggle('on', locked); }
-    var r=document.getElementById('resetbtn'); if(r) r.style.display = locked ? 'none' : '';
+    // Reset stays available even when locked — it's password-gated on its own.
   }
   // Password gate — light deterrent so the board isn't toggled casually (the
   // password is in the page source, so it's not real security).
@@ -544,9 +544,11 @@ function renderCompPop(){
 (function(){
   var b=document.getElementById('resetbtn');
   if(b) b.addEventListener('click',function(){
-    if(locked) return;
-    if(!confirm('Move every card back to its department’s Unsorted column, sorted by date received?\n\nThis clears all To Process, EZ, Hold / Special Projects and manual ordering.')) return;
-    ctlWrite('reset',{}).then(function(){poll();}).catch(function(){});
+    var pw=prompt('Password to RESET the board — this clears ALL sorting (To Process, EZ, Hold / Special Projects, manual order) for everyone:');
+    if(pw===null) return;                                  // cancelled
+    ctlWrite('reset',{pw:pw}).then(function(r){return r.json();}).then(function(res){
+      if(res&&res.ok){poll();} else {alert('Incorrect password — board not reset.');}
+    }).catch(function(){alert('Reset failed.');});
   });
 })();
 
