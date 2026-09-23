@@ -132,6 +132,9 @@ body.locked .ec{cursor:default}
 .ec .ecid .ecac{font-size:11px;color:#9fb2ca;font-weight:600}
 .ec .ecage{font-size:14px;font-weight:900;white-space:nowrap;flex:0 0 auto}.ec .ecage.over{color:#ff6b6b}
 .ec .ecm{font-size:10.5px;color:#c7d3e2;margin-top:1px;line-height:1.45}
+.ec .ectot{font-size:10.5px;color:#9fb2ca;margin-top:2px;padding-top:2px;border-top:1px solid #1e3554;line-height:1.35}
+.ec .ectot b{color:#F0B429;font-weight:800}
+.ec .ectot .tl{color:#7f93ad;font-size:9px;text-transform:uppercase;letter-spacing:.6px;margin-right:5px}
 .ec .ecm b{color:#ffc247}
 .mb{display:inline-block;border-radius:4px;padding:1px 5px;font-size:9.5px;font-weight:800;margin-left:4px;vertical-align:middle}
 .mb.prio{background:#F0B429;color:#152B47}
@@ -329,6 +332,16 @@ function stationHere(o, station){
   return (parts.join(' &middot; ')||'in process')+' here';
 }
 
+// ORDER TOTAL across every station it still occupies. Unlike stationHere() this
+// is ALWAYS rendered (Rob 2026-09-23) — zeros show as 0 rather than vanishing,
+// so a card never leaves you guessing whether it's empty or just not reported.
+function orderTotal(o){
+  var w = o.floor_weight || 0, c = o.floor_ctn || 0;
+  return '<div class="ectot"><span class="tl">total</span>'
+    + '<b>' + lbs(Math.round(w)) + '</b> lbs'
+    + ' &middot; <b>' + c + '</b> ctn</div>';
+}
+
 // Compact, DRAGGABLE order card for a station column. Drag a card into the EZ
 // column (or back to To Process) to (un)tag it EZ — persisted server-side.
 function renderCards(list, station, more){
@@ -345,7 +358,8 @@ function renderCards(list, station, more){
       +'<div class="ecr"><span class="ecid">'+esc(o.id)+(o.account?(' <span class="ecac">&middot; '+esc(o.account)+'</span>'):'')+'</span>'
       +'<button class="notebtn'+(o.note?' has':'')+'" data-note="'+esc(o.id)+'" title="'+(o.note?'View / edit note':'Add note')+'">&#128221;</button>'
       +'<span class="ecage'+(band===2?' over':'')+'">'+o.days+'d</span></div>'
-      +'<div class="ecm">'+stationHere(o,station)+badges+'</div></div>';
+      +'<div class="ecm">'+stationHere(o,station)+badges+'</div>'
+      +orderTotal(o)+'</div>';
   });
   if(more>0) h+='<div class="ezmore">+ '+more+' more</div>';
   return h;
