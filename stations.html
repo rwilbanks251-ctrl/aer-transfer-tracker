@@ -135,6 +135,24 @@ body.locked .ec{cursor:default}
 .ec .ectot{font-size:10.5px;color:#9fb2ca;margin-top:2px;padding-top:2px;border-top:1px solid #1e3554;line-height:1.35}
 .ec .ectot b{color:#F0B429;font-weight:800}
 .ec .ectot .tl{color:#7f93ad;font-size:9px;text-transform:uppercase;letter-spacing:.6px;margin-right:5px}
+.ctnbtn{background:transparent;border:none;cursor:pointer;font-size:12px;line-height:1;padding:0 3px;opacity:.28;flex:0 0 auto;position:relative}
+.ctnbtn.has{opacity:1;filter:drop-shadow(0 0 3px #7fd8ff)}
+.ctnbtn:hover{opacity:.95}
+.ctnbtn .cb{font-size:8.5px;font-weight:900;color:#0d1a2b;background:#7fd8ff;border-radius:7px;padding:0 3px;margin-left:1px;vertical-align:3px}
+.hp-row .ctnbtn{font-size:14px}
+.cm-box{width:620px}
+.cm-st{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#7fd8ff;font-weight:800;margin:12px 0 5px;border-bottom:1px solid #24406a;padding-bottom:3px}
+.cm-st:first-child{margin-top:2px}
+.cm-r{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:7px;background:#0f1e33;margin-bottom:4px}
+.cm-r.ip{opacity:.5}
+.cm-lab{font-family:Consolas,monospace;font-weight:800;font-size:13px;color:#eaf1f8;flex:0 0 96px}
+.cm-loc{font-family:Consolas,monospace;font-weight:800;font-size:14px;color:#F0B429;flex:0 0 118px}
+.cm-loc.none{color:#6b7f96;font-family:inherit;font-weight:600;font-size:11px;font-style:italic}
+.cm-meta{font-size:11px;color:#9fb2ca;flex:1 1 auto;text-align:right}
+.cm-meta .ipf{color:#43d17a;font-weight:800}
+.cm-empty{color:#9fb2ca;font-size:12.5px;line-height:1.6;padding:6px 2px}
+.cm-sum{font-size:11.5px;color:#9fb2ca;margin-top:12px;border-top:1px solid #24406a;padding-top:8px}
+.cm-sum b{color:#F0B429}
 .ec .ecm b{color:#ffc247}
 .mb{display:inline-block;border-radius:4px;padding:1px 5px;font-size:9.5px;font-weight:800;margin-left:4px;vertical-align:middle}
 .mb.prio{background:#F0B429;color:#152B47}
@@ -284,6 +302,12 @@ body.locked .ec{cursor:default}
     <div class="nm-actions" id="nm-actions"><button class="nm-del" id="nm-del">&#128465; Delete</button><button class="nm-save" id="nm-save">Save note</button></div>
   </div>
 </div>
+<div class="notemodal" id="ctnmodal" style="display:none">
+  <div class="nm-box cm-box">
+    <div class="nm-h"><span id="cm-title">Containers</span><button class="nm-x" id="cm-close" title="Close">&times;</button></div>
+    <div id="cm-body"></div>
+  </div>
+</div>
 <div class="foot"><div id="src">Makor InboundOrders / commodity containers + OPS Dashboard movements</div><div id="updated">&nbsp;</div></div>
 <script>
 // When the board is served from GitHub Pages / Supabase (not the local Python
@@ -332,6 +356,18 @@ function stationHere(o, station){
   return (parts.join(' &middot; ')||'in process')+' here';
 }
 
+// CONTAINER button — mirrors the note icon. Lit when the order has staged
+// containers; the count rides on the badge so you can see there's something to
+// pull without opening it. Click -> modal listing each container + the
+// warehouse location to go get it from.
+function ctnBtn(o){
+  var n=(o.containers||[]).length;
+  return '<button class="ctnbtn'+(n?' has':'')+'" data-ctn="'+esc(o.id)+'" title="'
+    + (n? (n+' staged container'+(n===1?'':'s')+' — click for locations')
+        : 'No staged containers with a location')
+    + '">&#128230;'+(n?('<span class="cb">'+n+'</span>'):'')+'</button>';
+}
+
 // ORDER TOTAL across every station it still occupies. Unlike stationHere() this
 // is ALWAYS rendered (Rob 2026-09-23) — zeros show as 0 rather than vanishing,
 // so a card never leaves you guessing whether it's empty or just not reported.
@@ -356,6 +392,7 @@ function renderCards(list, station, more){
     if(o.audit)       badges+='<span class="mb aud">AUDIT</span>';
     h+='<div class="ec b'+band+(o.priority?' prio':'')+'" draggable="true" data-id="'+esc(o.id)+'" data-station="'+esc(station)+'">'
       +'<div class="ecr"><span class="ecid">'+esc(o.id)+(o.account?(' <span class="ecac">&middot; '+esc(o.account)+'</span>'):'')+'</span>'
+      +ctnBtn(o)
       +'<button class="notebtn'+(o.note?' has':'')+'" data-note="'+esc(o.id)+'" title="'+(o.note?'View / edit note':'Add note')+'">&#128221;</button>'
       +'<span class="ecage'+(band===2?' over':'')+'">'+o.days+'d</span></div>'
       +'<div class="ecm">'+stationHere(o,station)+badges+'</div>'
@@ -393,7 +430,7 @@ var dragOrder=null, locked=false, hideXfer=false, lastData=null;
 function vis(list){ return hideXfer ? (list||[]).filter(function(o){return !o.xfer;}) : (list||[]); }
 document.addEventListener('dragstart',function(e){
   if(locked){e.preventDefault();return;}          // drag-and-drop locked for this screen
-  if(e.target&&e.target.closest&&e.target.closest('.notebtn')){e.preventDefault();return;}  // grabbing the note icon
+  if(e.target&&e.target.closest&&e.target.closest('.notebtn,.ctnbtn')){e.preventDefault();return;}  // grabbing the note / container icon
   var c=e.target&&e.target.closest?e.target.closest('.ec'):null;
   if(!c){dragOrder=null;return;}
   dragOrder={id:c.getAttribute('data-id'),station:c.getAttribute('data-station')||'',hold:c.hasAttribute('data-hold')};
@@ -570,6 +607,44 @@ function renderCompPop(){
   });
 })();
 
+// Per-order CONTAINERS — read-only pick list: which containers are staged for
+// this order and the warehouse location to pull each one from. Grouped by
+// station, next-to-grab first; already-in-process ones are dimmed.
+function openCtn(id){
+  var o=(window._byId||{})[id]||{id:id};
+  var list=o.containers||[];
+  document.getElementById('cm-title').innerHTML='&#128230; #'+esc(id)
+    +(o.account?(' <span style="color:#9fb2ca;font-weight:600;font-size:14px">'+esc(o.account)+'</span>'):'');
+  var h='';
+  if(!list.length){
+    h='<div class="cm-empty">No staged containers found for this order.<br>'
+     +'<span style="color:#7f93ad">Containerized material shows here once it is staged at Sorting, '
+     +'Data Capture or Tracked Recycling. Loose material and Tech-only work have no container record.</span></div>';
+  } else {
+    var cur='', lbsTot=0;
+    list.forEach(function(c){
+      if(c.station!==cur){ cur=c.station; h+='<div class="cm-st">'+esc(cur)+'</div>'; }
+      lbsTot += (c.weight||0);
+      var loc=(c.location||'').trim();
+      h+='<div class="cm-r'+(c.in_process?' ip':'')+'">'
+        +'<span class="cm-lab">'+esc(c.label||'?')+'</span>'
+        +(loc?('<span class="cm-loc">'+esc(loc)+'</span>')
+             :'<span class="cm-loc none">no location set</span>')
+        +'<span class="cm-meta">'+lbs(Math.round(c.weight||0))+' lbs'
+        +(c.category?(' &middot; '+esc(c.category)):'')
+        +' &middot; '+(c.age||0)+'d'
+        +(c.in_process?' &middot; <span class="ipf">in process</span>':'')
+        +'</span></div>';
+    });
+    h+='<div class="cm-sum"><b>'+list.length+'</b> container'+(list.length===1?'':'s')
+      +' &middot; <b>'+lbs(Math.round(lbsTot))+'</b> lbs staged &nbsp;|&nbsp; '
+      +'<span style="color:#7f93ad">amber = warehouse location to pull from; dimmed = already in process</span></div>';
+  }
+  document.getElementById('cm-body').innerHTML=h;
+  document.getElementById('ctnmodal').style.display='flex';
+}
+function closeCtn(){ document.getElementById('ctnmodal').style.display='none'; }
+
 // Per-order NOTES — editable when the board is unlocked, read-only when locked.
 function openNote(id){
   var o=(window._byId||{})[id]||{id:id};
@@ -591,14 +666,19 @@ function saveNote(text){
 (function(){
   document.addEventListener('click',function(e){
     var nb=e.target.closest?e.target.closest('.notebtn'):null;
-    if(nb){ e.stopPropagation(); openNote(nb.getAttribute('data-note')); }
+    if(nb){ e.stopPropagation(); openNote(nb.getAttribute('data-note')); return; }
+    var cb=e.target.closest?e.target.closest('.ctnbtn'):null;
+    if(cb){ e.stopPropagation(); openCtn(cb.getAttribute('data-ctn')); }
   });
   var m=document.getElementById('notemodal');
   document.getElementById('nm-close').addEventListener('click',closeNote);
   m.addEventListener('click',function(e){ if(e.target===m) closeNote(); });
   document.getElementById('nm-save').addEventListener('click',function(){ saveNote(document.getElementById('nm-text').value); });
   document.getElementById('nm-del').addEventListener('click',function(){ saveNote(''); });
-  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeNote(); });
+  var cm=document.getElementById('ctnmodal');
+  document.getElementById('cm-close').addEventListener('click',closeCtn);
+  cm.addEventListener('click',function(e){ if(e.target===cm) closeCtn(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeNote(); closeCtn(); } });
 })();
 
 function renderFlow(d){
