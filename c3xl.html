@@ -456,7 +456,7 @@ body{
 <header class="bar">
   <div class="brand">
     <h1>NGXL <em>Oct 3-4</em> Layout Banger</h1>
-    <p>for Absolute Carnage by RW &middot; <b>Blitz: 10 perfect runs under 1:00</b></p>
+    <p>for Absolute Carnage by RW &middot; <b>Blitz: 10 perfect runs under 1:30</b></p>
   </div>
   <div class="modes" role="group" aria-label="Mode">
     <button type="button" data-mode="study" aria-pressed="true">Study</button>
@@ -501,7 +501,7 @@ body{
 
     <div class="board">
       <div class="board-head">
-        <b>Perfect blitz runs &middot; under 1:00</b>
+        <b>Perfect blitz runs &middot; under 1:30</b>
         <span id="board-days"></span>
       </div>
       <div class="board-best">
@@ -585,7 +585,7 @@ var API    = "https://opfxjmqscafxfnavjbfa.supabase.co/functions/v1/c3xl";
 
 var USERS   = ["Brett","AJ","Andy","Kevin","Crim","Eric","Frank","Nick","Brian","Hunter","Mo"];
 var GOAL    = 10;
-var LIMIT   = 60;
+var LIMIT   = 90;              /* seconds - a run only counts under this */
 var TOURNEY = "2026-10-03";
 var LS_USER = "ngxl_user", LS_PW = "ngxl_pw", LS_SCORES = "ngxl_scores";
 
@@ -870,9 +870,9 @@ function finish(){
   var sub;
   if (!isBlitz) sub = "All 26 named. Blitz is the one that counts.";
   else if (qualifies) sub = "Logging it…";
-  else if (!perfect && !inTime) sub = st.miss + " missed and over the minute. Needs to be clean and under 1:00.";
+  else if (!perfect && !inTime) sub = st.miss + " missed and over time. Needs to be clean and under 1:30.";
   else if (!perfect) sub = st.miss + (st.miss === 1 ? " miss" : " misses") + " - a run only counts if it is perfect.";
-  else sub = "Clean, but " + fmt(ms) + " is over the minute. Go again.";
+  else sub = "Clean, but " + fmt(ms) + " is over 1:30. Go again.";
   document.getElementById("done-sub").textContent = sub;
 
   var wo = document.getElementById("done-workon");
@@ -898,7 +898,7 @@ function finish(){
     if (j && j.counted){
       document.getElementById("done-sub").textContent = got >= GOAL
         ? "That is all " + GOAL + " clean runs. Ready for NGXL."
-        : "Counted. " + (GOAL - got) + " more perfect runs under 1:00 before 10/3.";
+        : "Counted. " + (GOAL - got) + " more perfect runs under 1:30 before 10/3.";
     } else {
       document.getElementById("done-sub").textContent =
         j && j.reason === "too_soon" ? "Logged too fast after the last one - give it 20 seconds."
