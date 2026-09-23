@@ -587,6 +587,7 @@ var USERS   = ["Brett","AJ","Andy","Kevin","Crim","Eric","Frank","Nick","Brian",
 var GOAL    = 10;
 var LIMIT   = 90;              /* seconds - a run only counts under this */
 var TOURNEY = "2026-10-03";
+var NORECORD = ["Tester"];     /* still on the board, never holds fastest run */
 var LS_USER = "ngxl_user", LS_PW = "ngxl_pw", LS_SCORES = "ngxl_scores";
 
 TARGETS.forEach(function(t, i){ t.id = "t" + i; });
@@ -691,6 +692,7 @@ function renderBoard(){
 
   var champ = null;
   USERS.forEach(function(u){
+    if (NORECORD.indexOf(u) >= 0) return;
     var b = scores[u] && scores[u].best;
     if (b && (!champ || b < champ.t)) champ = {u:u, t:b};
   });
