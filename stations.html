@@ -630,14 +630,18 @@ function openCtn(id){
         +'<span class="cm-lab">'+esc(c.label||'?')+'</span>'
         +(loc?('<span class="cm-loc">'+esc(loc)+'</span>')
              :'<span class="cm-loc none">no location set</span>')
-        +'<span class="cm-meta">'+lbs(Math.round(c.weight||0))+' lbs'
+        +'<span class="cm-meta">'
+        +(c.assets ? ('<b style="color:#eaf1f8">'+c.assets.toLocaleString()+'</b> assets')
+                   : (lbs(Math.round(c.weight||0))+' lbs'))
         +(c.category?(' &middot; '+esc(c.category)):'')
         +' &middot; '+(c.age||0)+'d'
         +(c.in_process?' &middot; <span class="ipf">in process</span>':'')
         +'</span></div>';
     });
+    var aTot=0; list.forEach(function(c){ aTot += (c.assets||0); });
     h+='<div class="cm-sum"><b>'+list.length+'</b> container'+(list.length===1?'':'s')
-      +' &middot; <b>'+lbs(Math.round(lbsTot))+'</b> lbs staged &nbsp;|&nbsp; '
+      +(aTot?(' &middot; <b>'+aTot.toLocaleString()+'</b> assets'):'')
+      +(lbsTot?(' &middot; <b>'+lbs(Math.round(lbsTot))+'</b> lbs staged'):'')+' &nbsp;|&nbsp; '
       +'<span style="color:#7f93ad">amber = warehouse location to pull from; dimmed = already in process</span></div>';
   }
   document.getElementById('cm-body').innerHTML=h;
