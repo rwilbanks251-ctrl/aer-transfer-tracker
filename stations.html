@@ -694,11 +694,16 @@ function renderAudit(d){
   var h2 = inv ? inv
     : (C.ds_ready
        ? '<div class="audempty">&#10003; <b>No inventory errors.</b><br>Every asset is in a container and carries a certificate of erasure.</div>'
-       : '<div class="audpend"><b>Certificate check runs separately.</b><br><br>'
-         +'The Makor DS feed is per-account and very large, so it is computed by '
-         +'<b>ds_compliance.py</b> on its own schedule rather than in the board\'s '
-         +'1-minute refresh.<br><br>Assets with no container are live above; '
-         +'certificate findings appear here once that job has run.</div>');
+       : '<div class="audpend"><b>Certificate check has not run yet.</b><br><br>'
+         +'The Makor DS feed is per-account and far too heavy for the board\'s '
+         +'1-minute refresh, so it is computed by <b>ds_compliance.py</b> on its '
+         +'own schedule.<br><br>Assets with no container are live above; '
+         +'certificate findings appear once that job has run.</div>');
+  // age of the certificate data, so a stale run can't read as an all-clear
+  if(C.ds_ready && C.ds_age_hours!=null && C.ds_age_hours>24){
+    h2 = '<div class="audpend" style="padding-bottom:6px">&#9888; certificate data is '
+       + C.ds_age_hours + 'h old — re-run <b>ds_compliance.py</b></div>' + h2;
+  }
 
   document.getElementById('audit_noloc').innerHTML=h1;
   document.getElementById('audit_inv').innerHTML=h2;
