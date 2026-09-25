@@ -33,6 +33,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .arac{font-size:11.5px;color:#9fb2ca;flex:1 1 auto;min-width:0;overflow:hidden;
       text-overflow:ellipsis;white-space:nowrap}
 .arage{font-size:13px;font-weight:900;color:#ffd782;flex:0 0 auto}
+/* Serial — the key you actually search Makor / the diag tool by, so it sits
+   on the header line with the tag and is selectable (Rob, 2026-09-25). */
+.arsn{font-size:11.5px;font-family:Consolas,monospace;color:#cfe0f2;flex:0 0 auto;
+      background:#1b3455;border:1px solid #2c4a72;border-radius:4px;padding:1px 5px;
+      user-select:all;cursor:text}
 .arm{font-size:11px;color:#9fb2ca;margin-top:3px;line-height:1.45}
 .arm b{color:#F0B429}
 /* clerical = the wipe DID happen, only the Makor paperwork is missing — must
@@ -58,8 +63,6 @@ body.locked .ec{cursor:default}
 .xferbtn{background:transparent;color:#7fd8ff;border:1.5px solid #1f6b85;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px;white-space:nowrap}
 .xferbtn:hover{background:#0d3a4a}
 .xferbtn.off{color:#7f93ad;border-color:#2a3a50}
-.compbtn{background:transparent;color:#43d17a;border:1.5px solid #2c6b41;border-radius:9px;padding:8px 14px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}
-.compbtn:hover{background:#14361f}
 .comppop{position:fixed;top:76px;left:34px;z-index:50;width:390px;max-height:72vh;overflow-y:auto;background:#12233c;border:1.5px solid #2c6b41;border-radius:12px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
 .comppop .cp-h{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#43d17a;font-weight:800;margin:2px 4px 8px}
 .comppop .cp-row{display:flex;align-items:center;gap:8px;background:#0e1c31;border-left:4px solid #43d17a;border-radius:0 8px 8px 0;padding:7px 10px;margin-bottom:6px}
@@ -75,19 +78,27 @@ body.locked .ec{cursor:default}
 .p90 .grp .gv{font-size:19px;font-weight:900}.p90 .grp .gv small{font-size:11px;font-weight:700}
 .top .clock{text-align:right}.top .clock .t{font-size:34px;font-weight:900;color:#F0B429;line-height:1}
 .top .clock .d{font-size:15px;color:#B8C4D4}
-.wx{display:flex;align-items:center;gap:12px}
-.wx .wxi{font-size:40px;line-height:1;display:inline-block}
-@keyframes wxspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@keyframes wxfloat{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
-@keyframes wxbounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@keyframes wxflash{0%,100%{opacity:1}50%{opacity:.35}}
-.wx .wxi.wx-spin{animation:wxspin 8s linear infinite}
-.wx .wxi.wx-float{animation:wxfloat 3s ease-in-out infinite}
-.wx .wxi.wx-bounce{animation:wxbounce 1.4s ease-in-out infinite}
-.wx .wxi.wx-flash{animation:wxflash 1s ease-in-out infinite}
-.wx .wxt{font-size:30px;font-weight:900;color:#F0B429;line-height:1}
-.wx .wxd{font-size:14px;color:#B8C4D4}
-.wx .wxt .wxfl{font-size:14px;color:#9fb2ca;font-weight:700;margin-left:6px}
+/* TRACKERS — the header strip that replaced the weather widget
+   (Rob, 2026-09-25). One tile per number the supervisors are held to.
+   Ops Complete is throughput (amber, click = the completions popover);
+   the three error tiles are targets-to-ZERO (green at 0, amber when not,
+   red when the gap is a real security finding) and click straight into
+   the matching Compliance column. */
+.trk{display:flex;align-items:stretch;gap:9px}
+.trkt{background:#0e1c31;border:1.5px solid #24406a;border-radius:11px;
+      padding:6px 13px;min-width:92px;text-align:center;cursor:pointer;
+      user-select:none;display:flex;flex-direction:column;justify-content:center}
+.trkt:hover{background:#16263f;border-color:#35598f}
+.trkt .tv{font-size:27px;font-weight:900;line-height:1;color:#eaf1f8}
+.trkt .tl2{font-size:9px;text-transform:uppercase;letter-spacing:.5px;
+           color:#9fb2ca;margin-top:3px;line-height:1.25;font-weight:800}
+.trkt.ok{border-color:#2c6b45}.trkt.ok .tv{color:#43d17a}
+.trkt.warn{border-color:#6a5410}.trkt.warn .tv{color:#ffd782}
+.trkt.bad{border-color:#7a2b2b}.trkt.bad .tv{color:#ff6b6b}
+.trkt.flow .tv{color:#F0B429}
+.trkt.soon{cursor:default;opacity:.5}
+.trkt.soon .tv{font-size:15px;color:#9fb2ca;font-weight:800}
+.trkt.soon:hover{background:#0e1c31;border-color:#24406a}
 .kpis{display:flex;gap:16px;padding:16px 34px}
 .kpi{flex:1;background:#152B47;border:2px solid #24406a;border-radius:14px;padding:12px 8px;text-align:center}
 .kpi .v{font-size:44px;font-weight:900;color:#F0B429;line-height:1}
@@ -97,7 +108,7 @@ body.locked .ec{cursor:default}
 .grid2{display:flex;flex-direction:column;gap:14px;padding:6px 34px 14px;height:calc(100vh - 150px)}
 .ordersrow{display:flex;gap:16px;flex:3 1 0;min-height:0}
 .ordersrow .panel{flex:1 1 0;min-height:0}
-/* HOLD box in the header (between weather and clock) */
+/* HOLD box in the header (between the trackers and the clock) */
 .holdbox{display:flex;align-items:center;gap:10px;background:#0e1c31;border:1.5px solid #6a5410;border-radius:12px;padding:7px 15px;cursor:pointer;user-select:none}
 .holdbox:hover{background:#161d2e}
 .holdbox.dragover{border-color:#F0B429;background:#1c2f4d;outline:2px dashed #F0B429;outline-offset:2px}
@@ -293,15 +304,25 @@ body.locked .ec{cursor:default}
       <option value="dc">Data Capture</option>
       <option value="tech">Tech</option>
       <option value="tr">Tracked Recycling</option>
-      <option value="compliance">&#9888; Compliance</option>
+      <option value="compliance">Compliance</option>
     </select>
     <button class="lockbtn" id="lockbtn" title="Lock / unlock drag-and-drop for this screen"></button>
     <button class="resetbtn" id="resetbtn" title="Move every card back to its department's Unsorted column, sorted by date received (clears To Process, EZ, Hold and manual order)">&#8635; Reset order</button>
     <button class="xferbtn" id="xferbtn" title="Show or hide transfer (XFER / Livermore) orders on this screen"></button>
-    <button class="compbtn" id="compbtn" title="Orders marked ops-complete this week (left Operations In-Progress)">&#10003; Completed this wk (0)</button>
     <div class="p90" id="p90" title="90th-percentile age (days since received) of all open orders; goal under the 45-day SLA"></div></div>
   <div class="comppop" id="comppop" style="display:none"></div>
-  <div class="wx" id="weather"><span class="wxi wx-float">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
+  <div class="trk" id="trackers">
+    <div class="trkt flow" id="trk_ops" title="Orders marked ops-complete this week (left Operations In-Progress). Click to list them.">
+      <div class="tv" id="trk_ops_v">0</div><div class="tl2">Ops Complete<br>this Week</div></div>
+    <div class="trkt" id="trk_loc" title="Staged containers with no warehouse location — nobody can be sent to fetch these. Click to open the list.">
+      <div class="tv" id="trk_loc_v">0</div><div class="tl2">Location<br>Errors</div></div>
+    <div class="trkt" id="trk_ds" title="Data-bearing assets with no certificate of erasure. Click to open the list.">
+      <div class="tv" id="trk_ds_v">0</div><div class="tl2">Data Security<br>Errors</div></div>
+    <div class="trkt" id="trk_inv" title="Assets with no container, missing grading, spec or category errors. Click to open the list.">
+      <div class="tv" id="trk_inv_v">0</div><div class="tl2">Inventory<br>Errors</div></div>
+    <div class="trkt soon" id="trk_com" title="Commodity inventory errors — not built yet.">
+      <div class="tv">Coming<br>Soon</div><div class="tl2">Commodity<br>Inv. Errors</div></div>
+  </div>
   <div class="holdbox drop" id="holdbox" data-bucket="hold" title="Drag an order here for Hold / Special Projects. Click to see them and release.">
     <div class="hb-ic">&#9208;</div><div class="hb-t"><div class="hb-n" id="holdcount">0</div><div class="hb-l">Hold /<br>Special Projects</div></div>
   </div>
@@ -588,16 +609,29 @@ function renderCompPop(){
   pop.innerHTML=h;
 }
 (function(){
-  var b=document.getElementById('compbtn'), pop=document.getElementById('comppop');
+  var b=document.getElementById('trk_ops'), pop=document.getElementById('comppop');
   if(b) b.addEventListener('click',function(){
     var open=pop.style.display!=='none'&&pop.style.display;
     renderCompPop(); pop.style.display=open?'none':'block';
   });
   document.addEventListener('click',function(e){
     if(!pop||pop.style.display==='none') return;
-    if(e.target.closest&&(e.target.closest('#comppop')||e.target.closest('#compbtn'))) return;
+    if(e.target.closest&&(e.target.closest('#comppop')||e.target.closest('#trk_ops'))) return;
     pop.style.display='none';
   });
+  // The three error tiles jump into the Compliance view and scroll that
+  // column to the top — click the number, land on the list behind it.
+  [['trk_loc','audit_noloc'],['trk_ds','audit_ds'],['trk_inv','audit_inv']]
+    .forEach(function(pair){
+      var el=document.getElementById(pair[0]);
+      if(!el) return;
+      el.addEventListener('click',function(){
+        var sel=document.getElementById('deptsel');
+        if(sel){ sel.value='compliance'; applyDept(); }
+        var col=document.getElementById(pair[1]);
+        if(col) col.scrollTop=0;
+      });
+    });
 })();
 
 // HOLD box — click to open the popover of held orders; each has a Release
@@ -678,6 +712,27 @@ function renderCompPop(){
 // ── COMPLIANCE tab ──────────────────────────────────────────────────────────
 // Audit gaps rather than work: containers nobody can locate, assets in no
 // container, and data-bearing assets with no sanitization record.
+// Header tracker tiles. Deliberately reads the SAME arrays renderAudit does,
+// so the number on the tile and the length of the list behind it can never
+// disagree. Every error tile is a target-to-ZERO: green at 0, amber above it,
+// red when a data-security gap is a real one rather than paperwork.
+function paintTrackers(d){
+  var C=(d&&d.compliance)||{};
+  var nl=(C.no_location||[]).length,
+      ds=(C.ds_gaps||[]),
+      inv=(C.no_container||[]).length+(C.inventory_errors||[]).length;
+  var sec=ds.filter(function(r){return r.severity!=='clerical';}).length;
+  function set(id,n,bad){
+    var t=document.getElementById(id), v=document.getElementById(id+'_v');
+    if(!t||!v) return;
+    v.innerHTML=n;
+    t.className='trkt'+(n===0?' ok':(bad?' bad':' warn'));
+  }
+  set('trk_loc',nl,false);
+  set('trk_ds',ds.length,sec>0);
+  set('trk_inv',inv,false);
+}
+
 function renderAudit(d){
   var C=(d&&d.compliance)||{no_location:[],no_container:[],ds_gaps:[],ds_ready:false};
   var nl=C.no_location||[], nc=C.no_container||[], ds=C.ds_gaps||[],
@@ -689,6 +744,7 @@ function renderAudit(d){
   function row(r, main, meta, sev, fix){
     return '<div class="ar'+(sev==='clerical'?' cler':'')+'"><div class="arh">'
       +'<span class="arid">'+esc(main)+'</span>'
+      +(r.serial?('<span class="arsn" title="serial number">'+esc(r.serial)+'</span>'):'')
       +'<span class="arord">'+esc(r.order||'?')+'</span>'
       +'<span class="arac">'+esc(r.account||'')+'</span>'
       +'<span class="arage">'+(r.age||0)+'d</span></div>'
@@ -930,9 +986,10 @@ function paint(d){
   document.getElementById('holdcount').innerHTML=ho.length;
   renderHoldPop();
   var cw=(d.completed_week||[]).length;
-  document.getElementById('compbtn').innerHTML='&#10003; Completed this wk ('+cw+')';
+  document.getElementById('trk_ops_v').innerHTML=cw;
   if(document.getElementById('comppop').style.display==='block') renderCompPop();
   renderAudit(d);            // keeps the Compliance count live even on the board view
+  paintTrackers(d);          // header tiles read the same numbers renderAudit shows
   // id -> order map for the note modal
   var by={};
   ['dc','tech','tr'].forEach(function(k){var s=S[k]||{};['regular','ez','unsorted'].forEach(function(bk){(s[bk]||[]).forEach(function(o){by[o.id]=o;});});});
@@ -959,43 +1016,6 @@ function paint(d){
 }
 
 // ── Weather (Duncan, SC) via Open-Meteo — free, no key, browser-side fetch ──
-function wxEmoji(c){
-  if(c===0) return '&#9728;';
-  if(c<=2)  return '&#9925;';
-  if(c===3) return '&#9729;';
-  if(c<=48) return '&#127787;';
-  if(c<=67) return '&#127783;';
-  if(c<=77) return '&#127784;';
-  if(c<=82) return '&#127782;';
-  return '&#9928;';
-}
-function wxText(c){
-  if(c===0) return 'Clear'; if(c<=2) return 'Partly cloudy'; if(c===3) return 'Overcast';
-  if(c<=48) return 'Fog'; if(c<=67) return 'Rain'; if(c<=77) return 'Snow';
-  if(c<=82) return 'Showers'; return 'Storms';
-}
-function wxAnimClass(c){
-  if(c===0) return 'wx-spin';
-  if(c<=3||c<=48) return 'wx-float';
-  if(c<=82) return 'wx-bounce';
-  return 'wx-flash';
-}
-function loadWeather(){
-  fetch('https://api.open-meteo.com/v1/forecast?latitude=34.938&longitude=-82.138&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&temperature_unit=fahrenheit')
-    .then(function(r){return r.json();})
-    .then(function(d){
-      var c=(d&&d.current)||{}; if(c.temperature_2m==null) return;
-      var code=c.weather_code||0, t=Math.round(c.temperature_2m);
-      var feels=(c.apparent_temperature!=null)?Math.round(c.apparent_temperature):null;
-      var hum=(c.relative_humidity_2m!=null)?Math.round(c.relative_humidity_2m):null;
-      var fl=(feels!=null&&feels!==t)?('<span class="wxfl">feels '+feels+'&deg;</span>'):'';
-      document.getElementById('weather').innerHTML=
-        '<span class="wxi '+wxAnimClass(code)+'">'+wxEmoji(code)+'</span><div class="wxb">'
-        +'<div class="wxt">'+t+'&deg;'+fl+'</div>'
-        +'<div class="wxd">'+wxText(code)+(hum!=null?(' &middot; '+hum+'% humidity'):'')+' &middot; Duncan, SC</div></div>';
-    }).catch(function(){});
-}
-loadWeather(); setInterval(loadWeather, 900000);
 
 function poll(){
   if(EDGE_MODE){fetch(EDGE+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});return;}
