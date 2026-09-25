@@ -626,8 +626,13 @@ function renderCompPop(){
       var el=document.getElementById(pair[0]);
       if(!el) return;
       el.addEventListener('click',function(){
+        // applyDept() switches on the module-level `dept`, NOT the select's
+        // value — setting the select alone leaves the board showing.
         var sel=document.getElementById('deptsel');
-        if(sel){ sel.value='compliance'; applyDept(); }
+        dept='compliance';
+        try{ localStorage.setItem('stations_dept',dept); }catch(_){}
+        if(sel) sel.value=dept;
+        applyDept();
         var col=document.getElementById(pair[1]);
         if(col) col.scrollTop=0;
       });
@@ -733,6 +738,13 @@ function paintTrackers(d){
   set('trk_inv',inv,false);
 }
 
+// Makor stores a literal "N/A" when a unit has no serial — that is not a
+// serial and must not render as a chip you could try to search by.
+function sn(v){
+  var t=(v==null?'':String(v)).trim();
+  return (!t||t.toUpperCase()==='N/A')?'':t;
+}
+
 function renderAudit(d){
   var C=(d&&d.compliance)||{no_location:[],no_container:[],ds_gaps:[],ds_ready:false};
   var nl=C.no_location||[], nc=C.no_container||[], ds=C.ds_gaps||[],
@@ -744,7 +756,7 @@ function renderAudit(d){
   function row(r, main, meta, sev, fix){
     return '<div class="ar'+(sev==='clerical'?' cler':'')+'"><div class="arh">'
       +'<span class="arid">'+esc(main)+'</span>'
-      +(r.serial?('<span class="arsn" title="serial number">'+esc(r.serial)+'</span>'):'')
+      +(sn(r.serial)?('<span class="arsn" title="serial number">'+esc(r.serial)+'</span>'):'')
       +'<span class="arord">'+esc(r.order||'?')+'</span>'
       +'<span class="arac">'+esc(r.account||'')+'</span>'
       +'<span class="arage">'+(r.age||0)+'d</span></div>'
