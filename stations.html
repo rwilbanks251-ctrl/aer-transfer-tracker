@@ -14,25 +14,25 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .resetbtn{background:transparent;color:#ffd782;border:1.5px solid #6a5410;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px}
 .resetbtn:hover{background:#F0B429;color:#152B47;border-color:#F0B429}
 .resetbtn:active{transform:translateY(1px)}
-.auditbtn{background:transparent;color:#ff9b6b;border:1.5px solid #7a3b22;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px}
-.auditbtn:hover{background:#ff6b3d;color:#0d1a2b;border-color:#ff6b3d}
-.auditbtn.on{background:#ff6b3d;color:#0d1a2b;border-color:#ff6b3d}
-.auditbtn.clean{color:#43d17a;border-color:#245c3b}
-.auditbtn.clean:hover,.auditbtn.clean.on{background:#43d17a;color:#0d1a2b;border-color:#43d17a}
-.auditcol{padding:2px 4px}
-.ar{background:#12233c;border-left:5px solid #ff6b3d;border-radius:0 8px 8px 0;padding:6px 9px;margin-bottom:5px}
-.ar.ok{border-left-color:#43d17a}
-.arh{display:flex;align-items:baseline;gap:7px}
-.arid{font-size:14px;font-weight:800;font-family:Consolas,monospace;color:#7fd8ff}
-.arord{font-size:12px;font-weight:800;color:#eaf1f8}
-.arac{font-size:11px;color:#9fb2ca;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.arage{font-size:12.5px;font-weight:900;color:#ffd782}
-.arm{font-size:10.5px;color:#9fb2ca;margin-top:2px}
+/* Compliance view — two equal columns, each independently scrollable so a long
+   findings list never pushes the page (Rob: "columns always scrollable"). */
+.auditrow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.auditcol{padding:6px 8px 8px;overflow-y:auto;overflow-x:hidden}
+.ar{background:#12233c;border-left:5px solid #ff6b3d;border-radius:0 8px 8px 0;
+    padding:8px 11px;margin-bottom:6px}
+.arh{display:flex;align-items:baseline;gap:9px}
+.arid{font-size:14px;font-weight:800;font-family:Consolas,monospace;color:#7fd8ff;
+      flex:0 0 auto;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arord{font-size:12.5px;font-weight:800;color:#eaf1f8;flex:0 0 auto}
+.arac{font-size:11.5px;color:#9fb2ca;flex:1 1 auto;min-width:0;overflow:hidden;
+      text-overflow:ellipsis;white-space:nowrap}
+.arage{font-size:13px;font-weight:900;color:#ffd782;flex:0 0 auto}
+.arm{font-size:11px;color:#9fb2ca;margin-top:3px;line-height:1.45}
 .arm b{color:#F0B429}
-.arst{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:#7f93ad;margin-right:6px}
-.audempty{color:#43d17a;font-size:13px;padding:14px 8px;line-height:1.6}
+.arst{font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:#7f93ad;margin-right:7px}
+.audempty{color:#43d17a;font-size:13.5px;padding:18px 10px;line-height:1.65}
 .audempty b{color:#43d17a}
-.audpend{color:#9fb2ca;font-size:12.5px;padding:14px 8px;line-height:1.65}
+.audpend{color:#9fb2ca;font-size:12.5px;padding:18px 10px;line-height:1.7}
 .audpend b{color:#ffd782}
 .lockbtn{background:transparent;color:#8fe0a8;border:1.5px solid #2c6b41;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px}
 .lockbtn:hover{background:#14361f}
@@ -277,12 +277,12 @@ body.locked .ec{cursor:default}
       <option value="dc">Data Capture</option>
       <option value="tech">Tech</option>
       <option value="tr">Tracked Recycling</option>
+      <option value="compliance">&#9888; Compliance</option>
     </select>
     <button class="lockbtn" id="lockbtn" title="Lock / unlock drag-and-drop for this screen"></button>
     <button class="resetbtn" id="resetbtn" title="Move every card back to its department's Unsorted column, sorted by date received (clears To Process, EZ, Hold and manual order)">&#8635; Reset order</button>
     <button class="xferbtn" id="xferbtn" title="Show or hide transfer (XFER / Livermore) orders on this screen"></button>
     <button class="compbtn" id="compbtn" title="Orders marked ops-complete this week (left Operations In-Progress)">&#10003; Completed this wk (0)</button>
-    <button class="auditbtn" id="auditbtn" title="Audit gaps: containers with no warehouse location, assets with no container, and data-bearing assets with no sanitization record">&#9888; Compliance (0)</button>
     <div class="p90" id="p90" title="90th-percentile age (days since received) of all open orders; goal under the 45-day SLA"></div></div>
   <div class="comppop" id="comppop" style="display:none"></div>
   <div class="wx" id="weather"><span class="wxi wx-float">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
@@ -294,13 +294,11 @@ body.locked .ec{cursor:default}
 </div>
 <div class="notebanner" id="notebanner" style="display:none"></div>
 <div class="grid2" id="auditview" style="display:none">
-  <div class="ordersrow">
+  <div class="ordersrow auditrow">
     <div class="panel sec"><h2><span class="n">CONTAINERS &mdash; NO LOCATION</span><span class="hx" id="a1hint"></span></h2>
       <div class="scroll auditcol" id="audit_noloc"></div></div>
-    <div class="panel sec"><h2><span class="n">ASSETS &mdash; NO CONTAINER</span><span class="hx" id="a2hint"></span></h2>
-      <div class="scroll auditcol" id="audit_nocont"></div></div>
-    <div class="panel sec"><h2><span class="n">DATA-BEARING &mdash; NO SANITIZATION</span><span class="hx" id="a3hint"></span></h2>
-      <div class="scroll auditcol" id="audit_ds"></div></div>
+    <div class="panel sec"><h2><span class="n">INVENTORY ERRORS</span><span class="hx" id="a2hint"></span></h2>
+      <div class="scroll auditcol" id="audit_inv"></div></div>
   </div>
 </div>
 <div class="grid2" id="boardview">
@@ -523,9 +521,24 @@ function wireDrops(){
 }
 wireDrops();
 
-// Department selector — show one department full-width, or all three.
+// Department selector — show one department full-width, all three, or the
+// Compliance view (which replaces the board entirely rather than sitting in a
+// stray header button).
 var dept='all';
 function applyDept(){
+  var audit=(dept==='compliance');
+  var bv=document.getElementById('boardview'), av=document.getElementById('auditview');
+  if(bv) bv.style.display=audit?'none':'';
+  if(av) av.style.display=audit?'':'none';
+  // controls that only make sense on the board (reset also stays hidden while
+  // the board is locked — see the lock handler)
+  ['lockbtn','xferbtn'].forEach(function(id){
+    var e=document.getElementById(id);
+    if(e) e.style.display=audit?'none':'';
+  });
+  var rb=document.getElementById('resetbtn');
+  if(rb) rb.style.display=(audit||locked)?'none':'';
+  if(audit){ if(lastData) renderAudit(lastData); return; }
   ['dc','tech','tr'].forEach(function(k){
     var p=document.getElementById('sec_'+k);
     if(p) p.style.display=(dept==='all'||dept===k)?'':'none';
@@ -597,7 +610,12 @@ function renderCompPop(){
   function apply(){
     document.body.classList.toggle('locked', locked);
     if(b){ b.innerHTML = locked ? '&#128274; Locked' : '&#128275; Unlocked'; b.classList.toggle('on', locked); }
-    // Reset stays available even when locked — it's password-gated on its own.
+    // RESET requires the board to be UNLOCKED as well as password-gated
+    // (Rob, 2026-09-24: "for peace of mind"). Two deliberate steps — unlock,
+    // then confirm the password — so a wipe of everyone's sorting can't happen
+    // from a single mis-click on a kiosk.
+    var rb=document.getElementById('resetbtn');
+    if(rb) rb.style.display = locked ? 'none' : '';
   }
   // Password gate — light deterrent so the board isn't toggled casually (the
   // password is in the page source, so it's not real security).
@@ -626,30 +644,11 @@ function renderCompPop(){
   apply();
 })();
 
-// Compliance tab — swaps the station grid for the audit view (per-browser).
-var auditOn=false;
-(function(){
-  try{ auditOn = localStorage.getItem('stations_audit')==='1'; }catch(_){}
-  function apply(){
-    var bv=document.getElementById('boardview'), av=document.getElementById('auditview');
-    if(bv) bv.style.display = auditOn?'none':'';
-    if(av) av.style.display = auditOn?'':'none';
-    var b=document.getElementById('auditbtn');
-    if(b) b.classList.toggle('on', auditOn);
-  }
-  var b=document.getElementById('auditbtn');
-  if(b) b.addEventListener('click', function(){
-    auditOn=!auditOn;
-    try{ localStorage.setItem('stations_audit', auditOn?'1':'0'); }catch(_){}
-    apply(); if(lastData) renderAudit(lastData);
-  });
-  apply();
-})();
-
 // Reset button — everything back to Unsorted (arrival state), by date received.
 (function(){
   var b=document.getElementById('resetbtn');
   if(b) b.addEventListener('click',function(){
+    if(locked){ alert('Unlock the board before resetting.'); return; }   // belt + braces
     var pw=prompt('Password to RESET the board — this clears ALL sorting (To Process, EZ, Hold / Special Projects, manual order) for everyone:');
     if(pw===null) return;                                  // cancelled
     ctlWrite('reset',{pw:pw}).then(function(r){return r.json();}).then(function(res){
@@ -679,37 +678,32 @@ function renderAudit(d){
     }).join('')
     : '<div class="audempty">&#10003; <b>All staged containers have a warehouse location.</b><br>Nothing here means every container can be called for by location.</div>';
 
-  var h2 = nc.length ? nc.map(function(r){
-      return row(r, r.label, esc(r.category||'')+(r.model?(' &middot; '+esc(r.model)):'')
-        +(r.serial?(' &middot; '+esc(r.serial)):'')
-        +(r.location?(' &middot; at '+esc(r.location)):' &middot; <b>no location either</b>'));
-    }).join('')
-    : '<div class="audempty">&#10003; <b>Every asset is in a container.</b><br>An asset outside a container is effectively unfindable, so this should stay empty.</div>';
+  // INVENTORY ERRORS — one list, same spirit as the inventory error report:
+  // assets with no container, plus assets missing a certificate of erasure.
+  var inv = nc.map(function(r){
+        return row(r, r.label, '<b>no container</b> &middot; '+esc(r.category||'')
+          +(r.model?(' &middot; '+esc(r.model)):'')
+          +(r.location?(' &middot; at '+esc(r.location)):' &middot; no location either'));
+      }).concat(ds.map(function(r){
+        return row(r, r.label, '<b>'+esc(r.reason||'no DS certificate')+'</b> &middot; '+esc(r.category||'')
+          +(r.model?(' &middot; '+esc(r.model)):'')
+          +(r.container?(' &middot; '+esc(r.container)):'')
+          +(r.location?(' &middot; '+esc(r.location)):''));
+      })).join('');
 
-  var h3 = C.ds_ready
-    ? (ds.length ? ds.map(function(r){
-        return row(r, r.label, esc(r.category||'')+' &middot; '+esc(r.reason||'no sanitization record'));
-      }).join('')
-      : '<div class="audempty">&#10003; <b>No data-bearing assets missing sanitization.</b></div>')
-    : '<div class="audpend"><b>Not wired up yet.</b><br><br>'
-      +'The ops feeds carry the fields but never fill them &mdash; every drive reads '
-      +'<b>Pending</b> (the queue only holds pending work) and wipe results are null on every asset.<br><br>'
-      +'Real status lives in <b>Makor DS records</b> + the diag tools (WipeOS / MacCheck / PhoneCheck) '
-      +'and must be pulled live. Showing nothing rather than a false all-clear.</div>';
+  var h2 = inv ? inv
+    : (C.ds_ready
+       ? '<div class="audempty">&#10003; <b>No inventory errors.</b><br>Every asset is in a container and carries a certificate of erasure.</div>'
+       : '<div class="audpend"><b>Certificate check runs separately.</b><br><br>'
+         +'The Makor DS feed is per-account and very large, so it is computed by '
+         +'<b>ds_compliance.py</b> on its own schedule rather than in the board\'s '
+         +'1-minute refresh.<br><br>Assets with no container are live above; '
+         +'certificate findings appear here once that job has run.</div>');
 
   document.getElementById('audit_noloc').innerHTML=h1;
-  document.getElementById('audit_nocont').innerHTML=h2;
-  document.getElementById('audit_ds').innerHTML=h3;
+  document.getElementById('audit_inv').innerHTML=h2;
   document.getElementById('a1hint').innerHTML=nl.length+' container'+(nl.length===1?'':'s');
-  document.getElementById('a2hint').innerHTML=nc.length+' asset'+(nc.length===1?'':'s');
-  document.getElementById('a3hint').innerHTML=C.ds_ready?(ds.length+' asset'+(ds.length===1?'':'s')):'pending';
-
-  var n=nl.length+nc.length+ds.length;
-  var btn=document.getElementById('auditbtn');
-  if(btn){
-    btn.innerHTML='&#9888; Compliance ('+n+')';
-    btn.classList.toggle('clean', n===0);
-  }
+  document.getElementById('a2hint').innerHTML=(nc.length+ds.length)+' issue'+((nc.length+ds.length)===1?'':'s');
 }
 
 // Per-order CONTAINERS — read-only pick list: which containers are staged for
