@@ -16,8 +16,14 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .resetbtn:active{transform:translateY(1px)}
 /* Compliance view — two equal columns, each independently scrollable so a long
    findings list never pushes the page (Rob: "columns always scrollable"). */
-.auditrow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.auditcol{padding:6px 8px 8px;overflow-y:auto;overflow-x:hidden}
+.auditrow{display:grid;grid-template-columns:1fr 1fr;gap:16px;min-height:0}
+/* grid items default to min-height:auto, which refuses to shrink and kills the
+   scroll — every level of the chain has to be allowed to shrink. */
+.auditrow>.panel{min-height:0}
+/* MUST out-specify `.scroll{overflow:hidden}`, which is declared later in this
+   stylesheet and would otherwise win and make the column unscrollable. */
+.auditrow .scroll.auditcol{padding:6px 8px 8px;flex:1 1 auto;min-height:0;
+  overflow-y:auto;overflow-x:hidden}
 .ar{background:#12233c;border-left:5px solid #ff6b3d;border-radius:0 8px 8px 0;
     padding:8px 11px;margin-bottom:6px}
 .arh{display:flex;align-items:baseline;gap:9px}
