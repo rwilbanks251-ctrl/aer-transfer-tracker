@@ -35,6 +35,16 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .arage{font-size:13px;font-weight:900;color:#ffd782;flex:0 0 auto}
 .arm{font-size:11px;color:#9fb2ca;margin-top:3px;line-height:1.45}
 .arm b{color:#F0B429}
+/* clerical = the wipe DID happen, only the Makor paperwork is missing — must
+   not look like a data-security breach */
+.ar.cler{border-left-color:#43d17a}
+.ar.cler .arm b{color:#43d17a}
+.arfix{font-size:10.5px;color:#8fa6c2;margin-top:5px;padding-top:5px;
+       border-top:1px dashed #24406a;line-height:1.5}
+.arfix .fixl{display:inline-block;font-size:8.5px;font-weight:900;letter-spacing:.8px;
+       color:#0d1a2b;background:#8fa6c2;border-radius:3px;padding:1px 5px;margin-right:7px;
+       vertical-align:1px}
+.ar.cler .arfix .fixl{background:#43d17a}
 .arst{font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:#7f93ad;margin-right:7px}
 .audempty{color:#43d17a;font-size:13.5px;padding:18px 10px;line-height:1.65}
 .audempty b{color:#43d17a}
@@ -670,31 +680,47 @@ function renderAudit(d){
   var C=(d&&d.compliance)||{no_location:[],no_container:[],ds_gaps:[],ds_ready:false};
   var nl=C.no_location||[], nc=C.no_container||[], ds=C.ds_gaps||[];
 
-  function row(r, main, meta){
-    return '<div class="ar"><div class="arh">'
+  // sev: 'clerical' (paperwork — green) vs 'security' (real gap — red).
+  // fix: what to DO about it, same idea as the inventory error report's
+  // (issue, how-to-fix) pairs.
+  function row(r, main, meta, sev, fix){
+    return '<div class="ar'+(sev==='clerical'?' cler':'')+'"><div class="arh">'
       +'<span class="arid">'+esc(main)+'</span>'
       +'<span class="arord">'+esc(r.order||'?')+'</span>'
       +'<span class="arac">'+esc(r.account||'')+'</span>'
       +'<span class="arage">'+(r.age||0)+'d</span></div>'
-      +'<div class="arm"><span class="arst">'+esc(r.station||'')+'</span>'+meta+'</div></div>';
+      +'<div class="arm"><span class="arst">'+esc(r.station||'')+'</span>'+meta+'</div>'
+      +(fix?('<div class="arfix"><span class="fixl">FIX</span>'+esc(fix)+'</div>'):'')
+      +'</div>';
   }
   var h1 = nl.length ? nl.map(function(r){
-      return row(r, r.label, r.assets ? ('<b>'+r.assets+'</b> assets &middot; no warehouse location')
-                                      : ('<b>'+lbs(r.weight||0)+'</b> lbs &middot; no warehouse location'));
+      return row(r, r.label,
+        r.assets ? ('<b>'+r.assets+'</b> assets &middot; no warehouse location')
+                 : ('<b>'+lbs(r.weight||0)+'</b> lbs &middot; no warehouse location'),
+        null,
+        'Set the warehouse location on this container in Makor so the floor can be told where to pull it from.');
     }).join('')
     : '<div class="audempty">&#10003; <b>All staged containers have a warehouse location.</b><br>Nothing here means every container can be called for by location.</div>';
 
   // INVENTORY ERRORS — one list, same spirit as the inventory error report:
   // assets with no container, plus assets missing a certificate of erasure.
+  // real security gaps first, then paperwork — an auditor reads top-down
+  var dsSorted = ds.slice().sort(function(a,b){
+    var sa=(a.severity==='clerical')?1:0, sb=(b.severity==='clerical')?1:0;
+    return sa-sb || (b.age||0)-(a.age||0);
+  });
   var inv = nc.map(function(r){
         return row(r, r.label, '<b>no container</b> &middot; '+esc(r.category||'')
           +(r.model?(' &middot; '+esc(r.model)):'')
-          +(r.location?(' &middot; at '+esc(r.location)):' &middot; no location either'));
-      }).concat(ds.map(function(r){
+          +(r.location?(' &middot; at '+esc(r.location)):' &middot; no location either'),
+          null,
+          'Assign this asset to a container in Makor — outside one it cannot be located.');
+      }).concat(dsSorted.map(function(r){
         return row(r, r.label, '<b>'+esc(r.reason||'no DS certificate')+'</b> &middot; '+esc(r.category||'')
           +(r.model?(' &middot; '+esc(r.model)):'')
           +(r.container?(' &middot; '+esc(r.container)):'')
-          +(r.location?(' &middot; '+esc(r.location)):''));
+          +(r.location?(' &middot; '+esc(r.location)):''),
+          r.severity, r.fix);
       })).join('');
 
   var h2 = inv ? inv
