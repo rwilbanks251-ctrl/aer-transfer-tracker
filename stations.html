@@ -16,7 +16,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .resetbtn:active{transform:translateY(1px)}
 /* Compliance view — two equal columns, each independently scrollable so a long
    findings list never pushes the page (Rob: "columns always scrollable"). */
-.auditrow{display:grid;grid-template-columns:1fr 1fr;gap:16px;min-height:0}
+.auditrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;min-height:0}
 /* grid items default to min-height:auto, which refuses to shrink and kills the
    scroll — every level of the chain has to be allowed to shrink. */
 .auditrow>.panel{min-height:0}
@@ -313,7 +313,9 @@ body.locked .ec{cursor:default}
   <div class="ordersrow auditrow">
     <div class="panel sec"><h2><span class="n">CONTAINERS &mdash; NO LOCATION</span><span class="hx" id="a1hint"></span></h2>
       <div class="scroll auditcol" id="audit_noloc"></div></div>
-    <div class="panel sec"><h2><span class="n">INVENTORY ERRORS</span><span class="hx" id="a2hint"></span></h2>
+    <div class="panel sec"><h2><span class="n">DATA SECURITY ERRORS</span><span class="hx" id="a2hint"></span></h2>
+      <div class="scroll auditcol" id="audit_ds"></div></div>
+    <div class="panel sec"><h2><span class="n">INVENTORY ERRORS</span><span class="hx" id="a3hint"></span></h2>
       <div class="scroll auditcol" id="audit_inv"></div></div>
   </div>
 </div>
@@ -678,7 +680,8 @@ function renderCompPop(){
 // container, and data-bearing assets with no sanitization record.
 function renderAudit(d){
   var C=(d&&d.compliance)||{no_location:[],no_container:[],ds_gaps:[],ds_ready:false};
-  var nl=C.no_location||[], nc=C.no_container||[], ds=C.ds_gaps||[];
+  var nl=C.no_location||[], nc=C.no_container||[], ds=C.ds_gaps||[],
+      ie=C.inventory_errors||[];
 
   // sev: 'clerical' (paperwork — green) vs 'security' (real gap — red).
   // fix: what to DO about it, same idea as the inventory error report's
@@ -704,43 +707,54 @@ function renderAudit(d){
 
   // INVENTORY ERRORS — one list, same spirit as the inventory error report:
   // assets with no container, plus assets missing a certificate of erasure.
-  // real security gaps first, then paperwork — an auditor reads top-down
+  // DATA SECURITY — real gaps first, then paperwork; an auditor reads top-down
   var dsSorted = ds.slice().sort(function(a,b){
     var sa=(a.severity==='clerical')?1:0, sb=(b.severity==='clerical')?1:0;
     return sa-sb || (b.age||0)-(a.age||0);
   });
-  var inv = nc.map(function(r){
-        return row(r, r.label, '<b>no container</b> &middot; '+esc(r.category||'')
-          +(r.model?(' &middot; '+esc(r.model)):'')
-          +(r.location?(' &middot; at '+esc(r.location)):' &middot; no location either'),
-          null,
-          'Assign this asset to a container in Makor — outside one it cannot be located.');
-      }).concat(dsSorted.map(function(r){
+  var h2 = dsSorted.length ? dsSorted.map(function(r){
         return row(r, r.label, '<b>'+esc(r.reason||'no DS certificate')+'</b> &middot; '+esc(r.category||'')
           +(r.model?(' &middot; '+esc(r.model)):'')
           +(r.container?(' &middot; '+esc(r.container)):'')
           +(r.location?(' &middot; '+esc(r.location)):''),
           r.severity, r.fix);
-      })).join('');
-
-  var h2 = inv ? inv
+      }).join('')
     : (C.ds_ready
-       ? '<div class="audempty">&#10003; <b>No inventory errors.</b><br>Every asset is in a container and carries a certificate of erasure.</div>'
+       ? '<div class="audempty">&#10003; <b>No data security errors.</b><br>Every data-bearing asset in inventory carries a certificate of erasure.</div>'
        : '<div class="audpend"><b>Certificate check has not run yet.</b><br><br>'
          +'The Makor DS feed is per-account and far too heavy for the board\'s '
          +'1-minute refresh, so it is computed by <b>ds_compliance.py</b> on its '
-         +'own schedule.<br><br>Assets with no container are live above; '
-         +'certificate findings appear once that job has run.</div>');
-  // age of the certificate data, so a stale run can't read as an all-clear
+         +'own schedule (daily 05:00).</div>');
   if(C.ds_ready && C.ds_age_hours!=null && C.ds_age_hours>24){
     h2 = '<div class="audpend" style="padding-bottom:6px">&#9888; certificate data is '
        + C.ds_age_hours + 'h old — re-run <b>ds_compliance.py</b></div>' + h2;
   }
 
+  // INVENTORY ERRORS — assets with no container (live, from the floor feed)
+  // plus missing grading / no container from the inventory pass.
+  var h3 = nc.map(function(r){
+        return row(r, r.label, '<b>no container</b> &middot; '+esc(r.category||'')
+          +(r.model?(' &middot; '+esc(r.model)):'')
+          +(r.location?(' &middot; at '+esc(r.location)):' &middot; no location either'),
+          null,
+          'Assign this asset to a container in Makor — outside one it cannot be located.');
+      }).concat(ie.map(function(r){
+        return row(r, r.label, '<b>'+esc(r.reason||'')+'</b> &middot; '+esc(r.category||'')
+          +(r.model?(' &middot; '+esc(r.model)):'')
+          +(r.container?(' &middot; '+esc(r.container)):'')
+          +(r.location?(' &middot; '+esc(r.location)):''),
+          null, r.fix);
+      })).join('')
+    || '<div class="audempty">&#10003; <b>No inventory errors.</b><br>Every asset is in a container and fully graded.</div>';
+
   document.getElementById('audit_noloc').innerHTML=h1;
-  document.getElementById('audit_inv').innerHTML=h2;
+  document.getElementById('audit_ds').innerHTML=h2;
+  document.getElementById('audit_inv').innerHTML=h3;
   document.getElementById('a1hint').innerHTML=nl.length+' container'+(nl.length===1?'':'s');
-  document.getElementById('a2hint').innerHTML=(nc.length+ds.length)+' issue'+((nc.length+ds.length)===1?'':'s');
+  var sec=ds.filter(function(r){return r.severity!=='clerical';}).length;
+  document.getElementById('a2hint').innerHTML=ds.length+' issue'+(ds.length===1?'':'s')
+    +(sec?(' &middot; <b style="color:#ff6b6b">'+sec+' real</b>'):'');
+  document.getElementById('a3hint').innerHTML=(nc.length+ie.length)+' issue'+((nc.length+ie.length)===1?'':'s');
 }
 
 // Per-order CONTAINERS — read-only pick list: which containers are staged for
