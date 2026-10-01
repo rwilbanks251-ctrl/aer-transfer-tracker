@@ -436,15 +436,17 @@ function ctnBtn(o){
     + '">&#128230;'+(n?('<span class="cb">'+n+'</span>'):'')+'</button>';
 }
 
-// ORDER TOTAL across every station it still occupies. Unlike stationHere() this
-// is ALWAYS rendered (Rob 2026-09-23) — zeros show as 0 rather than vanishing,
-// so a card never leaves you guessing whether it's empty or just not reported.
-function orderTotal(o){
-  var w = o.floor_weight || 0, c = o.floor_ctn || 0;
-  return '<div class="ectot"><span class="tl">total</span>'
-    + '<b>' + lbs(Math.round(w)) + '</b> lbs'
-    + ' &middot; <b>' + c + '</b> ctn</div>';
-}
+// The order-wide TOTAL line was REMOVED from station cards (Rob, 2026-10-01:
+// "its misleading"). Two reasons it misled: the weight counted every station
+// the order still occupies, so it never matched the "here" line right above it
+// and read as a contradiction; and the container count came from the ops-dash
+// snapshot rather than the staged-container list behind the box icon, so a card
+// could say "0 ctn" while the icon listed several. The per-station "here" line
+// and the container button are both accurate, so the total added nothing but
+// doubt. Kept as an empty-returning stub rather than deleted so the single
+// call site in renderCards() stays untouched; drop both together if the line
+// is never coming back.
+function orderTotal(o){ return ''; }
 
 // Compact, DRAGGABLE order card for a station column. Drag a card into the EZ
 // column (or back to To Process) to (un)tag it EZ — persisted server-side.
