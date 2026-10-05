@@ -40,6 +40,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .panel h2 .n{color:#F0B429}
 .panel h2 .hx{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none}
 .scroll{overflow:hidden;flex:1 1 auto}
+/* work-order lists scroll so every order is reachable */
+#orders_ih,#orders_xf{overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#2a4064 transparent}
+#orders_ih::-webkit-scrollbar,#orders_xf::-webkit-scrollbar{width:9px}
+#orders_ih::-webkit-scrollbar-track,#orders_xf::-webkit-scrollbar-track{background:transparent}
+#orders_ih::-webkit-scrollbar-thumb,#orders_xf::-webkit-scrollbar-thumb{background:#2a4064;border-radius:5px}
+#orders_ih::-webkit-scrollbar-thumb:hover,#orders_xf::-webkit-scrollbar-thumb:hover{background:#3a5a8c}
 .ord{background:#0e1c31;border-left:6px solid #43d17a;border-radius:0 12px 12px 0;padding:4px 13px;margin-bottom:4px}
 .ord.b1{border-left-color:#F0B429}
 .ord.b2{border-left-color:#ff5b5b}
@@ -272,8 +278,12 @@ function paint(d){
   } else { nb.style.display='none'; nb.classList.remove('sparkle'); nb.classList.remove('equinox'); }
   document.querySelector('.grid2').style.height=bandH?('calc(100vh - '+(252+bandH)+'px)'):'';
   document.getElementById('invhint').innerHTML='';
-  document.getElementById('orders_ih').innerHTML=renderOrders(d.orders_inhouse,{sla:sla,more:T.more_inhouse,hideXfer:true,empty:'No in-house orders on the floor'});
-  document.getElementById('orders_xf').innerHTML=renderOrders(d.orders_xfer,{sla:sla,more:T.more_xfer,hideXfer:true,empty:'No transfer orders on the floor'});
+  // keep each list's scroll position across the repaint
+  var ihEl=document.getElementById('orders_ih'), xfEl=document.getElementById('orders_xf');
+  var ihTop=ihEl.scrollTop, xfTop=xfEl.scrollTop;
+  ihEl.innerHTML=renderOrders(d.orders_inhouse,{sla:sla,more:T.more_inhouse,hideXfer:true,empty:'No in-house orders on the floor'});
+  xfEl.innerHTML=renderOrders(d.orders_xfer,{sla:sla,more:T.more_xfer,hideXfer:true,empty:'No transfer orders on the floor'});
+  ihEl.scrollTop=ihTop; xfEl.scrollTop=xfTop;
   document.getElementById('flow').innerHTML=renderFlow(d);
   document.getElementById('inv').innerHTML=renderInv(d);
   document.getElementById('cord').innerHTML=renderCord(d);
