@@ -17,6 +17,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 /* Compliance view — two equal columns, each independently scrollable so a long
    findings list never pushes the page (Rob: "columns always scrollable"). */
 .auditrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;min-height:0}
+/* Drive Management is TWO columns (Rob 2026-10-05): failed wipes belong
+   in To Destroy, not a column of their own. */
+.drvrow{display:grid;grid-template-columns:1fr 1fr;gap:16px;min-height:0}
+.drvrow>.panel{min-height:0}
+.drvrow .scroll.auditcol{padding:6px 8px 8px;flex:1 1 auto;min-height:0;
+  overflow-y:auto;overflow-x:hidden}
 /* grid items default to min-height:auto, which refuses to shrink and kills the
    scroll — every level of the chain has to be allowed to shrink. */
 .auditrow>.panel{min-height:0}
@@ -342,13 +348,11 @@ body.locked .ec{cursor:default}
   </div>
 </div>
 <div class="grid2" id="drivesview" style="display:none">
-  <div class="ordersrow auditrow">
+  <div class="ordersrow drvrow">
     <div class="panel sec"><h2><span class="n">TO WIPE</span><span class="hx" id="d1hint"></span></h2>
       <div class="scroll auditcol" id="drv_wipe"></div></div>
     <div class="panel sec"><h2><span class="n">TO DESTROY</span><span class="hx" id="d2hint"></span></h2>
       <div class="scroll auditcol" id="drv_destroy"></div></div>
-    <div class="panel sec"><h2><span class="n">FAILED SANITIZATION</span><span class="hx" id="d3hint"></span></h2>
-      <div class="scroll auditcol" id="drv_failed"></div></div>
   </div>
 </div>
 <div class="grid2" id="boardview">
@@ -770,43 +774,49 @@ function sn(v){
 // location for one anywhere in the API. Oldest order first, same priority
 // language as the station queues.
 function renderDrives(d){
-  var D=(d&&d.drives)||{wipe:[],destroy:[],failed:[],totals:{}};
-  function row(r, kind){
-    var sev = (kind==='failed') ? ' bad' : '';
-    return '<div class="ar'+(kind==='wipe'?' cler':'')+'"><div class="arh">'
-      +'<span class="arid">'+esc(r.tote)+'</span>'
-      +'<span class="arsn" title="drives in this tote">'+r.count+' drive'+(r.count===1?'':'s')+'</span>'
-      +'<span class="arord">'+esc(r.order||'?')+'</span>'
-      +'<span class="arac">'+esc(r.account||'')+'</span>'
-      +'<span class="arage'+((r.age||0)>45?' over':'')+'">'+(r.age||0)+'d</span></div>'
-      +'<div class="arm"><b>'+esc(r.types||'')+'</b>'
-      +(r.parents?(' &middot; from '+esc(r.parents)):'')
-      +(r.service?(' &middot; '+esc(r.service)):'')+'</div></div>';
+  var D=(d&&d.drives)||{wipe:[],destroy:[],totals:{}};
+  // Same card markup as renderCards() so the note + container buttons behave
+  // identically here. NOT draggable: there is no column to drag a drive order
+  // into, and a stray drop would write a bogus placement.
+  function card(o, kind){
+    var sla=45, band=o.days>sla?2:(o.days>sla-10?1:0);
+    var badges='';
+    if(o.priority)    badges+='<span class="mb prio">&#9733;</span>';
+    if(o.xfer)        badges+='<span class="mb xf">XFER</span>';
+    if(o.destruction) badges+='<span class="mb des">&#128293;</span>';
+    if(o.audit)       badges+='<span class="mb aud">AUDIT</span>';
+    var n=o.drv_count||0, f=o.drv_failed||0;
+    var meta='<b>'+n+'</b> loose drive'+(n===1?'':'s')
+      +(o.drv_types?(' &middot; '+esc(o.drv_types)):'')
+      +(o.drv_totes?(' &middot; '+o.drv_totes+' tote'+(o.drv_totes===1?'':'s')):'')
+      +(f?(' &middot; <b style="color:#ff6b6b">'+f+' failed wipe'+(f===1?'':'s')+'</b>'):'');
+    return '<div class="ec b'+band+(o.priority?' prio':'')+'">'
+      +'<div class="ecr"><span class="ecid">'+esc(o.id)
+        +(o.account?(' <span class="ecac">&middot; '+esc(o.account)+'</span>'):'')+'</span>'
+      +ctnBtn(o)
+      +'<button class="notebtn'+(o.note?' has':'')+'" data-note="'+esc(o.id)+'" title="'+(o.note?'View / edit note':'Add note')+'">&#128221;</button>'
+      +'<span class="ecage'+(band===2?' over':'')+'">'+o.days+'d</span></div>'
+      +'<div class="ecm">'+meta+badges+'</div></div>';
   }
   function fill(id, list, kind, emptyMsg){
     var el=document.getElementById(id); if(!el) return;
-    el.innerHTML = (list&&list.length)
-      ? list.map(function(r){return row(r,kind);}).join('')
+    el.innerHTML=(list&&list.length) ? list.map(function(o){return card(o,kind);}).join('')
       : '<div class="audempty">&#10003; <b>'+emptyMsg+'</b></div>';
   }
-  fill('drv_wipe', D.wipe, 'wipe',
-       'No drives waiting to be wiped.');
-  fill('drv_destroy', D.destroy, 'destroy',
-       'No drives waiting to be destroyed.');
-  fill('drv_failed', D.failed, 'failed',
-       'No failed sanitizations.');
+  var dby={};
+  (D.wipe||[]).concat(D.destroy||[]).forEach(function(o){ dby[o.id]=o; });
+  window._drvById=dby;
+  fill('drv_wipe', D.wipe, 'wipe', 'No loose drives waiting to be wiped.');
+  fill('drv_destroy', D.destroy, 'destroy', 'No loose drives waiting to be destroyed.');
   var t=D.totals||{};
-  function hint(id, n, totes){
+  function hint(id, drives, orders, extra){
     var e=document.getElementById(id); if(!e) return;
-    e.innerHTML = (n||0)+' drive'+((n||0)===1?'':'s')
-      + ' &middot; '+(totes||0)+' tote'+((totes||0)===1?'':'s');
+    e.innerHTML=(drives||0)+' drive'+((drives||0)===1?'':'s')
+      +' &middot; '+(orders||0)+' order'+((orders||0)===1?'':'s')+(extra||'');
   }
   hint('d1hint', t.wipe, (D.wipe||[]).length);
-  hint('d2hint', t.destroy, (D.destroy||[]).length);
-  var f=document.getElementById('d3hint');
-  if(f) f.innerHTML = (t.failed||0)
-      ? '<b style="color:#ff6b6b">'+t.failed+' need action</b>'
-      : '0';
+  hint('d2hint', t.destroy, (D.destroy||[]).length,
+       t.failed ? (' &middot; <b style="color:#ff6b6b">incl. '+t.failed+' failed</b>') : '');
 }
 
 function renderAudit(d){
@@ -893,7 +903,11 @@ function renderAudit(d){
 // this order and the warehouse location to pull each one from. Grouped by
 // station, next-to-grab first; already-in-process ones are dimmed.
 function openCtn(id){
-  var o=(window._byId||{})[id]||{id:id};
+  // On the Drive Management tab the relevant container is the drive TOTE,
+  // not the order's staged WQ/asset containers - different work, different
+  // thing to go and fetch. Those rows live in their own map.
+  var o=(dept==='drives' && (window._drvById||{})[id])
+      || (window._byId||{})[id] || {id:id};
   var list=o.containers||[];
   document.getElementById('cm-title').innerHTML='&#128230; #'+esc(id)
     +(o.account?(' <span style="color:#9fb2ca;font-weight:600;font-size:14px">'+esc(o.account)+'</span>'):'');
@@ -913,9 +927,11 @@ function openCtn(id){
         +(loc?('<span class="cm-loc">'+esc(loc)+'</span>')
              :'<span class="cm-loc none">no location set</span>')
         +'<span class="cm-meta">'
+        // A drive tote has no weight in Makor, so "0 lbs" would be noise rather
+        // than information - fall through to the drive count instead.
         +(c.assets ? ('<b style="color:#eaf1f8">'+c.assets.toLocaleString()+'</b> assets')
-                   : (lbs(Math.round(c.weight||0))+' lbs'))
-        +(c.category?(' &middot; '+esc(c.category)):'')
+          : (c.weight ? (lbs(Math.round(c.weight))+' lbs') : ''))
+        +(c.category?((c.assets||c.weight?' &middot; ':'')+esc(c.category)):'')
         +' &middot; '+(c.age||0)+'d'
         +(c.in_process?' &middot; <span class="ipf">in process</span>':'')
         +'</span></div>';
