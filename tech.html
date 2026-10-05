@@ -130,7 +130,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
   </div>
   <div class="rcol">
     <div class="panel"><h2><span class="n">TESTERS TODAY</span> &mdash; Duncan &middot; MacCheck + PhoneCheck + WipeOS</h2><div class="scroll" id="testers"></div></div>
-    <div class="panel"><h2><span class="n">DRIVE MANAGEMENT</span> &mdash; <span class="soon">coming soon</span></h2><div class="scroll" id="drives"></div></div>
+    <div class="panel"><h2><span class="n">DRIVE MANAGEMENT</span> &mdash; <span class="soon">drives to wipe</span></h2><div class="scroll" id="drives"></div></div>
   </div>
 </div>
 <div class="foot"><div id="src">Makor OPS Dashboard (Tech + Drive backlog, throughput) &middot; PhoneCheck + MacCheck + WipeOS (testers)</div><div id="updated">&nbsp;</div></div>
@@ -174,11 +174,9 @@ function renderOrders(d){
 }
 
 function renderDrives(d){
-  // Panel parked as "coming soon" (Rob, 2026-07-31). The by-container data below
-  // still computes and is ready to switch back on by removing this early return.
-  return '<div class="soonbox"><div class="soonic">&#128736;&#65039;</div>'
-    +'<div class="soontx">Coming soon</div>'
-    +'<div class="soonsub">Drive wipe queue by container</div></div>';
+  // Live again (Rob, 2026-10-05) now that Drive Management works on the Stations
+  // board. WIPE queue only, by container - the tote tag is the locator, since
+  // Makor exposes no warehouse location for a drive tote.
   var dr=d.drives||{containers:[],count:0,containers_more:0,pending_destroys:0};
   var cs=dr.containers||[];
   if(!cs.length) return '<div class="empty">No drives pending &#127881;</div>';
