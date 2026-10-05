@@ -28,6 +28,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .drvwait .wo{font-size:11.5px;color:#cfe0f2;background:#16263f;border:1px solid #2c4a72;
   border-radius:5px;padding:2px 8px;font-family:Consolas,monospace}
 .drvwait .wo b{color:#F0B429}
+/* Tech / Warehouse Overview: the sibling board embedded whole, so the
+   stations header and dropdown stay available to switch back. */
+#ovview{padding:0 34px 14px}
+#ovframe{width:100%;height:100%;border:0;border-radius:12px;background:#152B47;
+  display:block;min-height:0;flex:1 1 auto}
 .drvrow .scroll.auditcol{padding:6px 8px 8px;flex:1 1 auto;min-height:0;
   overflow-y:auto;overflow-x:hidden}
 /* grid items default to min-height:auto, which refuses to shrink and kills the
@@ -319,6 +324,8 @@ body.locked .ec{cursor:default}
       <option value="tr">Tracked Recycling</option>
       <option value="compliance">Compliance</option>
       <option value="drives">Drive Management</option>
+      <option value="ov_tech">Tech Overview</option>
+      <option value="ov_wh">Warehouse Overview</option>
     </select>
     <button class="lockbtn" id="lockbtn" title="Lock / unlock drag-and-drop for this screen"></button>
     <button class="resetbtn" id="resetbtn" title="Move every card back to its department's Unsorted column, sorted by date received (clears To Process, EZ, Hold and manual order)">&#8635; Reset order</button>
@@ -362,6 +369,9 @@ body.locked .ec{cursor:default}
       <div class="scroll auditcol" id="drv_destroy"></div></div>
   </div>
   <div class="drvwait" id="drv_waiting" style="display:none"></div>
+</div>
+<div class="grid2" id="ovview" style="display:none">
+  <iframe id="ovframe" title="dashboard" src="about:blank"></iframe>
 </div>
 <div class="grid2" id="boardview">
   <div class="ordersrow">
@@ -589,13 +599,28 @@ wireDrops();
 // Compliance view (which replaces the board entirely rather than sitting in a
 // stray header button).
 var dept='all';
+// Published pages for the sibling boards. Served locally we point at their own
+// local ports; on the public page we use their GitHub Pages copies (Supabase
+// Storage force-serves uploaded HTML as text/plain, so it cannot be framed).
+var OV_URLS = EDGE_MODE
+  ? {ov_tech:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/tech', ov_wh:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/warehouse'}
+  : {ov_tech:'http://'+location.hostname+':8777', ov_wh:'http://'+location.hostname+':8781'};
+
 function applyDept(){
-  var audit=(dept==='compliance'), drv=(dept==='drives'), board=!audit&&!drv;
+  var audit=(dept==='compliance'), drv=(dept==='drives'),
+      ov=(dept==='ov_tech'||dept==='ov_wh'), board=!audit&&!drv&&!ov;
   var bv=document.getElementById('boardview'), av=document.getElementById('auditview'),
-      dv=document.getElementById('drivesview');
+      dv=document.getElementById('drivesview'), ovv=document.getElementById('ovview');
   if(bv) bv.style.display=board?'':'none';
   if(av) av.style.display=audit?'':'none';
   if(dv) dv.style.display=drv?'':'none';
+  if(ovv) ovv.style.display=ov?'':'none';
+  if(ov){
+    var fr=document.getElementById('ovframe'), want=OV_URLS[dept]||'about:blank';
+    // only reload when the target actually changes - re-setting src on every
+    // repaint would restart the other board's fetch loop every minute
+    if(fr && fr.getAttribute('data-src')!==want){ fr.setAttribute('data-src',want); fr.src=want; }
+  }
   // controls that only make sense on the board (reset also stays hidden while
   // the board is locked — see the lock handler)
   ['lockbtn','xferbtn'].forEach(function(id){
@@ -606,6 +631,7 @@ function applyDept(){
   if(rb) rb.style.display=(board&&!locked)?'':'none';
   if(audit){ if(lastData) renderAudit(lastData); return; }
   if(drv){ if(lastData) renderDrives(lastData); return; }
+  if(ov){ return; }
   ['dc','tech','tr'].forEach(function(k){
     var p=document.getElementById('sec_'+k);
     if(p) p.style.display=(dept==='all'||dept===k)?'':'none';
@@ -703,8 +729,8 @@ function renderCompPop(){
     // Management have nothing to reset. This handler runs after applyDept(),
     // so without the dept check it re-showed the button on those tabs.
     var rb=document.getElementById('resetbtn');
-    if(rb) rb.style.display = (locked || dept==='compliance' || dept==='drives')
-      ? 'none' : '';
+    if(rb) rb.style.display = (locked || dept==='compliance' || dept==='drives'
+                           || dept==='ov_tech' || dept==='ov_wh') ? 'none' : '';
   }
   // Password gate — light deterrent so the board isn't toggled casually (the
   // password is in the page source, so it's not real security).
