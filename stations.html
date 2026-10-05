@@ -305,6 +305,7 @@ body.locked .ec{cursor:default}
       <option value="tech">Tech</option>
       <option value="tr">Tracked Recycling</option>
       <option value="compliance">Compliance</option>
+      <option value="drives">Drive Management</option>
     </select>
     <button class="lockbtn" id="lockbtn" title="Lock / unlock drag-and-drop for this screen"></button>
     <button class="resetbtn" id="resetbtn" title="Move every card back to its department's Unsorted column, sorted by date received (clears To Process, EZ, Hold and manual order)">&#8635; Reset order</button>
@@ -338,6 +339,16 @@ body.locked .ec{cursor:default}
       <div class="scroll auditcol" id="audit_ds"></div></div>
     <div class="panel sec"><h2><span class="n">INVENTORY ERRORS</span><span class="hx" id="a3hint"></span></h2>
       <div class="scroll auditcol" id="audit_inv"></div></div>
+  </div>
+</div>
+<div class="grid2" id="drivesview" style="display:none">
+  <div class="ordersrow auditrow">
+    <div class="panel sec"><h2><span class="n">TO WIPE</span><span class="hx" id="d1hint"></span></h2>
+      <div class="scroll auditcol" id="drv_wipe"></div></div>
+    <div class="panel sec"><h2><span class="n">TO DESTROY</span><span class="hx" id="d2hint"></span></h2>
+      <div class="scroll auditcol" id="drv_destroy"></div></div>
+    <div class="panel sec"><h2><span class="n">FAILED SANITIZATION</span><span class="hx" id="d3hint"></span></h2>
+      <div class="scroll auditcol" id="drv_failed"></div></div>
   </div>
 </div>
 <div class="grid2" id="boardview">
@@ -567,19 +578,22 @@ wireDrops();
 // stray header button).
 var dept='all';
 function applyDept(){
-  var audit=(dept==='compliance');
-  var bv=document.getElementById('boardview'), av=document.getElementById('auditview');
-  if(bv) bv.style.display=audit?'none':'';
+  var audit=(dept==='compliance'), drv=(dept==='drives'), board=!audit&&!drv;
+  var bv=document.getElementById('boardview'), av=document.getElementById('auditview'),
+      dv=document.getElementById('drivesview');
+  if(bv) bv.style.display=board?'':'none';
   if(av) av.style.display=audit?'':'none';
+  if(dv) dv.style.display=drv?'':'none';
   // controls that only make sense on the board (reset also stays hidden while
   // the board is locked — see the lock handler)
   ['lockbtn','xferbtn'].forEach(function(id){
     var e=document.getElementById(id);
-    if(e) e.style.display=audit?'none':'';
+    if(e) e.style.display=board?'':'none';
   });
   var rb=document.getElementById('resetbtn');
-  if(rb) rb.style.display=(audit||locked)?'none':'';
+  if(rb) rb.style.display=(board&&!locked)?'':'none';
   if(audit){ if(lastData) renderAudit(lastData); return; }
+  if(drv){ if(lastData) renderDrives(lastData); return; }
   ['dc','tech','tr'].forEach(function(k){
     var p=document.getElementById('sec_'+k);
     if(p) p.style.display=(dept==='all'||dept===k)?'':'none';
@@ -673,8 +687,12 @@ function renderCompPop(){
     // (Rob, 2026-09-24: "for peace of mind"). Two deliberate steps — unlock,
     // then confirm the password — so a wipe of everyone's sorting can't happen
     // from a single mis-click on a kiosk.
+    // ...and it only belongs on the BOARD at all - Compliance and Drive
+    // Management have nothing to reset. This handler runs after applyDept(),
+    // so without the dept check it re-showed the button on those tabs.
     var rb=document.getElementById('resetbtn');
-    if(rb) rb.style.display = locked ? 'none' : '';
+    if(rb) rb.style.display = (locked || dept==='compliance' || dept==='drives')
+      ? 'none' : '';
   }
   // Password gate — light deterrent so the board isn't toggled casually (the
   // password is in the page source, so it's not real security).
@@ -745,6 +763,50 @@ function paintTrackers(d){
 function sn(v){
   var t=(v==null?'':String(v)).trim();
   return (!t||t.toUpperCase()==='N/A')?'':t;
+}
+
+// DRIVE MANAGEMENT tab. Rows are TOTES, because the storage container tag is
+// the only locator Makor exposes for a drive tote - there is no warehouse
+// location for one anywhere in the API. Oldest order first, same priority
+// language as the station queues.
+function renderDrives(d){
+  var D=(d&&d.drives)||{wipe:[],destroy:[],failed:[],totals:{}};
+  function row(r, kind){
+    var sev = (kind==='failed') ? ' bad' : '';
+    return '<div class="ar'+(kind==='wipe'?' cler':'')+'"><div class="arh">'
+      +'<span class="arid">'+esc(r.tote)+'</span>'
+      +'<span class="arsn" title="drives in this tote">'+r.count+' drive'+(r.count===1?'':'s')+'</span>'
+      +'<span class="arord">'+esc(r.order||'?')+'</span>'
+      +'<span class="arac">'+esc(r.account||'')+'</span>'
+      +'<span class="arage'+((r.age||0)>45?' over':'')+'">'+(r.age||0)+'d</span></div>'
+      +'<div class="arm"><b>'+esc(r.types||'')+'</b>'
+      +(r.parents?(' &middot; from '+esc(r.parents)):'')
+      +(r.service?(' &middot; '+esc(r.service)):'')+'</div></div>';
+  }
+  function fill(id, list, kind, emptyMsg){
+    var el=document.getElementById(id); if(!el) return;
+    el.innerHTML = (list&&list.length)
+      ? list.map(function(r){return row(r,kind);}).join('')
+      : '<div class="audempty">&#10003; <b>'+emptyMsg+'</b></div>';
+  }
+  fill('drv_wipe', D.wipe, 'wipe',
+       'No drives waiting to be wiped.');
+  fill('drv_destroy', D.destroy, 'destroy',
+       'No drives waiting to be destroyed.');
+  fill('drv_failed', D.failed, 'failed',
+       'No failed sanitizations.');
+  var t=D.totals||{};
+  function hint(id, n, totes){
+    var e=document.getElementById(id); if(!e) return;
+    e.innerHTML = (n||0)+' drive'+((n||0)===1?'':'s')
+      + ' &middot; '+(totes||0)+' tote'+((totes||0)===1?'':'s');
+  }
+  hint('d1hint', t.wipe, (D.wipe||[]).length);
+  hint('d2hint', t.destroy, (D.destroy||[]).length);
+  var f=document.getElementById('d3hint');
+  if(f) f.innerHTML = (t.failed||0)
+      ? '<b style="color:#ff6b6b">'+t.failed+' need action</b>'
+      : '0';
 }
 
 function renderAudit(d){
@@ -1003,6 +1065,7 @@ function paint(d){
   document.getElementById('trk_ops_v').innerHTML=cw;
   if(document.getElementById('comppop').style.display==='block') renderCompPop();
   renderAudit(d);            // keeps the Compliance count live even on the board view
+  renderDrives(d);           // same for Drive Management
   paintTrackers(d);          // header tiles read the same numbers renderAudit shows
   // id -> order map for the note modal
   var by={};
