@@ -17,6 +17,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .deptsel{background:#0e1c31;color:#fff;border:1.5px solid #24406a;border-radius:9px;padding:8px 12px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer}
 .deptsel:focus{outline:none;border-color:#F0B429}
 .deptsel option{background:#12233c;color:#fff}
+.deptsel optgroup{background:#0e1c31;color:#F0B429;font-weight:900;font-style:normal;letter-spacing:.4px}
 .resetbtn{background:transparent;color:#ffd782;border:1.5px solid #6a5410;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px}
 .resetbtn:hover{background:#F0B429;color:#152B47;border-color:#F0B429}
 .resetbtn:active{transform:translateY(1px)}
@@ -76,9 +77,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .drvwait .wo b{color:#F0B429}
 /* Tech / Warehouse Overview: the sibling board embedded whole, so the
    stations header and dropdown stay available to switch back. */
-#ovview{padding:0 34px 14px}
-#ovframe{width:100%;height:100%;border:0;border-radius:12px;background:#152B47;
-  display:block;min-height:0;flex:1 1 auto}
+/* The embedded board is built for a 1920x1080 TV. Given only the laptop-sized
+   box left on this page it clipped its own bottom (body there is overflow
+   hidden). So render it at its NATIVE size and scale the whole frame down to
+   fit - an overview should show the entire board, just smaller. */
+#ovview{padding:0 34px 14px;overflow:hidden}
+#ovframe{width:1920px;height:1080px;border:0;border-radius:12px;background:#152B47;
+  display:block;transform-origin:top left;flex:0 0 auto}
 .drvrow .scroll.auditcol{padding:6px 8px 8px;flex:1 1 auto;min-height:0;
   overflow-y:auto;overflow-x:hidden}
 /* grid items default to min-height:auto, which refuses to shrink and kills the
@@ -421,15 +426,21 @@ body.locked .ec{cursor:default}
   <div class="tl"><h1>AER <span class="a">|</span> Dragon Dropper</h1>
     <select class="deptsel" id="deptsel" title="Show one department full-width, or all three">
       <option value="all">All Departments</option>
-      <option value="dc">Data Capture</option>
-      <option value="tech">Tech</option>
-      <option value="tr">Tracked Recycling</option>
-      <option value="compliance">Compliance</option>
-      <option value="drives">Drive Management</option>
-      <option value="commodity">Commodity Orders</option>
-      <option value="signoff">Order Sign-Off</option>
-      <option value="ov_tech">Tech Overview</option>
-      <option value="ov_wh">Warehouse Overview</option>
+      <optgroup label="Priority Boards">
+        <option value="dc">Data Capture</option>
+        <option value="tech">Tech</option>
+        <option value="drives">Drive Management</option>
+        <option value="tr">Tracked Recycling</option>
+      </optgroup>
+      <optgroup label="Overviews">
+        <option value="ov_wh">Warehouse</option>
+        <option value="ov_tech">Tech</option>
+        <option value="commodity">Commodity Orders</option>
+      </optgroup>
+      <optgroup label="Compliance">
+        <option value="compliance">Errors</option>
+        <option value="signoff">Order Sign-Off</option>
+      </optgroup>
     </select>
     <button class="lockbtn" id="lockbtn" title="Lock / unlock drag-and-drop for this screen"></button>
     <button class="resetbtn" id="resetbtn" title="Move every card back to its department's Unsorted column, sorted by date received (clears To Process, EZ, Hold and manual order)">&#8635; Reset order</button>
@@ -897,6 +908,18 @@ var OV_URLS = EDGE_MODE
   ? {ov_tech:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/tech?embed=1', ov_wh:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/warehouse?embed=1'}
   : {ov_tech:'http://'+location.hostname+':8777/?embed=1', ov_wh:'http://'+location.hostname+':8781/?embed=1'};
 
+// Scale the embedded board so all of it is visible. Measured off #ovview's own
+// box, which is in the same coordinate space as the frame, so the page zoom
+// does not have to be reasoned about.
+function fitOv(){
+  var wrap=document.getElementById('ovview'), fr=document.getElementById('ovframe');
+  if(!wrap||!fr||wrap.style.display==='none') return;
+  var w=wrap.clientWidth, h=wrap.clientHeight;
+  if(!w||!h) return;
+  var sc=Math.min(w/1920, h/1080);
+  fr.style.transform='scale('+sc+')';
+}
+window.addEventListener('resize', fitOv);
 function applyDept(){
   var audit=(dept==='compliance'), drv=(dept==='drives'), sg=(dept==='signoff'),
       cmd=(dept==='commodity'),
@@ -916,6 +939,7 @@ function applyDept(){
     // only reload when the target actually changes - re-setting src on every
     // repaint would restart the other board's fetch loop every minute
     if(fr && fr.getAttribute('data-src')!==want){ fr.setAttribute('data-src',want); fr.src=want; }
+    setTimeout(fitOv,0);          // after the frame is shown and laid out
   }
   // controls that only make sense on the board (reset also stays hidden while
   // the board is locked — see the lock handler)
