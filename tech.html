@@ -124,7 +124,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .lkst.ok{background:#14361f;color:#8fe0a8;border-color:#2c6b41}
 .lkst.wait{background:#3a2c10;color:#ffd782;border-color:#6a5410}
 .lkst.na{background:#1b2638;color:#9fb2ca;border-color:#3b4a60}
-.lkst.none{background:transparent;color:#6f819a;border-color:#2a3b55}
+.lkst.todo{background:#4a2410;color:#ff9f43;border-color:#8a4a12}
 .lk-ro{margin-bottom:12px;font-size:13px;font-weight:700;color:#9fb2ca}
 .lkrow.ro{cursor:default;opacity:.72}
 .lkrow{display:flex;align-items:center;gap:11px;padding:10px 8px;border-bottom:1px solid #1b3152;cursor:pointer}
@@ -255,7 +255,11 @@ function lkStatus(o,station){
 // the bubble itself, centred on its own line by lkStatus above
 function lkBubble(o){
   var b=lkLatest(o);
-  if(!b) return '<span class="lkst none">&#128274; no unlock info</span>';
+  // Nothing recorded is a TO-DO, not a neutral blank: somebody still has to
+  // find out whether this order's devices are locked (Rob, 2026-10-06). Shown
+  // in the base blue so it reads as an action, distinct from amber (submitted,
+  // waiting on the customer) and green (clear to proceed).
+  if(!b) return '<span class="lkst todo">&#128274; Need Lock Action</span>';
   // N/A is a GO state, not a neutral one: nothing on the order needs unlocking,
   // so it is as clear to proceed as an actual unlock (Rob, 2026-10-06). Only a
   // SUBMITTED stage is amber - that is the one still waiting on the customer.
@@ -487,10 +491,10 @@ function renderTesters(d){
 // render as an all-clear.
 function errKpi(e){
   if(!e||!e.ready) return '<div class="kpi"><div class="v" style="color:#7f93ad">&mdash;</div>'
-    +'<div class="l">Errors (no data)</div></div>';
+    +'<div class="l">Errors &middot; no data</div></div>';
   var n=e.total||0, col=n>0?'color:#ff6b6b':'color:#43d17a';
   return '<div class="kpi hot"><div class="v" style="'+col+'">'+n+'</div>'
-    +'<div class="l">'+(e.inventory||0)+' inventory &middot; '+(e.ds||0)+' DS</div></div>';
+    +'<div class="l">Errors &middot; '+(e.inventory||0)+' inventory &middot; '+(e.ds||0)+' DS</div></div>';
 }
 
 function paint(d){
