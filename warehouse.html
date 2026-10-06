@@ -34,6 +34,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .inforow{display:flex;gap:16px;flex:1 1 0;min-height:0}
 .inforow .panel.flow{flex:1.25 1 0;min-height:0}
 .inforow .panel.inv{flex:1 1 0;min-height:0}
+.pglbl{font-size:11.5px;color:#9fb2ca;text-transform:uppercase;letter-spacing:.7px;
+  font-weight:800;margin:2px 0 3px}
+.pglbl span{color:#7fd8ff;font-weight:600;text-transform:none;letter-spacing:0}
+.pgsep{height:1px;background:#24406a;margin:10px 0 2px}
 .inforow .panel.cord{flex:1.15 1 0;min-height:0}
 .panel{background:#12233c;border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;overflow:hidden}
 .panel h2{font-size:20px;letter-spacing:2px;text-transform:uppercase;color:#fff;margin-bottom:12px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:baseline}
@@ -91,7 +95,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .ord .meta .due{color:#9fb2ca}
 .ord .meta .due.hot{color:#ff9b9b;font-weight:700}
 .expline{font-size:14px;color:#9fb2ca;margin-top:6px}.expline b{color:#fff}
-.flowrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.flowrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .flowcell{background:#0e1c31;border-radius:12px;padding:9px 12px;text-align:center;overflow:hidden}
 .flowcell .fl{font-size:11.5px;color:#9fb2ca;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
 .flowcell .fv{font-size:24px;font-weight:900;color:#43d17a;line-height:1.1;white-space:nowrap}
@@ -144,7 +148,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
   </div>
   <div class="inforow">
     <div class="panel flow"><h2><span class="n">WEEK FLOW</span></h2><div id="flow"></div></div>
-    <div class="panel inv"><h2><span class="n">OUSEI LOAD</span><span class="hx" id="invhint"></span></h2><div class="scroll" id="inv"></div></div>
+    <div class="panel inv"><h2><span class="n">LOAD PROGRESS</span><span class="hx" id="invhint"></span></h2><div class="scroll" id="inv"></div></div>
     <div class="panel cord"><h2><span class="n">AWAITING CUSTOMER</span><span class="hx">shipped &middot; pending invoice</span></h2><div class="scroll" id="cord"></div></div>
   </div>
 </div>
@@ -208,15 +212,24 @@ function renderFlow(d){
     +cell('Sorting',T.sort_today,T.sort_week)
     +cell('Tracked Recycling',T.tr_today,T.tr_week)
     +cell('Data Capture',T.dc_today,T.dc_week,'items')
+    +cell('Tech',T.tech_today,T.tech_week,'units')
     +'</div>';
 }
 
-function renderInv(d){
-  var O=d.ousei||{total:0,containers:0,pct:0,goal_lbs:40000,goal_ctn:40};
-  var pct=O.pct||0;
-  return '<div class="pgrow"><div class="pgpct">'+pct+'%</div>'
+function loadBar(name,streams,O){
+  O=O||{total:0,containers:0,pct:0,goal_lbs:40000,goal_ctn:40};
+  var pct=O.pct||0, ready=pct>=100;
+  return '<div class="pglbl">'+name+(ready?' &middot; <span style="color:#43d17a">load ready</span>':'')
+    +'<br><span>'+streams+'</span></div>'
+    +'<div class="pgrow"><div class="pgpct">'+pct+'%</div>'
     +'<div class="pgmain"><div class="pgbar"><i style="width:'+Math.min(100,pct)+'%"></i></div>'
     +'<div class="pgnums"><b>'+lbs(O.total)+'</b> / '+lbs(O.goal_lbs)+' lbs &middot; <b>'+O.containers+'</b> / '+O.goal_ctn+' containers</div></div></div>';
+}
+
+function renderInv(d){
+  return loadBar('OUSEI','boards &middot; memory &middot; CPU',d.ousei)
+    +'<div class="pgsep"></div>'
+    +loadBar('SRG','paper &middot; cardboard &middot; aluminium &middot; steel &middot; hard drives &middot; wire',d.srg);
 }
 
 function renderCord(d){
