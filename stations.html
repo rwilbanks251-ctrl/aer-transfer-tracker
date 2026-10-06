@@ -860,9 +860,19 @@ function ctnBtn(o){
 // progress bars had one briefly and did not need it. Price is left blank - it
 // is filled in outside this board.
 function tagCsv(tags, filename, label){
-  tags=(tags||[]).filter(function(v,i,a){ return v && a.indexOf(v)===i; });
-  if(!tags.length){ alert('No containers to export for '+label+'.'); return; }
-  var lines=['TagID,Price'].concat(tags.map(function(t){ return lkCsvCell(t)+','; }));
+  // Each entry is {tag, loc}. Deduped on the TAG - the same container cannot
+  // be in two places, and a duplicate row would be priced twice.
+  var seen={}, rows=[];
+  (tags||[]).forEach(function(t){
+    var id=t&&t.tag?String(t.tag):'';
+    if(!id||seen[id]) return;
+    seen[id]=1; rows.push({tag:id, loc:(t.loc||'')});
+  });
+  if(!rows.length){ alert('No containers to export for '+label+'.'); return; }
+  // Location is appended so TagID and Price keep the positions they had before.
+  var lines=['TagID,Price,Location'].concat(rows.map(function(r){
+    return lkCsvCell(r.tag)+',,'+lkCsvCell(r.loc);
+  }));
   var NL=String.fromCharCode(13)+String.fromCharCode(10);
   var blob=new Blob([String.fromCharCode(65279)+lines.join(NL)],{type:'text/csv;charset=utf-8;'});
   var a=document.createElement('a');
