@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AER Intelligence</title>
+<title>AER Dragon Dropper</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
@@ -356,6 +356,36 @@ body.locked .ec{cursor:default}
 .ecp .epk i{display:block;height:100%;border-radius:4px;
   background:linear-gradient(90deg,#8a6a12,#F0B429)}
 .ecp .epk i.hit{background:linear-gradient(90deg,#2c6b41,#4ad17c)}
+.ld{padding:11px 13px;border-bottom:1px solid #1b3152}
+.ld .lh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+.ld .ln{font-size:15px;font-weight:900;color:#eaf1f8;letter-spacing:.4px}
+.ld .lp{font-size:20px;font-weight:900;color:#F0B429}
+.ld .lp.hit{color:#4ad17c}
+.ld .lk{height:12px;background:#0e1c31;border-radius:6px;overflow:hidden;border:1px solid #24406a}
+.ld .lk i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#8a6a12,#F0B429)}
+.ld .lk i.hit{background:linear-gradient(90deg,#2c6b41,#4ad17c)}
+.ld .lnum{margin-top:6px;font-size:12px;color:#9fb2ca;font-weight:700}
+.ld .lnum b{color:#eaf1f8}
+.ld .lcat{margin-top:5px;font-size:11px;color:#7f93ad;font-weight:600;line-height:1.5}
+.lk-pw{margin-bottom:12px}
+.lk-pw input{width:100%;background:#0e1c31;color:#fff;border:1.5px solid #24406a;border-radius:9px;
+  padding:9px 12px;font-size:14px;font-family:inherit;font-weight:700}
+.lk-pw input:focus{outline:none;border-color:#F0B429}
+.lkrow{display:flex;align-items:center;gap:11px;padding:10px 8px;border-bottom:1px solid #1b3152;cursor:pointer}
+.lkrow:last-child{border-bottom:none}
+.lkrow .bx{width:20px;height:20px;border:2px solid #3b5f8f;border-radius:5px;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#0e1c31}
+.lkrow.on .bx{background:#43d17a;border-color:#43d17a}
+.lkrow .lkl{flex:1 1 auto;font-size:15px;font-weight:800;color:#eaf1f8}
+.lkrow.on .lkl{color:#8fe0a8}
+.lkrow .lkd{font-size:13px;font-weight:800;color:#F0B429;white-space:nowrap}
+.lkrow.na .lkl{color:#9fb2ca}
+.lk-msg{margin-top:10px;font-size:13px;font-weight:700;color:#ff8f8f;min-height:16px}
+.lockbtn2{background:transparent;border:1.5px solid #2c4a73;color:#7fd8ff;border-radius:7px;
+  padding:2px 7px;font-size:12px;cursor:pointer;font-family:inherit;line-height:1.5;margin-left:5px}
+.lockbtn2.has{border-color:#2c6b41;color:#8fe0a8}
+.lockbtn2.na{border-color:#3b4a60;color:#9fb2ca}
+
 .cbar{margin-bottom:5px}
 .cbar .ct{display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px;color:#c7d3e2}
 .cbar .ct .cw{font-weight:800;color:#ffc247}
@@ -376,7 +406,7 @@ body.locked .ec{cursor:default}
 .notewarn{color:#ffc247}
 </style></head><body>
 <div class="top">
-  <div class="tl"><h1>AER <span class="a">|</span> Intelligence</h1>
+  <div class="tl"><h1>AER <span class="a">|</span> Dragon Dropper</h1>
     <select class="deptsel" id="deptsel" title="Show one department full-width, or all three">
       <option value="all">All Departments</option>
       <option value="dc">Data Capture</option>
@@ -384,6 +414,7 @@ body.locked .ec{cursor:default}
       <option value="tr">Tracked Recycling</option>
       <option value="compliance">Compliance</option>
       <option value="drives">Drive Management</option>
+      <option value="commodity">Commodity Orders</option>
       <option value="signoff">Order Sign-Off</option>
       <option value="ov_tech">Tech Overview</option>
       <option value="ov_wh">Warehouse Overview</option>
@@ -412,6 +443,14 @@ body.locked .ec{cursor:default}
   <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
 </div>
 <div class="notebanner" id="notebanner" style="display:none"></div>
+<div class="grid2" id="cmdview" style="display:none">
+  <div class="ordersrow auditrow">
+    <div class="panel sec"><h2><span class="n">LOAD PROGRESS</span><span class="hx" id="c1hint"></span></h2>
+      <div class="scroll auditcol" id="cmd_loads"></div></div>
+    <div class="panel sec"><h2><span class="n">AWAITING CUSTOMER</span><span class="hx" id="c2hint"></span></h2>
+      <div class="scroll auditcol" id="cmd_orders"></div></div>
+  </div>
+</div>
 <div class="grid2" id="auditview" style="display:none">
   <div class="ordersrow auditrow">
     <div class="panel sec"><h2><span class="n">CONTAINERS &mdash; NO LOCATION</span><span class="hx" id="a1hint"></span></h2>
@@ -475,6 +514,15 @@ body.locked .ec{cursor:default}
     <div class="nm-actions" id="nm-actions"><button class="nm-del" id="nm-del">&#128465; Delete</button><button class="nm-save" id="nm-save">Save note</button></div>
   </div>
 </div>
+<div class="notemodal" id="lkmodal" style="display:none">
+  <div class="nm-box">
+    <div class="nm-h"><span id="lk-title">Device unlock</span><button class="nm-x" id="lk-close" title="Close">&times;</button></div>
+    <div class="lk-pw"><input type="password" id="lk-pw" placeholder="Board password to edit" autocomplete="off"></div>
+    <div id="lk-body"></div>
+    <div class="lk-msg" id="lk-msg"></div>
+  </div>
+</div>
+
 <div class="notemodal" id="ctnmodal" style="display:none">
   <div class="nm-box cm-box">
     <div class="nm-h"><span id="cm-title">Containers</span><button class="nm-x" id="cm-close" title="Close">&times;</button></div>
@@ -533,6 +581,77 @@ function stationHere(o, station){
 // containers; the count rides on the badge so you can see there's something to
 // pull without opening it. Click -> modal listing each container + the
 // warehouse location to go get it from.
+// DEVICE UNLOCK button + modal. Lives on Tech cards only: the unlock round
+// trip is tech's job, and putting it on every station's cards would be noise.
+// Stage dates answer "when did we last hear about this", which is the question
+// once an order has been sitting.
+var LK_STAGES=[['na','N/A'],['p1_sub','P1 Submitted'],['p1_unl','P1 Unlocked'],
+               ['p2_sub','P2 Submitted'],['p2_unl','P2 Unlocked']];
+function lkBtn(o,station){
+  if(station!=='Tech') return '';
+  var u=o.unlock_info||{}, keys=Object.keys(u);
+  var cls=keys.length?(u.na?' na':' has'):'';
+  var ttl=keys.length
+    ? LK_STAGES.filter(function(p){return u[p[0]];})
+        .map(function(p){return p[1]+' '+fdate(u[p[0]]);}).join(' / ')
+    : 'Device unlock status';
+  return '<button class="lockbtn2'+cls+'" data-lock="'+esc(o.id)+'" title="'+esc(ttl)+'">&#128273;</button>';
+}
+var lkOrder=null;
+function lkRender(){
+  var body=document.getElementById('lk-body'); if(!body||!lkOrder) return;
+  var row=(lastData&&(lastData.rows||[]).filter(function(r){return String(r.id)===String(lkOrder);})[0])||null;
+  var u=(row&&row.unlock_info)||{};
+  body.innerHTML=LK_STAGES.map(function(p){
+    var on=!!u[p[0]];
+    return '<div class="lkrow'+(on?' on':'')+(p[0]==='na'?' na':'')+'" data-stage="'+p[0]+'">'
+      +'<span class="bx">'+(on?'&#10003;':'')+'</span>'
+      +'<span class="lkl">'+p[1]+'</span>'
+      +'<span class="lkd">'+(on?fdate(u[p[0]]):'')+'</span></div>';
+  }).join('');
+}
+function lkOpen(id){
+  lkOrder=id;
+  var m=document.getElementById('lkmodal');
+  document.getElementById('lk-title').textContent='Device unlock · '+id;
+  document.getElementById('lk-msg').textContent='';
+  lkRender();
+  m.style.display='flex';
+  var pw=document.getElementById('lk-pw'); if(pw&&!pw.value) pw.focus();
+}
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest&&ev.target.closest('[data-lock]');
+  if(b){ ev.stopPropagation(); lkOpen(b.getAttribute('data-lock')); return; }
+  var x=ev.target.closest&&ev.target.closest('#lk-close');
+  if(x){ document.getElementById('lkmodal').style.display='none'; return; }
+  var r=ev.target.closest&&ev.target.closest('.lkrow');
+  if(r&&lkOrder){
+    var pw=(document.getElementById('lk-pw')||{}).value||'';
+    var msg=document.getElementById('lk-msg');
+    if(!pw){ msg.textContent='Enter the board password to change this.'; return; }
+    var stage=r.getAttribute('data-stage'), on=!r.classList.contains('on');
+    msg.textContent='';
+    ctlWrite('unlockinfo',{id:lkOrder,stage:stage,on:on,pw:pw}).then(function(res){
+      if(res.status===403){ msg.textContent='Wrong password.'; return; }
+      if(!res.ok){ msg.textContent='Could not save.'; return; }
+      // optimistic: stamp locally so the date shows at once, then the next
+      // poll replaces it with the server's copy
+      var row=(lastData&&(lastData.rows||[]).filter(function(q){return String(q.id)===String(lkOrder);})[0]);
+      if(row){
+        row.unlock_info=row.unlock_info||{};
+        if(on){
+          var d=new Date(), iso=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+          if(stage==='na'){ row.unlock_info={na:iso}; }
+          else { delete row.unlock_info.na; row.unlock_info[stage]=iso; }
+        } else { delete row.unlock_info[stage]; }
+      }
+      lkRender();
+      if(typeof refresh==='function') setTimeout(refresh,400);
+    }).catch(function(){ msg.textContent='Could not save.'; });
+  }
+},true);
+
+
 function ctnBtn(o){
   var n=(o.containers||[]).length;
   return '<button class="ctnbtn'+(n?' has':'')+'" data-ctn="'+esc(o.id)+'" title="'
@@ -548,19 +667,32 @@ function ctnBtn(o){
 // snapshot rather than the staged-container list behind the box icon, so a card
 // could say "0 ctn" while the icon listed several. The per-station "here" line
 // and the container button are both accurate, so the total added nothing but
-// doubt. The slot now carries the Tracked Recycling teardown bar: commodity
-// weight already booked off the order, over that plus what is still staged
-// there. TR only - the other stations count items, not pounds. tr_pct is null
-// when there is no weight to measure, and the bar is omitted rather than drawn
-// at 0%, which would read as "nothing done" on an order nobody has weighed.
-function orderTotal(o, station){
-  if(station!=='Tracked Recycling') return '';
-  if(o.tr_pct===null||o.tr_pct===undefined||!(o.tr_total>0)) return '';
-  var p=o.tr_pct;
+// doubt. The slot now carries a PROGRESS bar, per station:
+//   Tracked Recycling - commodity weight booked off the order, over that plus
+//                       what is still staged there.
+//   Tech / Data Capture - how far the order's count has fallen from its
+//                       high-water mark, since finished work leaves the step
+//                       rather than being marked done.
+// A bar is omitted when there is nothing to measure, never drawn at 0% for
+// want of data - that reads as 'nothing done' on an order nobody has touched.
+function progBar(label, done, total, pct, unit){
   return '<div class="ecp"><div class="epl">'
-    +'<span>'+lbs(o.tr_done)+' / '+lbs(o.tr_total)+' lbs torn down</span>'
-    +'<b>'+p+'%</b></div>'
-    +'<div class="epk"><i class="'+(p>=100?'hit':'')+'" style="width:'+Math.min(100,p)+'%"></i></div></div>';
+    +'<span>'+lbs(done)+' / '+lbs(total)+' '+unit+' '+label+'</span>'
+    +'<b>'+pct+'%</b></div>'
+    +'<div class="epk"><i class="'+(pct>=100?'hit':'')+'" style="width:'+Math.min(100,pct)+'%"></i></div></div>';
+}
+function orderTotal(o, station){
+  if(station==='Tracked Recycling'){
+    if(o.tr_pct===null||o.tr_pct===undefined||!(o.tr_total>0)) return '';
+    return progBar('torn down', o.tr_done, o.tr_total, o.tr_pct, 'lbs');
+  }
+  if(station==='Tech'||station==='Data Capture'){
+    var p=(o.step_progress||{})[station];
+    if(!p||!p.start||p.pct===null||p.pct===undefined) return '';
+    var unit=(station==='Tech')?'devices':'lbs';
+    return progBar('complete', p.done, p.start, p.pct, unit);
+  }
+  return '';
 }
 
 // Compact, DRAGGABLE order card for a station column. Drag a card into the EZ
@@ -579,6 +711,7 @@ function renderCards(list, station, more){
       +'<div class="ecr"><span class="ecid">'+esc(o.id)+(o.account?(' <span class="ecac">&middot; '+esc(o.account)+'</span>'):'')+'</span>'
       +ctnBtn(o)
       +'<button class="notebtn'+(o.note?' has':'')+'" data-note="'+esc(o.id)+'" title="'+(o.note?'View / edit note':'Add note')+'">&#128221;</button>'
+      +lkBtn(o,station)
       +'<span class="ecage'+(band===2?' over':'')+'">'+o.days+'d</span></div>'
       +'<div class="ecm">'+stationHere(o,station)+badges+'</div>'
       +orderTotal(o,station)+'</div>';
@@ -685,12 +818,13 @@ var dept='all';
 // local ports; on the public page we use their GitHub Pages copies (Supabase
 // Storage force-serves uploaded HTML as text/plain, so it cannot be framed).
 var OV_URLS = EDGE_MODE
-  ? {ov_tech:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/tech', ov_wh:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/warehouse'}
-  : {ov_tech:'http://'+location.hostname+':8777', ov_wh:'http://'+location.hostname+':8781'};
+  ? {ov_tech:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/tech?embed=1', ov_wh:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/warehouse?embed=1'}
+  : {ov_tech:'http://'+location.hostname+':8777/?embed=1', ov_wh:'http://'+location.hostname+':8781/?embed=1'};
 
 function applyDept(){
   var audit=(dept==='compliance'), drv=(dept==='drives'), sg=(dept==='signoff'),
-      ov=(dept==='ov_tech'||dept==='ov_wh'), board=!audit&&!drv&&!ov&&!sg;
+      cmd=(dept==='commodity'),
+      ov=(dept==='ov_tech'||dept==='ov_wh'), board=!audit&&!drv&&!ov&&!sg&&!cmd;
   var bv=document.getElementById('boardview'), av=document.getElementById('auditview'),
       dv=document.getElementById('drivesview'), ovv=document.getElementById('ovview');
   if(bv) bv.style.display=board?'':'none';
@@ -698,6 +832,8 @@ function applyDept(){
   if(dv) dv.style.display=drv?'':'none';
   var sgv=document.getElementById('sgview');
   if(sgv) sgv.style.display=sg?'':'none';
+  var cmv=document.getElementById('cmdview');
+  if(cmv) cmv.style.display=cmd?'':'none';
   if(ovv) ovv.style.display=ov?'':'none';
   if(ov){
     var fr=document.getElementById('ovframe'), want=OV_URLS[dept]||'about:blank';
@@ -713,20 +849,20 @@ function applyDept(){
   });
   var rb=document.getElementById('resetbtn');
   if(rb) rb.style.display=(board&&!locked)?'':'none';
-  // An embedded overview is a whole board - it carries its own header, clock
-  // and "Updated .." footer. Leaving ours on screen too renders two of each and
-  // reads as a duplicate window, so hide the outer chrome and keep only the
-  // title + dropdown needed to switch back.
+  // An embedded overview is a whole board and carries its own header, clock and
+  // footer. Rather than hiding OURS (which left the embedded board's identity
+  // on screen), the iframe is loaded with ?embed=1 and the embedded board hides
+  // its own chrome - so the Dragon Dropper header stays put (Rob, 2026-10-06).
+  // Only the board-specific widgets come off, since they describe this board's
+  // columns, not the overview being shown.
   ['trackers','holdbox','p90'].forEach(function(id){
     var e=document.getElementById(id);
     if(e) e.style.display=ov?'none':'';
   });
-  var ck=document.querySelector('.top .clock'), ft=document.querySelector('.foot');
-  if(ck) ck.style.display=ov?'none':'';
-  if(ft) ft.style.display=ov?'none':'';
   if(audit){ if(lastData) renderAudit(lastData); return; }
   if(drv){ if(lastData) renderDrives(lastData); return; }
   if(sg){ if(lastData) renderSignoff(lastData); return; }
+  if(cmd){ if(lastData) renderCommodity(lastData); return; }
   if(ov){ return; }
   ['dc','tech','tr'].forEach(function(k){
     var p=document.getElementById('sec_'+k);
@@ -825,7 +961,7 @@ function renderCompPop(){
     // Management have nothing to reset. This handler runs after applyDept(),
     // so without the dept check it re-showed the button on those tabs.
     var rb=document.getElementById('resetbtn');
-    if(rb) rb.style.display = (locked || dept==='compliance' || dept==='drives'
+    if(rb) rb.style.display = (locked || dept==='compliance' || dept==='commodity' || dept==='drives'
                            || dept==='signoff'
                            || dept==='ov_tech' || dept==='ov_wh') ? 'none' : '';
   }
@@ -1290,12 +1426,39 @@ function renderFlow(d){
     +'</div>';
 }
 
-function renderInv(d){
-  var O=d.ousei||{total:0,containers:0,pct:0,goal_lbs:40000,goal_ctn:40};
-  var pct=O.pct||0;
-  return '<div class="pgrow"><div class="pgpct">'+pct+'%</div>'
-    +'<div class="pgmain"><div class="pgbar"><i style="width:'+Math.min(100,pct)+'%"></i></div>'
-    +'<div class="pgnums"><b>'+lbs(O.total)+'</b> / '+lbs(O.goal_lbs)+' lbs &middot; <b>'+O.containers+'</b> / '+O.goal_ctn+' containers</div></div></div>';
+// LOAD PROGRESS - one bar per outbound stream. OUSEI and SRG call a truck at
+// 40k lbs OR 40 containers, whichever fills first, so the bar shows whichever
+// is further along; SRG STEEL rides its own trailer and is called on pounds
+// only, so it has no container goal (the count is shown as information).
+function loadRow(name, s){
+  if(!s) return '';
+  var p=s.pct||0, hit=p>=100?' hit':'';
+  var nums='<b>'+lbs(s.total)+'</b> / '+lbs(s.goal_lbs)+' lbs';
+  nums += s.goal_ctn ? (' &middot; <b>'+s.containers+'</b> / '+s.goal_ctn+' containers')
+                     : (' &middot; <b>'+s.containers+'</b> containers on hand');
+  if(s.unstaged>0) nums += ' &middot; '+lbs(s.unstaged)+' not yet on a load';
+  var cats=Object.keys(s.cats||{}).slice(0,5).map(function(k){
+    return esc(k)+' '+lbs(s.cats[k]); }).join(' &middot; ');
+  return '<div class="ld"><div class="lh"><span class="ln">'+esc(name)+'</span>'
+    +'<span class="lp'+hit+'">'+p+'%</span></div>'
+    +'<div class="lk"><i class="'+(hit?'hit':'')+'" style="width:'+Math.min(100,p)+'%"></i></div>'
+    +'<div class="lnum">'+nums+'</div>'
+    +(cats?('<div class="lcat">'+cats+'</div>'):'')+'</div>';
+}
+function renderCommodity(d){
+  var C=d.commodity||{};
+  var el=document.getElementById('cmd_loads');
+  if(el){
+    var h=loadRow('OUSEI',C.ousei)+loadRow('SRG',C.srg)+loadRow('SRG STEEL',C.steel);
+    el.innerHTML=h||'<div class="audempty">No commodity on hand.</div>';
+  }
+  var oe=document.getElementById('cmd_orders');
+  if(oe) oe.innerHTML=renderCord({commodity_orders:(C.orders||d.commodity_orders||[])});
+  var n=(C.orders||d.commodity_orders||[]).length;
+  var h1=document.getElementById('c1hint');
+  if(h1) h1.innerHTML=lbs(C.commodity_total||0)+' lbs commodity on hand';
+  var h2=document.getElementById('c2hint');
+  if(h2) h2.innerHTML=n+' order'+(n===1?'':'s')+' waiting on weight &amp; pricing';
 }
 
 function renderCord(d){
@@ -1380,6 +1543,7 @@ function paint(d){
   renderAudit(d);            // keeps the Compliance count live even on the board view
   renderDrives(d);           // same for Drive Management
   renderSignoff(d);          // and the sign-off queue
+  renderCommodity(d);        // and the commodity load bars / awaiting-customer list
   paintTrackers(d);          // header tiles read the same numbers renderAudit shows
   // id -> order map for the note modal
   var by={};
