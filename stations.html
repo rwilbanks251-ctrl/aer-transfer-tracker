@@ -700,8 +700,15 @@ var LK_COLS=['PO/Order','Rep','CST','Location','Type','Serial','Model Number','P
              'BD Notified (P2)','Due Date P2','Unlocked per Customer (P2)'];
 function lkCsvCell(v){
   v=(v===null||v===undefined)?'':String(v);
-  return /[",
-]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  // No regex and no backslash escapes on purpose: this JS is built from a
+  // Python string, where an escape written one backslash short turns into a
+  // REAL line break inside the literal. That breaks the enclosing regex or
+  // string and kills every script after it - the whole board went blank that
+  // way on 2026-10-06. Keep control characters as fromCharCode here.
+  var NL=String.fromCharCode(10), CR=String.fromCharCode(13);
+  var needs = v.indexOf('"')>=0 || v.indexOf(',')>=0
+           || v.indexOf(NL)>=0 || v.indexOf(CR)>=0;
+  return needs ? '"'+v.split('"').join('""')+'"' : v;
 }
 function lkUsDate(d){
   return ('0'+(d.getMonth()+1)).slice(-2)+'/'+('0'+d.getDate()).slice(-2)+'/'+d.getFullYear();
@@ -728,8 +735,7 @@ function lkDownload(id){
                 lkUsDate(today), '', '', '', ''].map(lkCsvCell).join(','));
   });
   // BOM so Excel opens it as UTF-8 rather than mangling accented names
-  var blob=new Blob(['﻿'+lines.join('
-')],{type:'text/csv;charset=utf-8;'});
+  var blob=new Blob([String.fromCharCode(65279)+lines.join(String.fromCharCode(13)+String.fromCharCode(10))],{type:'text/csv;charset=utf-8;'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download='Device Unlocks '+id+' '+lkUsDate(new Date()).split('/').join('-')+'.csv';
@@ -831,13 +837,11 @@ function tagDownload(id, station){
               .filter(function(v,i,a){ return v && a.indexOf(v)===i; });
   if(!tags.length){ alert('No containers staged at '+station+' for order '+id+'.'); return; }
   var lines=['TagID,Price'].concat(tags.map(function(t){
-    return (/[",
-]/.test(t) ? '"'+t.replace(/"/g,'""')+'"' : t)+',';
+    return lkCsvCell(t)+',';          // shared quoting, no regex
   }));
   var d=new Date();
   var stamp=('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)+'-'+d.getFullYear();
-  var blob=new Blob(['﻿'+lines.join('
-')],{type:'text/csv;charset=utf-8;'});
+  var blob=new Blob([String.fromCharCode(65279)+lines.join(String.fromCharCode(13)+String.fromCharCode(10))],{type:'text/csv;charset=utf-8;'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download=id+' '+station+' containers '+stamp+'.csv';
@@ -862,7 +866,7 @@ document.addEventListener('click',function(ev){
 function progBar(label, done, total, pct, unit, o, station){
   var dl = (o && station)
     ? '<button class="tagdl" data-tags="'+esc(o.id)+'|'+esc(station)+'"'
-      +' title="Export this step's container tags">&#11015;</button>'
+      +' title="Export container tags for this step">&#11015;</button>'
     : '';
   return '<div class="ecp"><div class="epl">'
     +'<span>'+lbs(done)+' / '+lbs(total)+' '+unit+' '+label+'</span>'
