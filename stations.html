@@ -624,8 +624,11 @@ function lkStatus(o,station){
 function lkBubble(o){
   var b=lkLatest(o);
   if(!b) return '<span class="lkst none">&#128274; no unlock info</span>';
-  var cls = b.key==='na' ? 'na' : (b.key.indexOf('_unl')>0 ? 'ok' : 'wait');
-  var ic  = b.key==='na' ? '&#8212;' : (cls==='ok' ? '&#128275;' : '&#128274;');
+  // N/A is a GO state, not a neutral one: nothing on the order needs unlocking,
+  // so it is as clear to proceed as an actual unlock (Rob, 2026-10-06). Only a
+  // SUBMITTED stage is amber - that is the one still waiting on the customer.
+  var cls = (b.key==='na' || b.key.indexOf('_unl')>0) ? 'ok' : 'wait';
+  var ic  = cls==='ok' ? '&#128275;' : '&#128274;';
   return '<span class="lkst '+cls+'">'+ic+' '+b.label+' <i>'+fdate(b.date)+'</i></span>';
 }
 // Editing follows the board's own lock button - there is no separate password
