@@ -70,6 +70,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .sgmsg{font-size:11.5px;color:#9fb2ca}
 .drvwait{flex:0 0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   background:#0e1c31;border:1.5px solid #24406a;border-radius:11px;padding:8px 14px}
+.audempty.held{color:#ffd782}
+.audempty.held .heldwhy{margin-top:4px;font-size:11.5px;font-weight:700;color:#9fb2ca}
 .drvwait .wt{font-size:12px;font-weight:900;color:#ffd782;text-transform:uppercase;letter-spacing:.5px}
 .drvwait .wd{font-size:11.5px;color:#9fb2ca}
 .drvwait .wo{font-size:11.5px;color:#cfe0f2;background:#16263f;border:1px solid #2c4a72;
@@ -1444,8 +1446,27 @@ function renderDrives(d){
   var dby={};
   (D.wipe||[]).concat(D.destroy||[]).forEach(function(o){ dby[o.id]=o; });
   window._drvById=dby;
-  fill('drv_wipe', D.wipe, 'wipe', 'No loose drives waiting to be wiped.');
-  fill('drv_destroy', D.destroy, 'destroy', 'No loose drives waiting to be destroyed.');
+  // An empty column must say WHY it is empty. Drives held back still exist:
+  // 43 drives sat pending destroy on 202292 while this column read "none
+  // waiting to be destroyed" (Rob, 2026-10-06). "None" and "held" are
+  // different facts and the card has to tell them apart.
+  function heldIn(bucket){
+    var w=(D.waiting||[]).filter(function(o){ return o.drv_bucket===bucket; });
+    var n=w.reduce(function(a,o){ return a+(o.drv_count||0); },0);
+    if(!n) return '';
+    var why=(w[0]&&w[0].drv_hold)?esc(w[0].drv_hold):'upstream work still open';
+    return '<div class="audempty held">&#9203; <b>'+n+' drive'+(n===1?'':'s')+' held</b>'
+      +'<div class="heldwhy">'+why+' &middot; '+w.length+' order'+(w.length===1?'':'s')
+      +' &mdash; see Not yet released below</div></div>';
+  }
+  function fillDrv(id, list, kind, noneMsg){
+    var el=document.getElementById(id); if(!el) return;
+    if(list && list.length){ fill(id, list, kind, noneMsg); return; }
+    var h=heldIn(kind);
+    el.innerHTML = h || ('<div class="audempty">&#10003; <b>'+noneMsg+'</b></div>');
+  }
+  fillDrv('drv_wipe', D.wipe, 'wipe', 'No loose drives waiting to be wiped.');
+  fillDrv('drv_destroy', D.destroy, 'destroy', 'No loose drives waiting to be destroyed.');
   var t=D.totals||{};
   function hint(id, drives, orders, extra){
     var e=document.getElementById(id); if(!e) return;
