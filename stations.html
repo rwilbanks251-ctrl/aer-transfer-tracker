@@ -395,6 +395,7 @@ body.locked .ec{cursor:default}
         <div class="subcol"><div class="sublbl uns">Unsorted</div><div class="scroll drop" id="dc_unsorted" data-station="Data Capture" data-bucket="unsorted"></div></div>
       </div></div>
     <div class="panel sec" id="sec_tech"><h2><span class="n">TECH</span><span class="hx" id="techhint"></span></h2>
+      <div class="trt" id="techtarget"></div>
       <div class="secgrid">
         <div class="subcol"><div class="sublbl">To Process</div><div class="scroll drop" id="tech_regular" data-station="Tech" data-bucket="regular"></div></div>
         <div class="subcol"><div class="sublbl ez">&#9889; EZ</div><div class="scroll drop" id="tech_ez" data-station="Tech" data-bucket="ez"></div></div>
@@ -1077,6 +1078,11 @@ function renderTRTarget(d){
   return renderTargetBars(T.tr_today,T.tr_week,T.tr_target_day||6000,T.tr_target_week||30000,'lbs');
 }
 
+function renderTechTarget(d){
+  var T=d.totals||{};
+  return renderTargetBars(T.tech_today,T.tech_week,T.tech_target_day||90,T.tech_target_week||450,'units');
+}
+
 function renderDCTarget(d){
   var T=d.totals||{};
   return renderTargetBars(T.dc_today,T.dc_week,T.dc_target_day||350,T.dc_target_week||1750,'items');
@@ -1176,6 +1182,8 @@ function paint(d){
   if(trt) trt.innerHTML=renderTRTarget(d);
   var dct=document.getElementById('dctarget');
   if(dct) dct.innerHTML=renderDCTarget(d);
+  var tct=document.getElementById('techtarget');
+  if(tct) tct.innerHTML=renderTechTarget(d);
   var ho=vis(d.hold_orders);
   window._held=ho;
   document.getElementById('holdcount').innerHTML=ho.length;
