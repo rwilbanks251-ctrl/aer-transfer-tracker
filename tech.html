@@ -116,6 +116,40 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .tr .num{text-align:center;min-width:60px}.tr .num .v{font-size:24px;font-weight:900}.tr .num .l{font-size:11px;color:#9fb2ca;text-transform:uppercase}
 .v.g{color:#43d17a}.v.r{color:#ff6b6b}.v.o{color:#ffc247}.v.big{color:#fff;font-size:30px}
 .empty{color:#43d17a;font-size:22px;font-weight:800;padding:20px 0}
+.lkst{display:inline-flex;align-items:baseline;gap:5px;font-size:10.5px;font-weight:900;
+  letter-spacing:.3px;padding:2px 8px;border-radius:5px;white-space:nowrap;
+  background:#15304d;color:#7fd8ff;border:1px solid #2c4a73}
+.lkst i{font-style:normal;font-weight:800;opacity:.75}
+.lkst.ok{background:#14361f;color:#8fe0a8;border-color:#2c6b41}
+.lkst.wait{background:#3a2c10;color:#ffd782;border-color:#6a5410}
+.lkst.na{background:#1b2638;color:#9fb2ca;border-color:#3b4a60}
+.lkst.none{background:transparent;color:#6f819a;border-color:#2a3b55}
+.lk-pw{margin-bottom:12px}
+.lk-pw input{width:100%;background:#0e1c31;color:#fff;border:1.5px solid #24406a;border-radius:9px;
+  padding:9px 12px;font-size:14px;font-family:inherit;font-weight:700}
+.lk-pw input:focus{outline:none;border-color:#F0B429}
+.lkrow{display:flex;align-items:center;gap:11px;padding:10px 8px;border-bottom:1px solid #1b3152;cursor:pointer}
+.lkrow:last-child{border-bottom:none}
+.lkrow .bx{width:20px;height:20px;border:2px solid #3b5f8f;border-radius:5px;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#0e1c31}
+.lkrow.on .bx{background:#43d17a;border-color:#43d17a}
+.lkrow .lkl{flex:1 1 auto;font-size:15px;font-weight:800;color:#eaf1f8}
+.lkrow.on .lkl{color:#8fe0a8}
+.lkrow .lkd{font-size:13px;font-weight:800;color:#F0B429;white-space:nowrap}
+.lkrow.na .lkl{color:#9fb2ca}
+.lk-msg{margin-top:10px;font-size:13px;font-weight:700;color:#ff8f8f;min-height:16px}
+.lockbtn2{background:transparent;border:1.5px solid #2c4a73;color:#7fd8ff;border-radius:7px;
+  padding:2px 7px;font-size:12px;cursor:pointer;font-family:inherit;line-height:1.5;margin-left:5px}
+.lockbtn2.has{border-color:#2c6b41;color:#8fe0a8}
+.lockbtn2.na{border-color:#3b4a60;color:#9fb2ca}
+
+.opg{margin:7px 0 2px}
+.opg .opl{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;
+  font-weight:800;color:#9fb2ca;letter-spacing:.3px;margin-bottom:4px}
+.opg .opl b{color:#F0B429;font-size:13px}
+.opg .opk{height:8px;background:#0e1c31;border-radius:5px;overflow:hidden;border:1px solid #24406a}
+.opg .opk i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#8a6a12,#F0B429)}
+.opg .opk i.hit{background:linear-gradient(90deg,#2c6b41,#4ad17c)}
 .foot{display:flex;justify-content:space-between;padding:0 34px 12px;font-size:13px;color:#7f93ad}
 .stale{color:#ffc247}
 .opsstale{background:#5a1616;color:#ffb0b0;border-radius:4px;padding:1px 7px;font-weight:900}
@@ -137,6 +171,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
   }catch(_){}
 })();
 </script>
+<div class="notemodal" id="lkmodal" style="display:none">
+  <div class="nm-box">
+    <div class="nm-h"><span id="lk-title">Device unlock</span><button class="nm-x" id="lk-close" title="Close">&times;</button></div>
+    <div class="lk-pw"><input type="password" id="lk-pw" placeholder="Board password to edit" autocomplete="off"></div>
+    <div id="lk-body"></div>
+    <div class="lk-msg" id="lk-msg"></div>
+  </div>
+</div>
+
 <div class="top">
   <h1>AER <span class="a">|</span> Tech Room</h1>
   <div class="wx" id="weather"><span class="wxi wx-float">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
@@ -157,6 +200,116 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 <div class="foot"><div id="src">Makor OPS Dashboard (Tech + Drive backlog, throughput) &middot; PhoneCheck + MacCheck + WipeOS (testers)</div><div id="updated">&nbsp;</div></div>
 <script>
 function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fdate(s){if(!s)return '';var p=String(s).split('-');return p.length===3?(p[1]+'/'+p[2]+'/'+p[0].slice(2)):s;}
+// Device-unlock state is SHARED with the Dragon Dropper board: one row in
+// stations_control, reached through the stations edge function. This board has
+// no control endpoints of its own, so every write goes there.
+var EDGE='https://opfxjmqscafxfnavjbfa.supabase.co/functions/v1/stations';
+function ctlWrite(action,payload){
+  var body={action:action};for(var k in (payload||{}))body[k]=payload[k];
+  return fetch(EDGE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+}
+var lastData={rows:[]};
+// Pull the unlock map from the same edge function so a tick made on either
+// board shows on both. Best-effort: the queue must render even if this fails.
+function loadUnlocks(){
+  return fetch(EDGE).then(function(r){return r.json();}).then(function(d){
+    var m={};(d.rows||[]).forEach(function(r){ if(r.unlock_info) m[String(r.id)]=r.unlock_info; });
+    window._unlockMap=m;
+  }).catch(function(){});
+}
+// DEVICE UNLOCK button + modal. Lives on Tech cards only: the unlock round
+// trip is tech's job, and putting it on every station's cards would be noise.
+// Stage dates answer "when did we last hear about this", which is the question
+// once an order has been sitting.
+var LK_STAGES=[['na','N/A'],['p1_sub','P1 Submitted'],['p1_unl','P1 Unlocked'],
+               ['p2_sub','P2 Submitted'],['p2_unl','P2 Unlocked']];
+function lkBtn(o,station){
+  if(station!=='Tech') return '';
+  var u=o.unlock_info||{}, keys=Object.keys(u);
+  var cls=keys.length?(u.na?' na':' has'):'';
+  var ttl=keys.length
+    ? LK_STAGES.filter(function(p){return u[p[0]];})
+        .map(function(p){return p[1]+' '+fdate(u[p[0]]);}).join(' / ')
+    : 'Device unlock status';
+  return '<button class="lockbtn2'+cls+'" data-lock="'+esc(o.id)+'" title="'+esc(ttl)+'">&#128273;</button>';
+}
+// The order's CURRENT unlock status = the furthest-along box ticked. Ties on
+// date break by stage order, so P1 Unlocked beats P1 Submitted when both were
+// ticked the same day. Returns null when nothing has been recorded - an order
+// nobody has looked at must not read the same as one explicitly marked N/A.
+function lkLatest(o){
+  var u=(o&&o.unlock_info)||{}, best=null;
+  LK_STAGES.forEach(function(p,i){
+    var d=u[p[0]]; if(!d) return;
+    if(!best || d>best.date || (d===best.date && i>best.i)) best={key:p[0],label:p[1],date:d,i:i};
+  });
+  return best;
+}
+function lkStatus(o,station){
+  if(station!=='Tech') return '';
+  var b=lkLatest(o);
+  if(!b) return '<span class="lkst none">&#128274; no unlock info</span>';
+  var cls = b.key==='na' ? 'na' : (b.key.indexOf('_unl')>0 ? 'ok' : 'wait');
+  var ic  = b.key==='na' ? '&#8212;' : (cls==='ok' ? '&#128275;' : '&#128274;');
+  return '<span class="lkst '+cls+'">'+ic+' '+b.label+' <i>'+fdate(b.date)+'</i></span>';
+}
+var lkOrder=null;
+function lkRender(){
+  var body=document.getElementById('lk-body'); if(!body||!lkOrder) return;
+  var row=(lastData&&(lastData.rows||[]).filter(function(r){return String(r.id)===String(lkOrder);})[0])||null;
+  var u=(row&&row.unlock_info)||{};
+  body.innerHTML=LK_STAGES.map(function(p){
+    var on=!!u[p[0]];
+    return '<div class="lkrow'+(on?' on':'')+(p[0]==='na'?' na':'')+'" data-stage="'+p[0]+'">'
+      +'<span class="bx">'+(on?'&#10003;':'')+'</span>'
+      +'<span class="lkl">'+p[1]+'</span>'
+      +'<span class="lkd">'+(on?fdate(u[p[0]]):'')+'</span></div>';
+  }).join('');
+}
+function lkOpen(id){
+  lkOrder=id;
+  var m=document.getElementById('lkmodal');
+  document.getElementById('lk-title').textContent='Device unlock · '+id;
+  document.getElementById('lk-msg').textContent='';
+  lkRender();
+  m.style.display='flex';
+  var pw=document.getElementById('lk-pw'); if(pw&&!pw.value) pw.focus();
+}
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest&&ev.target.closest('[data-lock]');
+  if(b){ ev.stopPropagation(); lkOpen(b.getAttribute('data-lock')); return; }
+  var x=ev.target.closest&&ev.target.closest('#lk-close');
+  if(x){ document.getElementById('lkmodal').style.display='none'; return; }
+  var r=ev.target.closest&&ev.target.closest('.lkrow');
+  if(r&&lkOrder){
+    var pw=(document.getElementById('lk-pw')||{}).value||'';
+    var msg=document.getElementById('lk-msg');
+    if(!pw){ msg.textContent='Enter the board password to change this.'; return; }
+    var stage=r.getAttribute('data-stage'), on=!r.classList.contains('on');
+    msg.textContent='';
+    ctlWrite('unlockinfo',{id:lkOrder,stage:stage,on:on,pw:pw}).then(function(res){
+      if(res.status===403){ msg.textContent='Wrong password.'; return; }
+      if(!res.ok){ msg.textContent='Could not save.'; return; }
+      // optimistic: stamp locally so the date shows at once, then the next
+      // poll replaces it with the server's copy
+      var row=(lastData&&(lastData.rows||[]).filter(function(q){return String(q.id)===String(lkOrder);})[0]);
+      if(row){
+        row.unlock_info=row.unlock_info||{};
+        if(on){
+          var d=new Date(), iso=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+          if(stage==='na'){ row.unlock_info={na:iso}; }
+          else { delete row.unlock_info.na; row.unlock_info[stage]=iso; }
+        } else { delete row.unlock_info[stage]; }
+      }
+      lkRender();
+      if(typeof refresh==='function') setTimeout(refresh,400);
+    }).catch(function(){ msg.textContent='Could not save.'; });
+  }
+},true);
+
+
+
 function tickClock(){var n=new Date();
   document.getElementById('clock').textContent=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
   document.getElementById('cdate').textContent=n.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});}
@@ -164,7 +317,19 @@ setInterval(tickClock,1000);tickClock();
 
 function kpi(v,l){return '<div class="kpi"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
 
+// How far this order has got at Tech: its count against the high-water mark
+// seen for it, since a tested device leaves the summary rather than being
+// marked done. Omitted when there is no baseline yet - a missing bar is
+// honest, a 0% bar on an untouched order is not.
+function progBar(p){
+  if(!p||!p.start||p.pct===null||p.pct===undefined) return '';
+  var pct=p.pct;
+  return '<div class="opg"><div class="opl"><span>'+Math.round(p.done)+' / '+Math.round(p.start)+' devices complete</span>'
+    +'<b>'+pct+'%</b></div>'
+    +'<div class="opk"><i class="'+(pct>=100?'hit':'')+'" style="width:'+Math.min(100,pct)+'%"></i></div></div>';
+}
 function renderOrders(d){
+  lastData={rows:d.orders||[]};        // the shared unlock modal reads rows from here
   if(!d.orders||!d.orders.length) return '<div class="empty">All active Duncan orders complete &#127881;</div>';
   var sla=d.sla||45, warn=sla-5, h='';
   d.orders.forEach(function(o){
@@ -185,9 +350,11 @@ function renderOrders(d){
     else if(o.unlock==='partial') lock='<span class="locktag partial">&#128274; PARTIAL UNLOCK</span>';
     else if(o.unlock==='pending') lock='<span class="locktag pending">&#128274; PENDING UNLOCK</span>';
     var note=o.note?('<div class="ordnote">&#128221; '+esc(o.note)+'</div>'):'';
-    h+='<div class="ord b'+band+(o.priority?' prio':'')+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span>'+xf+prio+tag+lock+'</div>'
+    o.unlock_info=(window._unlockMap||{})[String(o.id)]||o.unlock_info||{};
+    h+='<div class="ord b'+band+(o.priority?' prio':'')+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span>'+xf+prio+tag+lock+lkBtn(o,'Tech')+'</div>'
       +'<div class="age'+(band===2?' over':'')+'">'+o.age+'<small>days in queue</small></div></div>'
-      +'<div class="meta">'+meta+'</div>'
+      +'<div class="meta">'+meta+' '+lkStatus(o,'Tech')+'</div>'
+      +progBar(o.prog)
       +'<div class="chips">'+chips+'</div>'+note+'</div>';
   });
   if(d.totals.more>0) h+='<div class="chip" style="background:none;color:#7f93ad">+ '+d.totals.more+' more in queue</div>';
@@ -364,7 +531,9 @@ function loadWeather(){
 }
 loadWeather(); setInterval(loadWeather, 900000);   // refresh weather every 15 min
 
-function poll(){fetch('tech_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});}
+function poll(){loadUnlocks().then(function(){
+  return fetch('tech_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint);
+}).catch(function(){});}
 poll();setInterval(poll,60000);
 
 // Kiosk hygiene: reload the page once a night (~3 AM) so a TV left on for
