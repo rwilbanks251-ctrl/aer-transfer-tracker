@@ -624,9 +624,13 @@ function lkStatus(o,station){
   return '<span class="lkst '+cls+'">'+ic+' '+b.label+' <i>'+fdate(b.date)+'</i></span>';
 }
 // Editing follows the board's own lock button - there is no separate password
-// (Rob, 2026-10-06: one lock, up top). A page that has no lock toggle at all,
-// like the Tech overview, is editable: that is why the button is on it.
-function lkReadOnly(){ return (typeof locked!=='undefined') && !!locked; }
+// (Rob, 2026-10-06: one lock, up top). A page can also declare itself view-only
+// by setting LK_VIEW_ONLY, which the Tech overview does: it is a wall display,
+// so the status is there to be READ, and ticking happens on Dragon Dropper.
+function lkReadOnly(){
+  if(typeof LK_VIEW_ONLY!=='undefined' && LK_VIEW_ONLY) return true;
+  return (typeof locked!=='undefined') && !!locked;
+}
 var lkOrder=null;
 function lkRender(){
   var body=document.getElementById('lk-body'); if(!body||!lkOrder) return;
@@ -648,7 +652,10 @@ function lkOpen(id){
   document.getElementById('lk-msg').textContent='';
   lkRender();
   var ro=document.getElementById('lk-ro');
-  if(ro) ro.style.display=lkReadOnly()?'':'none';
+  if(ro){ ro.style.display=lkReadOnly()?'':'none';
+          ro.innerHTML=(typeof LK_VIEW_ONLY!=='undefined'&&LK_VIEW_ONLY)
+            ? '&#128274; View only &mdash; tick these on the Dragon Dropper board.'
+            : '&#128274; Read-only &mdash; unlock the board to change this.'; }
   m.style.display='flex';
 }
 document.addEventListener('click',function(ev){
@@ -659,7 +666,9 @@ document.addEventListener('click',function(ev){
   var r=ev.target.closest&&ev.target.closest('.lkrow');
   if(r&&lkOrder){
     var msg=document.getElementById('lk-msg');
-    if(lkReadOnly()){ msg.textContent='Board is locked - unlock it up top to change this.'; return; }
+    if(lkReadOnly()){ msg.textContent=(typeof LK_VIEW_ONLY!=='undefined'&&LK_VIEW_ONLY)
+      ? 'View only - tick these on the Dragon Dropper board.'
+      : 'Board is locked - unlock it up top to change this.'; return; }
     var stage=r.getAttribute('data-stage'), on=!r.classList.contains('on');
     msg.textContent='';
     ctlWrite('unlockinfo',{id:lkOrder,stage:stage,on:on}).then(function(res){
