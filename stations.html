@@ -1034,13 +1034,11 @@ function renderCompPop(){
                            || dept==='signoff'
                            || dept==='ov_tech' || dept==='ov_wh') ? 'none' : '';
   }
-  // Password gate — light deterrent so the board isn't toggled casually (the
-  // password is in the page source, so it's not real security).
-  var LOCK_PW='layla';
+  // Plain toggle, no password (Rob, 2026-10-06). The prompt was a deterrent
+  // only - the password sat in the page source - and it stood between a tech
+  // and ticking a device-unlock box every single time. RESET is still gated,
+  // server-side, because that one wipes the board for everyone.
   if(b) b.addEventListener('click',function(){
-    var pw=prompt(locked?'Password to UNLOCK drag-and-drop:':'Password to LOCK drag-and-drop:');
-    if(pw===null) return;                                   // cancelled
-    if(pw.trim().toLowerCase()!==LOCK_PW){ alert('Incorrect password.'); return; }
     locked=!locked;
     try{ localStorage.setItem('stations_locked', locked?'1':'0'); }catch(_){}
     apply();
