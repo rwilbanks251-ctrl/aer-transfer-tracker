@@ -367,6 +367,14 @@ body.locked .ec{cursor:default}
 .ld .lnum{margin-top:6px;font-size:12px;color:#9fb2ca;font-weight:700}
 .ld .lnum b{color:#eaf1f8}
 .ld .lcat{margin-top:5px;font-size:11px;color:#7f93ad;font-weight:600;line-height:1.5}
+.lkst{display:inline-flex;align-items:baseline;gap:5px;font-size:10.5px;font-weight:900;
+  letter-spacing:.3px;padding:2px 8px;border-radius:5px;white-space:nowrap;
+  background:#15304d;color:#7fd8ff;border:1px solid #2c4a73}
+.lkst i{font-style:normal;font-weight:800;opacity:.75}
+.lkst.ok{background:#14361f;color:#8fe0a8;border-color:#2c6b41}
+.lkst.wait{background:#3a2c10;color:#ffd782;border-color:#6a5410}
+.lkst.na{background:#1b2638;color:#9fb2ca;border-color:#3b4a60}
+.lkst.none{background:transparent;color:#6f819a;border-color:#2a3b55}
 .lk-pw{margin-bottom:12px}
 .lk-pw input{width:100%;background:#0e1c31;color:#fff;border:1.5px solid #24406a;border-radius:9px;
   padding:9px 12px;font-size:14px;font-family:inherit;font-weight:700}
@@ -597,6 +605,26 @@ function lkBtn(o,station){
     : 'Device unlock status';
   return '<button class="lockbtn2'+cls+'" data-lock="'+esc(o.id)+'" title="'+esc(ttl)+'">&#128273;</button>';
 }
+// The order's CURRENT unlock status = the furthest-along box ticked. Ties on
+// date break by stage order, so P1 Unlocked beats P1 Submitted when both were
+// ticked the same day. Returns null when nothing has been recorded - an order
+// nobody has looked at must not read the same as one explicitly marked N/A.
+function lkLatest(o){
+  var u=(o&&o.unlock_info)||{}, best=null;
+  LK_STAGES.forEach(function(p,i){
+    var d=u[p[0]]; if(!d) return;
+    if(!best || d>best.date || (d===best.date && i>best.i)) best={key:p[0],label:p[1],date:d,i:i};
+  });
+  return best;
+}
+function lkStatus(o,station){
+  if(station!=='Tech') return '';
+  var b=lkLatest(o);
+  if(!b) return '<span class="lkst none">&#128274; no unlock info</span>';
+  var cls = b.key==='na' ? 'na' : (b.key.indexOf('_unl')>0 ? 'ok' : 'wait');
+  var ic  = b.key==='na' ? '&#8212;' : (cls==='ok' ? '&#128275;' : '&#128274;');
+  return '<span class="lkst '+cls+'">'+ic+' '+b.label+' <i>'+fdate(b.date)+'</i></span>';
+}
 var lkOrder=null;
 function lkRender(){
   var body=document.getElementById('lk-body'); if(!body||!lkOrder) return;
@@ -713,7 +741,7 @@ function renderCards(list, station, more){
       +'<button class="notebtn'+(o.note?' has':'')+'" data-note="'+esc(o.id)+'" title="'+(o.note?'View / edit note':'Add note')+'">&#128221;</button>'
       +lkBtn(o,station)
       +'<span class="ecage'+(band===2?' over':'')+'">'+o.days+'d</span></div>'
-      +'<div class="ecm">'+stationHere(o,station)+badges+'</div>'
+      +'<div class="ecm">'+stationHere(o,station)+badges+lkStatus(o,station)+'</div>'
       +orderTotal(o,station)+'</div>';
   });
   if(more>0) h+='<div class="ezmore">+ '+more+' more</div>';
