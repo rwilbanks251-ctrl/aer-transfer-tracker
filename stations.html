@@ -21,6 +21,46 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
    in To Destroy, not a column of their own. */
 .drvrow{display:grid;grid-template-columns:1fr 1fr;gap:16px;min-height:0}
 .drvrow>.panel{min-height:0}
+/* Order Sign-Off: list on the left, the selected order's checklist right */
+.sgrow{display:grid;grid-template-columns:minmax(300px,1fr) 2fr;gap:16px;min-height:0}
+.sgrow>.panel{min-height:0}
+.sgrow .scroll.auditcol{padding:6px 8px 8px;flex:1 1 auto;min-height:0;
+  overflow-y:auto;overflow-x:hidden}
+.sgo{background:#0e1c31;border:1.5px solid #24406a;border-radius:9px;
+  padding:7px 11px;margin-bottom:6px;cursor:pointer}
+.sgo:hover{background:#16263f;border-color:#35598f}
+.sgo.on{border-color:#F0B429;background:#1c2f4d}
+.sgo .r1{display:flex;align-items:baseline;gap:8px}
+.sgo .oid{font-size:14px;font-weight:800;font-family:Consolas,monospace;color:#7fd8ff}
+.sgo .ac{font-size:11.5px;color:#9fb2ca;flex:1 1 auto;overflow:hidden;white-space:nowrap}
+.sgo .dt{font-size:11px;color:#ffd782;font-weight:800}
+.sgo .st{font-size:10.5px;color:#7f93ad;margin-top:2px}
+.sgo .ok{color:#43d17a;font-weight:800}
+.ck{background:#0e1c31;border:1.5px solid #24406a;border-left-width:4px;
+  border-radius:9px;padding:8px 12px;margin-bottom:7px}
+.ck.pass{border-left-color:#43d17a}.ck.fail{border-left-color:#ff6b6b}
+.ck.sign{border-left-color:#ffd782}
+.ck .h{display:flex;align-items:baseline;gap:9px}
+.ck .lab{font-size:13px;font-weight:800;color:#eaf1f8;flex:1 1 auto}
+.ck .tag{font-size:10px;font-weight:900;padding:1px 7px;border-radius:4px}
+.ck.pass .tag{background:#14361f;color:#43d17a}
+.ck.fail .tag{background:#3a1420;color:#ff6b6b}
+.ck.sign .tag{background:#2a2410;color:#ffd782}
+.ck .det{font-size:11.5px;color:#9fb2ca;margin-top:3px}
+.ck .fix{font-size:11px;color:#ffd782;margin-top:4px}
+.ck .exc{font-size:11px;color:#8fd3ff;margin-top:4px}
+.sgbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  background:#0e1c31;border:1.5px solid #24406a;border-radius:10px;
+  padding:9px 12px;margin-bottom:9px}
+.sgbtn{background:transparent;border:1.5px solid #2c6b41;color:#43d17a;
+  border-radius:8px;padding:6px 13px;font-size:12.5px;font-weight:800;
+  cursor:pointer;font-family:inherit}
+.sgbtn:hover{background:#14361f}
+.sgbtn[disabled]{opacity:.38;cursor:not-allowed}
+.sgbtn.done{border-color:#24406a;color:#7f93ad}
+.sgbtn.exc{border-color:#6a5410;color:#ffd782}
+.sgbtn.exc:hover{background:#2a2410}
+.sgmsg{font-size:11.5px;color:#9fb2ca}
 .drvwait{flex:0 0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   background:#0e1c31;border:1.5px solid #24406a;border-radius:11px;padding:8px 14px}
 .drvwait .wt{font-size:12px;font-weight:900;color:#ffd782;text-transform:uppercase;letter-spacing:.5px}
@@ -308,6 +348,14 @@ body.locked .ec{cursor:default}
 .trt .trk2 i{display:block;height:100%;border-radius:4px;
   background:linear-gradient(90deg,#8a6a12,#F0B429)}
 .trt .trk2 i.hit{background:linear-gradient(90deg,#2c6b41,#4ad17c)}
+.ecp{margin:5px 0 1px}
+.ecp .epl{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:10px;font-weight:800;color:#9fb2ca;letter-spacing:.3px;margin-bottom:3px}
+.ecp .epl b{color:#F0B429;font-size:11px}
+.ecp .epk{height:6px;background:#0e1c31;border-radius:4px;overflow:hidden;border:1px solid #24406a}
+.ecp .epk i{display:block;height:100%;border-radius:4px;
+  background:linear-gradient(90deg,#8a6a12,#F0B429)}
+.ecp .epk i.hit{background:linear-gradient(90deg,#2c6b41,#4ad17c)}
 .cbar{margin-bottom:5px}
 .cbar .ct{display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px;color:#c7d3e2}
 .cbar .ct .cw{font-weight:800;color:#ffc247}
@@ -336,6 +384,7 @@ body.locked .ec{cursor:default}
       <option value="tr">Tracked Recycling</option>
       <option value="compliance">Compliance</option>
       <option value="drives">Drive Management</option>
+      <option value="signoff">Order Sign-Off</option>
       <option value="ov_tech">Tech Overview</option>
       <option value="ov_wh">Warehouse Overview</option>
     </select>
@@ -381,6 +430,14 @@ body.locked .ec{cursor:default}
       <div class="scroll auditcol" id="drv_destroy"></div></div>
   </div>
   <div class="drvwait" id="drv_waiting" style="display:none"></div>
+</div>
+<div class="grid2" id="sgview" style="display:none">
+  <div class="ordersrow sgrow">
+    <div class="panel sec"><h2><span class="n">AWAITING SIGN-OFF</span><span class="hx" id="sg1hint"></span></h2>
+      <div class="scroll auditcol" id="sg_list"></div></div>
+    <div class="panel sec"><h2><span class="n">CHECKLIST</span><span class="hx" id="sg2hint"></span></h2>
+      <div class="scroll auditcol" id="sg_detail"></div></div>
+  </div>
 </div>
 <div class="grid2" id="ovview" style="display:none">
   <iframe id="ovframe" title="dashboard" src="about:blank"></iframe>
@@ -491,10 +548,19 @@ function ctnBtn(o){
 // snapshot rather than the staged-container list behind the box icon, so a card
 // could say "0 ctn" while the icon listed several. The per-station "here" line
 // and the container button are both accurate, so the total added nothing but
-// doubt. Kept as an empty-returning stub rather than deleted so the single
-// call site in renderCards() stays untouched; drop both together if the line
-// is never coming back.
-function orderTotal(o){ return ''; }
+// doubt. The slot now carries the Tracked Recycling teardown bar: how much of
+// what the dock received for this order has already left the floor
+// (received minus still-in-process, over received). TR only -- the other
+// stations count items, not pounds. No receiving report (or a manual card)
+// means no denominator, so the bar is omitted rather than drawn at 0%.
+function orderTotal(o, station){
+  if(station!=='Tracked Recycling') return '';
+  if(o.pct_done===null||o.pct_done===undefined||!(o.recv_weight>0)) return '';
+  var p=o.pct_done, done=Math.max(0,(o.recv_weight||0)-(o.floor_weight||0));
+  return '<div class="ecp"><div class="epl"><span>'+lbs(done)+' / '+lbs(o.recv_weight)+' lbs</span>'
+    +'<b>'+p+'%</b></div>'
+    +'<div class="epk"><i class="'+(p>=100?'hit':'')+'" style="width:'+Math.min(100,p)+'%"></i></div></div>';
+}
 
 // Compact, DRAGGABLE order card for a station column. Drag a card into the EZ
 // column (or back to To Process) to (un)tag it EZ — persisted server-side.
@@ -514,7 +580,7 @@ function renderCards(list, station, more){
       +'<button class="notebtn'+(o.note?' has':'')+'" data-note="'+esc(o.id)+'" title="'+(o.note?'View / edit note':'Add note')+'">&#128221;</button>'
       +'<span class="ecage'+(band===2?' over':'')+'">'+o.days+'d</span></div>'
       +'<div class="ecm">'+stationHere(o,station)+badges+'</div>'
-      +orderTotal(o)+'</div>';
+      +orderTotal(o,station)+'</div>';
   });
   if(more>0) h+='<div class="ezmore">+ '+more+' more</div>';
   return h;
@@ -622,13 +688,15 @@ var OV_URLS = EDGE_MODE
   : {ov_tech:'http://'+location.hostname+':8777', ov_wh:'http://'+location.hostname+':8781'};
 
 function applyDept(){
-  var audit=(dept==='compliance'), drv=(dept==='drives'),
-      ov=(dept==='ov_tech'||dept==='ov_wh'), board=!audit&&!drv&&!ov;
+  var audit=(dept==='compliance'), drv=(dept==='drives'), sg=(dept==='signoff'),
+      ov=(dept==='ov_tech'||dept==='ov_wh'), board=!audit&&!drv&&!ov&&!sg;
   var bv=document.getElementById('boardview'), av=document.getElementById('auditview'),
       dv=document.getElementById('drivesview'), ovv=document.getElementById('ovview');
   if(bv) bv.style.display=board?'':'none';
   if(av) av.style.display=audit?'':'none';
   if(dv) dv.style.display=drv?'':'none';
+  var sgv=document.getElementById('sgview');
+  if(sgv) sgv.style.display=sg?'':'none';
   if(ovv) ovv.style.display=ov?'':'none';
   if(ov){
     var fr=document.getElementById('ovframe'), want=OV_URLS[dept]||'about:blank';
@@ -657,6 +725,7 @@ function applyDept(){
   if(ft) ft.style.display=ov?'none':'';
   if(audit){ if(lastData) renderAudit(lastData); return; }
   if(drv){ if(lastData) renderDrives(lastData); return; }
+  if(sg){ if(lastData) renderSignoff(lastData); return; }
   if(ov){ return; }
   ['dc','tech','tr'].forEach(function(k){
     var p=document.getElementById('sec_'+k);
@@ -756,6 +825,7 @@ function renderCompPop(){
     // so without the dept check it re-showed the button on those tabs.
     var rb=document.getElementById('resetbtn');
     if(rb) rb.style.display = (locked || dept==='compliance' || dept==='drives'
+                           || dept==='signoff'
                            || dept==='ov_tech' || dept==='ov_wh') ? 'none' : '';
   }
   // Password gate — light deterrent so the board isn't toggled casually (the
@@ -833,6 +903,121 @@ function sn(v){
 // the only locator Makor exposes for a drive tote - there is no warehouse
 // location for one anywhere in the API. Oldest order first, same priority
 // language as the station queues.
+// ORDER SIGN-OFF. The list rides in /data; a single order's checklist is
+// fetched from /checklist?order= on click, because each build costs a Makor
+// audit-view call. Approvals POST to /signoff - every gate (password, "fix it
+// or get an exception", Afshan+TJ before Rob) is enforced SERVER-side, so a
+// crafted POST cannot skip the chain.
+var SG_SEL = null, SG_BUSY = false;
+
+function renderSignoff(d){
+  var P = ((d && d.signoff) || {}).pending || [];
+  var el = document.getElementById('sg_list');
+  var hint = document.getElementById('sg1hint');
+  if(hint) hint.innerHTML = P.length + ' order' + (P.length===1?'':'s');
+  if(!el) return;
+  el.innerHTML = P.length ? P.map(function(o){
+      var done = (o.approved_by||[]).map(function(x){return x.toUpperCase();}).join(' + ');
+      var wait = (o.awaiting||[]).map(function(x){return x.toUpperCase();}).join(' + ');
+      return '<div class="sgo'+(SG_SEL===String(o.order)?' on':'')+'" data-sg="'+esc(o.order)+'">'
+        +'<div class="r1"><span class="oid">'+esc(o.order)+'</span>'
+        +'<span class="ac">'+esc(o.account||'')+'</span>'
+        +'<span class="dt">'+esc(o.completed||'')+'</span></div>'
+        +'<div class="st">'+(done?('<span class="ok">'+done+' approved</span> &middot; '):'')
+        +'awaiting '+esc(wait)+'</div></div>';
+    }).join('')
+    : '<div class="audempty">&#10003; <b>Nothing awaiting sign-off.</b><br>'
+      +'Orders appear here once they reach ops complete.</div>';
+}
+
+function sgPick(oid){
+  SG_SEL = String(oid);
+  renderSignoff(lastData);
+  var det = document.getElementById('sg_detail');
+  det.innerHTML = '<div class="audempty">Loading checklist for '+esc(oid)+'&hellip;</div>';
+  fetch('/checklist?order='+encodeURIComponent(oid), {cache:'no-store'})
+    .then(function(r){return r.json();}).then(sgPaint)
+    .catch(function(){ det.innerHTML='<div class="audempty">Could not load.</div>'; });
+}
+
+function sgPaint(c){
+  var det = document.getElementById('sg_detail');
+  if(!c || c.error){
+    det.innerHTML='<div class="audempty"><b>'+esc((c&&c.error)||'No data')+'</b></div>';
+    return;
+  }
+  var h2 = document.getElementById('sg2hint');
+  if(h2) h2.innerHTML = esc(c.order)+' &middot; '+(c.assets||0)+' assets'
+    +(c.went_to_tech?' &middot; went to Tech':'');
+  var ex = c.exceptions||{}, appr = c.approvals||{};
+  var h = '<div class="sgbar">';
+  ['afshan','tj','rob'].forEach(function(w){
+    var done = !!appr[w];
+    h += '<button class="sgbtn'+(done?' done':'')+'" data-appr="'+w+'"'+(done?' disabled':'')+'>'
+      + (done ? ('&#10003; '+w.toUpperCase()+' approved') : ('Approve as '+w.toUpperCase()))
+      + '</button>';
+  });
+  h += '<span class="sgmsg" id="sgmsg">'
+     + ((c.unresolved && c.unresolved.length)
+        ? ('Blocked: '+c.unresolved.length+' check(s) failing - fix them, or Rob documents an exception')
+        : (c.final_done ? 'Signed off.' : 'All checks clear.'))
+     + '</span></div>';
+  (c.checks||[]).forEach(function(ck){
+    var cls = ck.ok===true?'pass':(ck.ok===false?'fail':'sign');
+    var tag = ck.ok===true?'PASS':(ck.ok===false?'FAIL':'SIGN-OFF');
+    var e = ex[ck.key];
+    if(e){ cls='sign'; tag='EXCEPTION'; }
+    h += '<div class="ck '+cls+'"><div class="h"><span class="lab">'+esc(ck.label)+'</span>'
+      +'<span class="tag">'+tag+'</span></div>'
+      +'<div class="det">'+esc(ck.detail||'')+'</div>'
+      +((ck.evidence&&ck.evidence.length)?('<div class="det">e.g. '+esc(ck.evidence.join(' | '))+'</div>'):'')
+      +(e?('<div class="exc">Exception: '+esc(e.reason)+' &mdash; approved by '+esc(e.approved_by)+'</div>'):'')
+      +((ck.ok===false&&!e)?('<div class="fix">'+esc(ck.fix||'')
+          +' <button class="sgbtn exc" data-exc="'+esc(ck.key)+'">Document exception (Rob)</button></div>'):'')
+      +'</div>';
+  });
+  det.innerHTML = h;
+}
+
+function sgPost(body, okMsg){
+  if(SG_BUSY) return;
+  SG_BUSY = true;
+  fetch('/signoff', {method:'POST', headers:{'Content-Type':'application/json'},
+                     body: JSON.stringify(body)})
+    .then(function(r){ return r.json().then(function(j){ return {s:r.status, j:j}; }); })
+    .then(function(x){
+      var m = document.getElementById('sgmsg');
+      if(m) m.innerHTML = (x.s===200) ? okMsg : ('&#9888; '+esc(x.j.msg||'failed'));
+      if(x.s===200){ sgPick(body.order); poll(); }
+    })
+    .catch(function(){ var m=document.getElementById('sgmsg'); if(m) m.innerHTML='request failed'; })
+    .then(function(){ SG_BUSY = false; });
+}
+
+document.addEventListener('click', function(ev){
+  if(!ev.target.closest) return;
+  var row = ev.target.closest('[data-sg]');
+  if(row){ sgPick(row.getAttribute('data-sg')); return; }
+  var ab = ev.target.closest('[data-appr]');
+  if(ab && SG_SEL){
+    var who = ab.getAttribute('data-appr');
+    var pw = prompt('Password for '+who.toUpperCase()+':');
+    if(pw===null) return;
+    sgPost({order:SG_SEL, who:who, pw:pw, action:'approve'},
+           '&#10003; '+who.toUpperCase()+' approved');
+    return;
+  }
+  var eb = ev.target.closest('[data-exc]');
+  if(eb && SG_SEL){
+    var why = prompt('Why can this check not be satisfied? (recorded in the audit trail)');
+    if(!why) return;
+    var pw2 = prompt('Password for ROB to approve the exception:');
+    if(pw2===null) return;
+    sgPost({order:SG_SEL, who:'rob', pw:pw2, action:'exception',
+            check:eb.getAttribute('data-exc'), reason:why}, 'Exception recorded');
+  }
+});
+
 function renderDrives(d){
   var D=(d&&d.drives)||{wipe:[],destroy:[],totals:{}};
   // Same card markup as renderCards() so the note + container buttons behave
@@ -1193,6 +1378,7 @@ function paint(d){
   if(document.getElementById('comppop').style.display==='block') renderCompPop();
   renderAudit(d);            // keeps the Compliance count live even on the board view
   renderDrives(d);           // same for Drive Management
+  renderSignoff(d);          // and the sign-off queue
   paintTrackers(d);          // header tiles read the same numbers renderAudit shows
   // id -> order map for the note modal
   var by={};
