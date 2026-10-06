@@ -124,10 +124,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .lkst.wait{background:#3a2c10;color:#ffd782;border-color:#6a5410}
 .lkst.na{background:#1b2638;color:#9fb2ca;border-color:#3b4a60}
 .lkst.none{background:transparent;color:#6f819a;border-color:#2a3b55}
-.lk-pw{margin-bottom:12px}
-.lk-pw input{width:100%;background:#0e1c31;color:#fff;border:1.5px solid #24406a;border-radius:9px;
-  padding:9px 12px;font-size:14px;font-family:inherit;font-weight:700}
-.lk-pw input:focus{outline:none;border-color:#F0B429}
+.lk-ro{margin-bottom:12px;font-size:13px;font-weight:700;color:#9fb2ca}
+.lkrow.ro{cursor:default;opacity:.72}
 .lkrow{display:flex;align-items:center;gap:11px;padding:10px 8px;border-bottom:1px solid #1b3152;cursor:pointer}
 .lkrow:last-child{border-bottom:none}
 .lkrow .bx{width:20px;height:20px;border:2px solid #3b5f8f;border-radius:5px;flex:0 0 auto;
@@ -174,7 +172,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 <div class="notemodal" id="lkmodal" style="display:none">
   <div class="nm-box">
     <div class="nm-h"><span id="lk-title">Device unlock</span><button class="nm-x" id="lk-close" title="Close">&times;</button></div>
-    <div class="lk-pw"><input type="password" id="lk-pw" placeholder="Board password to edit" autocomplete="off"></div>
+    <div class="lk-ro" id="lk-ro" style="display:none">&#128274; Read-only &mdash; unlock the board to change this.</div>
     <div id="lk-body"></div>
     <div class="lk-msg" id="lk-msg"></div>
   </div>
@@ -210,6 +208,9 @@ function ctlWrite(action,payload){
   return fetch(EDGE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 }
 var lastData={rows:[]};
+// This board is a wall display: unlock status is READ here and ticked on
+// the Dragon Dropper board (Rob, 2026-10-06).
+var LK_VIEW_ONLY=true;
 // Pull the unlock map from the same edge function so a tick made on either
 // board shows on both. Best-effort: the queue must render even if this fails.
 function loadUnlocks(){
@@ -254,14 +255,48 @@ function lkStatus(o,station){
   var ic  = b.key==='na' ? '&#8212;' : (cls==='ok' ? '&#128275;' : '&#128274;');
   return '<span class="lkst '+cls+'">'+ic+' '+b.label+' <i>'+fdate(b.date)+'</i></span>';
 }
+// Editing follows the board's own lock button - there is no separate password
+// (Rob, 2026-10-06: one lock, up top). A page can also declare itself view-only
+// by setting LK_VIEW_ONLY, which the Tech overview does: it is a wall display,
+// so the status is there to be READ, and ticking happens on Dragon Dropper.
+function lkReadOnly(){
+  if(typeof LK_VIEW_ONLY!=='undefined' && LK_VIEW_ONLY) return true;
+  return (typeof locked!=='undefined') && !!locked;
+}
+// Find an order wherever this page keeps it. The Dragon Dropper board served
+// locally has lastData.rows; the PUBLISHED board gets its data from the edge
+// function, which splits rows into sections - looking only at .rows meant a
+// ticked box never re-rendered there (2026-10-06). Falls back to the sections
+// and to the Tech board's own map so the modal cannot silently find nothing.
+function lkFindRow(id){
+  id=String(id);
+  var d=(typeof lastData!=='undefined'&&lastData)||{};
+  var hit=(d.rows||[]).filter(function(r){return String(r.id)===id;})[0];
+  if(hit) return hit;
+  var sec=d.sections||{};
+  for(var k in sec){
+    var g=sec[k]||{};
+    for(var bucket in g){
+      var list=g[bucket];
+      if(!list||!list.length) continue;
+      hit=list.filter(function(r){return r&&String(r.id)===id;})[0];
+      if(hit) return hit;
+    }
+  }
+  hit=(d.hold_orders||[]).filter(function(r){return String(r.id)===id;})[0];
+  if(hit) return hit;
+  var m=(window._unlockMap||{})[id];
+  return m?{id:id,unlock_info:m}:null;
+}
 var lkOrder=null;
 function lkRender(){
   var body=document.getElementById('lk-body'); if(!body||!lkOrder) return;
-  var row=(lastData&&(lastData.rows||[]).filter(function(r){return String(r.id)===String(lkOrder);})[0])||null;
+  var row=lkFindRow(lkOrder);
   var u=(row&&row.unlock_info)||{};
+  var ro=lkReadOnly();
   body.innerHTML=LK_STAGES.map(function(p){
     var on=!!u[p[0]];
-    return '<div class="lkrow'+(on?' on':'')+(p[0]==='na'?' na':'')+'" data-stage="'+p[0]+'">'
+    return '<div class="lkrow'+(on?' on':'')+(p[0]==='na'?' na':'')+(ro?' ro':'')+'" data-stage="'+p[0]+'">'
       +'<span class="bx">'+(on?'&#10003;':'')+'</span>'
       +'<span class="lkl">'+p[1]+'</span>'
       +'<span class="lkd">'+(on?fdate(u[p[0]]):'')+'</span></div>';
@@ -273,8 +308,12 @@ function lkOpen(id){
   document.getElementById('lk-title').textContent='Device unlock · '+id;
   document.getElementById('lk-msg').textContent='';
   lkRender();
+  var ro=document.getElementById('lk-ro');
+  if(ro){ ro.style.display=lkReadOnly()?'':'none';
+          ro.innerHTML=(typeof LK_VIEW_ONLY!=='undefined'&&LK_VIEW_ONLY)
+            ? '&#128274; View only &mdash; tick these on the Dragon Dropper board.'
+            : '&#128274; Read-only &mdash; unlock the board to change this.'; }
   m.style.display='flex';
-  var pw=document.getElementById('lk-pw'); if(pw&&!pw.value) pw.focus();
 }
 document.addEventListener('click',function(ev){
   var b=ev.target.closest&&ev.target.closest('[data-lock]');
@@ -283,17 +322,17 @@ document.addEventListener('click',function(ev){
   if(x){ document.getElementById('lkmodal').style.display='none'; return; }
   var r=ev.target.closest&&ev.target.closest('.lkrow');
   if(r&&lkOrder){
-    var pw=(document.getElementById('lk-pw')||{}).value||'';
     var msg=document.getElementById('lk-msg');
-    if(!pw){ msg.textContent='Enter the board password to change this.'; return; }
+    if(lkReadOnly()){ msg.textContent=(typeof LK_VIEW_ONLY!=='undefined'&&LK_VIEW_ONLY)
+      ? 'View only - tick these on the Dragon Dropper board.'
+      : 'Board is locked - unlock it up top to change this.'; return; }
     var stage=r.getAttribute('data-stage'), on=!r.classList.contains('on');
     msg.textContent='';
-    ctlWrite('unlockinfo',{id:lkOrder,stage:stage,on:on,pw:pw}).then(function(res){
-      if(res.status===403){ msg.textContent='Wrong password.'; return; }
+    ctlWrite('unlockinfo',{id:lkOrder,stage:stage,on:on}).then(function(res){
       if(!res.ok){ msg.textContent='Could not save.'; return; }
       // optimistic: stamp locally so the date shows at once, then the next
       // poll replaces it with the server's copy
-      var row=(lastData&&(lastData.rows||[]).filter(function(q){return String(q.id)===String(lkOrder);})[0]);
+      var row=lkFindRow(lkOrder);
       if(row){
         row.unlock_info=row.unlock_info||{};
         if(on){
