@@ -142,6 +142,21 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .opsstale{background:#5a1616;color:#ffb0b0;border-radius:4px;padding:1px 7px;font-weight:900}
 .notewarn{color:#ffc247}
 </style></head><body>
+<script>
+// EMBED MODE: when this board is shown inside the Dragon Dropper board's
+// overview tab (?embed=1) it must not paint its own header, clock or footer -
+// that board keeps its own identity on screen and two of each reads as a
+// duplicate window. Applied before first paint so nothing flashes.
+(function(){
+  try{
+    if(new URLSearchParams(location.search).get('embed')!=='1') return;
+    var css='.top{display:none!important}.foot{display:none!important}'
+          + '.bdaybanner{display:none!important}body{padding-top:10px}';
+    var st=document.createElement('style'); st.textContent=css;
+    document.head.appendChild(st);
+  }catch(_){}
+})();
+</script>
 <div class="top">
   <h1>AER <span class="a">|</span> Warehouse</h1>
   <div class="wx" id="weather"><span class="wxi wx-float">&#9925;</span><div class="wxb"><div class="wxt">--&deg;</div><div class="wxd">Duncan, SC</div></div></div>
