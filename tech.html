@@ -124,7 +124,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .lkst.wait{background:#3a2c10;color:#ffd782;border-color:#6a5410}
 .lkst.na{background:#1b2638;color:#9fb2ca;border-color:#3b4a60}
 .lkst.todo{background:#4a2410;color:#ff9f43;border-color:#8a4a12}
-.lk-actions{margin-top:14px;display:flex;justify-content:flex-end}
+.lk-actions{margin-top:14px;display:flex;justify-content:flex-end;gap:8px}
 .lk-dl{background:transparent;color:#7fd8ff;border:1.5px solid #2c4a73;border-radius:9px;
   padding:8px 14px;font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit}
 .lk-dl:hover:not(:disabled){border-color:#F0B429;color:#F0B429}
@@ -179,7 +179,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
     <div class="nm-h"><span id="lk-title">Device unlock</span><button class="nm-x" id="lk-close" title="Close">&times;</button></div>
     <div class="lk-ro" id="lk-ro" style="display:none">&#128274; Read-only &mdash; unlock the board to change this.</div>
     <div id="lk-body"></div>
-    <div class="lk-actions"><button class="lk-dl" id="lk-dl">&#11015; Export device list (.csv)</button></div>
+    <div class="lk-actions"><button class="lk-dl" id="lk-dl1">&#11015; P1 Export</button><button class="lk-dl" id="lk-dl2">&#11015; P2 Export</button></div>
     <div class="lk-msg" id="lk-msg"></div>
   </div>
 </div>
@@ -311,8 +311,15 @@ var LK_COLS=['PO/Order','Rep','CST','Location','Type','Serial','Model Number','P
              'BD Notified (P2)','Due Date P2','Unlocked per Customer (P2)'];
 function lkCsvCell(v){
   v=(v===null||v===undefined)?'':String(v);
-  return /[",
-]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  // No regex and no backslash escapes on purpose: this JS is built from a
+  // Python string, where an escape written one backslash short turns into a
+  // REAL line break inside the literal. That breaks the enclosing regex or
+  // string and kills every script after it - the whole board went blank that
+  // way on 2026-10-06. Keep control characters as fromCharCode here.
+  var NL=String.fromCharCode(10), CR=String.fromCharCode(13);
+  var needs = v.indexOf('"')>=0 || v.indexOf(',')>=0
+           || v.indexOf(NL)>=0 || v.indexOf(CR)>=0;
+  return needs ? '"'+v.split('"').join('""')+'"' : v;
 }
 function lkUsDate(d){
   return ('0'+(d.getMonth()+1)).slice(-2)+'/'+('0'+d.getDate()).slice(-2)+'/'+d.getFullYear();
@@ -321,33 +328,58 @@ function lkReportFor(id){
   var d=(typeof lastData!=='undefined'&&lastData)||{};
   return ((d.unlock_report||{})[String(id)])||null;
 }
-function lkDownload(id){
-  var rep=lkReportFor(id);
-  var msg=document.getElementById('lk-msg');
-  if(!rep||!rep.rows||!rep.rows.length){
-    if(msg) msg.textContent='No device list available for this order yet.';
+function lkPlus7(from){ var d=new Date(from.getTime()); d.setDate(d.getDate()+7); return d; }
+function lkParseIso(v){
+  if(!v) return null;
+  var p=String(v).split('-');
+  return (p.length===3) ? new Date(+p[0], +p[1]-1, +p[2]) : null;
+}
+// PHASE 1 lists every lockable device the order sent to Tech. PHASE 2 lists
+// only what is on the bench RIGHT NOW - anything since finished has dropped
+// off - and reprints the P1 dates the customer was already given. Those are
+// read from the shared control row, not from this browser, so whoever runs P2
+// gets them even if someone else ran P1.
+function lkDownload(id, phase){
+  phase=String(phase||'1');
+  var rep=lkReportFor(id), msg=document.getElementById('lk-msg');
+  var rows=rep ? (phase==='2' ? (rep.tech_now||[]) : (rep.rows||[])) : [];
+  if(!rows.length){
+    if(msg) msg.textContent=(phase==='2')
+      ? 'Nothing left on the Tech bench for this order.'
+      : 'No device list available for this order yet.';
     return;
   }
-  var today=new Date();
-  // BD Notified (P1) is the day the sheet goes out, i.e. today; Due Date P1
-  // is a week after that.
-  var due=new Date(); due.setDate(due.getDate()+7);
+  var today=new Date(), due=lkPlus7(today);
+  var row=lkFindRow(id), info=(row&&row.unlock_info)||{};
+  var p1run=lkParseIso(info.p1_report);
+  var p1Not='', p1Due='';
+  if(phase==='1'){ p1Not=lkUsDate(today); p1Due=lkUsDate(due); }
+  else if(p1run){ p1Not=lkUsDate(p1run); p1Due=lkUsDate(lkPlus7(p1run)); }
   var lines=[LK_COLS.map(lkCsvCell).join(',')];
-  rep.rows.forEach(function(a){
-    lines.push([id, rep.rep||'', rep.cst||'', rep.location||'',
-                a.type||'', a.serial||'', a.model||'', '1', 'N/A', lkUsDate(due),
-                lkUsDate(today), '', '', '', ''].map(lkCsvCell).join(','));
+  rows.forEach(function(a){
+    var rec=[id, rep.rep||'', rep.cst||'', rep.location||'',
+             a.type||'', a.serial||'', a.model||'', phase, 'N/A',
+             p1Due, p1Not, ''];
+    rec = (phase==='2') ? rec.concat([lkUsDate(today), lkUsDate(due), ''])
+                        : rec.concat(['','','']);
+    lines.push(rec.map(lkCsvCell).join(','));
   });
-  // BOM so Excel opens it as UTF-8 rather than mangling accented names
-  var blob=new Blob(['﻿'+lines.join('
-')],{type:'text/csv;charset=utf-8;'});
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='Device Unlocks '+id+' '+lkUsDate(new Date()).split('/').join('-')+'.csv';
-  document.body.appendChild(a); a.click();
-  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },0);
-  if(msg) msg.textContent=rep.rows.length+' device'+(rep.rows.length===1?'':'s')+' exported · due '+lkUsDate(due);
+  var NL=String.fromCharCode(13)+String.fromCharCode(10);
+  var blob=new Blob([String.fromCharCode(65279)+lines.join(NL)],{type:'text/csv;charset=utf-8;'});
+  var a2=document.createElement('a');
+  a2.href=URL.createObjectURL(blob);
+  a2.download='Device Unlocks P'+phase+' '+id+' '+lkUsDate(today).split('/').join('-')+'.csv';
+  document.body.appendChild(a2); a2.click();
+  setTimeout(function(){ URL.revokeObjectURL(a2.href); a2.remove(); },0);
+  try{ ctlWrite('unlockexport',{id:id,phase:phase}); }catch(_){}
+  if(msg){
+    var note=rows.length+' device'+(rows.length===1?'':'s')+' exported (P'+phase+')';
+    note+=(phase==='2') ? (' · P2 due '+lkUsDate(due)) : (' · due '+lkUsDate(due));
+    if(phase==='2' && !p1run) note+=' · no P1 run on record, P1 columns blank';
+    msg.textContent=note;
+  }
 }
+
 var lkOrder=null;
 function lkRender(){
   var body=document.getElementById('lk-body'); if(!body||!lkOrder) return;
@@ -368,10 +400,11 @@ function lkOpen(id){
   document.getElementById('lk-title').textContent='Device unlock · '+id;
   document.getElementById('lk-msg').textContent='';
   lkRender();
-  var rp=lkReportFor(id), dlb=document.getElementById('lk-dl');
-  if(dlb){ var n=(rp&&rp.rows)?rp.rows.length:0;
-           dlb.textContent=n?('⬇ Export device list ('+n+')'):'⬇ No device list yet';
-           dlb.disabled=!n; }
+  var rp=lkReportFor(id);
+  var b1=document.getElementById('lk-dl1'), b2=document.getElementById('lk-dl2');
+  var n1=(rp&&rp.rows)?rp.rows.length:0, n2=(rp&&rp.tech_now)?rp.tech_now.length:0;
+  if(b1){ b1.textContent='⬇ P1 Export'+(n1?(' ('+n1+')'):''); b1.disabled=!n1; }
+  if(b2){ b2.textContent='⬇ P2 Export'+(n2?(' ('+n2+')'):''); b2.disabled=!n2; }
   var ro=document.getElementById('lk-ro');
   if(ro){ ro.style.display=lkReadOnly()?'':'none';
           ro.innerHTML=(typeof LK_VIEW_ONLY!=='undefined'&&LK_VIEW_ONLY)
@@ -382,8 +415,10 @@ function lkOpen(id){
 document.addEventListener('click',function(ev){
   var b=ev.target.closest&&ev.target.closest('[data-lock]');
   if(b){ ev.stopPropagation(); lkOpen(b.getAttribute('data-lock')); return; }
-  var dl=ev.target.closest&&ev.target.closest('#lk-dl');
-  if(dl&&lkOrder){ ev.stopPropagation(); lkDownload(lkOrder); return; }
+  var d1=ev.target.closest&&ev.target.closest('#lk-dl1');
+  if(d1&&lkOrder){ ev.stopPropagation(); lkDownload(lkOrder,'1'); return; }
+  var d2=ev.target.closest&&ev.target.closest('#lk-dl2');
+  if(d2&&lkOrder){ ev.stopPropagation(); lkDownload(lkOrder,'2'); return; }
   var x=ev.target.closest&&ev.target.closest('#lk-close');
   if(x){ document.getElementById('lkmodal').style.display='none'; return; }
   var r=ev.target.closest&&ev.target.closest('.lkrow');
