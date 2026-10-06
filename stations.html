@@ -4,6 +4,12 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
+/* Dragon Dropper is worked on a LAPTOP, not a wall TV (Rob,
+   2026-10-06), so the page carries its own standard zoom instead of
+   depending on whatever each browser happens to be set to. The tech
+   and warehouse boards are untouched - they still run full size on
+   their TVs, including when embedded in the overview tabs here. */
+html{zoom:0.8}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overflow:hidden}
 .top{display:flex;justify-content:space-between;align-items:center;padding:18px 34px;background:#152B47;border-bottom:4px solid #F0B429}
 .top h1{font-size:34px;font-weight:900}.top h1 .a{color:#F0B429}
@@ -1035,11 +1041,16 @@ function renderCompPop(){
                            || dept==='signoff'
                            || dept==='ov_tech' || dept==='ov_wh') ? 'none' : '';
   }
-  // Plain toggle, no password (Rob, 2026-10-06). The prompt was a deterrent
-  // only - the password sat in the page source - and it stood between a tech
-  // and ticking a device-unlock box every single time. RESET is still gated,
-  // server-side, because that one wipes the board for everyone.
+  // Password gate on the LOCK button - restored 2026-10-06. It was briefly
+  // removed when "remove the password dialog after clicking the key" was read
+  // as covering this too; it does not. The KEY (device unlock) never prompts -
+  // it simply follows this lock - but toggling the board itself still asks.
+  // Light deterrent only: the password is in the page source.
+  var LOCK_PW='layla';
   if(b) b.addEventListener('click',function(){
+    var pw=prompt(locked?'Password to UNLOCK drag-and-drop:':'Password to LOCK drag-and-drop:');
+    if(pw===null) return;                                   // cancelled
+    if(pw.trim().toLowerCase()!==LOCK_PW){ alert('Incorrect password.'); return; }
     locked=!locked;
     try{ localStorage.setItem('stations_locked', locked?'1':'0'); }catch(_){}
     apply();
