@@ -235,11 +235,9 @@ function lkBtn(o,station){
   if(station!=='Tech') return '';
   var u=o.unlock_info||{}, keys=Object.keys(u);
   var cls=keys.length?(u.na?' na':' has'):'';
-  var ttl=keys.length
-    ? LK_STAGES.filter(function(p){return u[p[0]];})
-        .map(function(p){return p[1]+' '+fdate(u[p[0]]);}).join(' / ')
-    : 'Device unlock status';
-  return '<button class="lockbtn2'+cls+'" data-lock="'+esc(o.id)+'" title="'+esc(ttl)+'">&#128273;</button>';
+  // No title attribute: the status bubble on the card already says where the
+  // order stands, so a hover tooltip repeating it was just noise (Rob).
+  return '<button class="lockbtn2'+cls+'" data-lock="'+esc(o.id)+'">&#128273;</button>';
 }
 // The order's CURRENT unlock status = the furthest-along box ticked. Ties on
 // date break by stage order, so P1 Unlocked beats P1 Submitted when both were
