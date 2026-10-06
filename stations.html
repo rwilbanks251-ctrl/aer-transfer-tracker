@@ -631,10 +631,35 @@ function lkReadOnly(){
   if(typeof LK_VIEW_ONLY!=='undefined' && LK_VIEW_ONLY) return true;
   return (typeof locked!=='undefined') && !!locked;
 }
+// Find an order wherever this page keeps it. The Dragon Dropper board served
+// locally has lastData.rows; the PUBLISHED board gets its data from the edge
+// function, which splits rows into sections - looking only at .rows meant a
+// ticked box never re-rendered there (2026-10-06). Falls back to the sections
+// and to the Tech board's own map so the modal cannot silently find nothing.
+function lkFindRow(id){
+  id=String(id);
+  var d=(typeof lastData!=='undefined'&&lastData)||{};
+  var hit=(d.rows||[]).filter(function(r){return String(r.id)===id;})[0];
+  if(hit) return hit;
+  var sec=d.sections||{};
+  for(var k in sec){
+    var g=sec[k]||{};
+    for(var bucket in g){
+      var list=g[bucket];
+      if(!list||!list.length) continue;
+      hit=list.filter(function(r){return r&&String(r.id)===id;})[0];
+      if(hit) return hit;
+    }
+  }
+  hit=(d.hold_orders||[]).filter(function(r){return String(r.id)===id;})[0];
+  if(hit) return hit;
+  var m=(window._unlockMap||{})[id];
+  return m?{id:id,unlock_info:m}:null;
+}
 var lkOrder=null;
 function lkRender(){
   var body=document.getElementById('lk-body'); if(!body||!lkOrder) return;
-  var row=(lastData&&(lastData.rows||[]).filter(function(r){return String(r.id)===String(lkOrder);})[0])||null;
+  var row=lkFindRow(lkOrder);
   var u=(row&&row.unlock_info)||{};
   var ro=lkReadOnly();
   body.innerHTML=LK_STAGES.map(function(p){
@@ -675,7 +700,7 @@ document.addEventListener('click',function(ev){
       if(!res.ok){ msg.textContent='Could not save.'; return; }
       // optimistic: stamp locally so the date shows at once, then the next
       // poll replaces it with the server's copy
-      var row=(lastData&&(lastData.rows||[]).filter(function(q){return String(q.id)===String(lkOrder);})[0]);
+      var row=lkFindRow(lkOrder);
       if(row){
         row.unlock_info=row.unlock_info||{};
         if(on){
@@ -745,7 +770,6 @@ function renderCards(list, station, more){
     if(o.priority)    badges+='<span class="mb prio">&#9733;</span>';
     if(o.xfer)        badges+='<span class="mb xf">XFER</span>';
     if(o.destruction) badges+='<span class="mb des">&#128293;</span>';
-    if(o.audit)       badges+='<span class="mb aud">AUDIT</span>';
     h+='<div class="ec b'+band+(o.priority?' prio':'')+'" draggable="true" data-id="'+esc(o.id)+'" data-station="'+esc(station)+'">'
       +'<div class="ecr"><span class="ecid">'+esc(o.id)+(o.account?(' <span class="ecac">&middot; '+esc(o.account)+'</span>'):'')+'</span>'
       +ctnBtn(o)
@@ -1205,7 +1229,6 @@ function renderDrives(d){
     if(o.priority)    badges+='<span class="mb prio">&#9733;</span>';
     if(o.xfer)        badges+='<span class="mb xf">XFER</span>';
     if(o.destruction) badges+='<span class="mb des">&#128293;</span>';
-    if(o.audit)       badges+='<span class="mb aud">AUDIT</span>';
     var n=o.drv_count||0, f=o.drv_failed||0;
     var meta='<b>'+n+'</b> loose drive'+(n===1?'':'s')
       +(o.drv_types?(' &middot; '+esc(o.drv_types)):'')
