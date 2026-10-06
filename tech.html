@@ -233,7 +233,11 @@ var LK_STAGES=[['na','N/A'],['p1_sub','P1 Submitted'],['p1_unl','P1 Unlocked'],
                ['p2_sub','P2 Submitted'],['p2_unl','P2 Unlocked']];
 function lkBtn(o,station){
   if(station!=='Tech') return '';
-  var u=o.unlock_info||{}, keys=Object.keys(u);
+  var u=o.unlock_info||{};
+  // Count only real STAGES. The same map also holds p1_report / p2_report (the
+  // day a sheet was exported), and counting those styled the button as "has a
+  // status" on an order whose badge still read Need Lock Action.
+  var keys=LK_STAGES.filter(function(p){ return u[p[0]]; });
   var cls=keys.length?(u.na?' na':' has'):'';
   // No title attribute: the status bubble on the card already says where the
   // order stands, so a hover tooltip repeating it was just noise (Rob).
