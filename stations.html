@@ -388,6 +388,7 @@ body.locked .ec{cursor:default}
 <div class="grid2" id="boardview">
   <div class="ordersrow">
     <div class="panel sec" id="sec_dc"><h2><span class="n">DATA CAPTURE</span><span class="hx" id="dchint"></span></h2>
+      <div class="trt" id="dctarget"></div>
       <div class="secgrid">
         <div class="subcol"><div class="sublbl">To Process</div><div class="scroll drop" id="dc_regular" data-station="Data Capture" data-bucket="regular"></div></div>
         <div class="subcol"><div class="sublbl ez">&#9889; EZ</div><div class="scroll drop" id="dc_ez" data-station="Data Capture" data-bucket="ez"></div></div>
@@ -1060,17 +1061,25 @@ function saveNote(text){
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeNote(); closeCtn(); } });
 })();
 
-function renderTRTarget(d){
-  var T=d.totals||{};
-  var dayT=T.tr_target_day||5000, wkT=T.tr_target_week||25000;
-  var day=T.tr_today||0, wk=T.tr_week||0;
+function renderTargetBars(day,wk,dayT,wkT,unit){
   function bar(label,val,target){
     var pct=target?Math.round(100*val/target):0, w=Math.min(100,pct);
-    return '<div class="trb"><div class="trh"><span>'+label+' &middot; <b>'+lbs(val)+'</b> / '+lbs(target)+' lbs</span>'
+    return '<div class="trb"><div class="trh"><span>'+label+' &middot; <b>'+lbs(val)+'</b> / '+lbs(target)+' '+unit+'</span>'
       +'<span class="trp">'+pct+'%</span></div>'
       +'<div class="trk2"><i class="'+(pct>=100?'hit':'')+'" style="width:'+w+'%"></i></div></div>';
   }
-  return bar('Today',day,dayT)+bar('This week',wk,wkT);
+  return bar('Today',val0(day),dayT)+bar('This week',val0(wk),wkT);
+}
+function val0(v){ return v||0; }
+
+function renderTRTarget(d){
+  var T=d.totals||{};
+  return renderTargetBars(T.tr_today,T.tr_week,T.tr_target_day||6000,T.tr_target_week||30000,'lbs');
+}
+
+function renderDCTarget(d){
+  var T=d.totals||{};
+  return renderTargetBars(T.dc_today,T.dc_week,T.dc_target_day||250,T.dc_target_week||1250,'items');
 }
 
 function renderFlow(d){
@@ -1165,6 +1174,8 @@ function paint(d){
   });
   var trt=document.getElementById('trtarget');
   if(trt) trt.innerHTML=renderTRTarget(d);
+  var dct=document.getElementById('dctarget');
+  if(dct) dct.innerHTML=renderDCTarget(d);
   var ho=vis(d.hold_orders);
   window._held=ho;
   document.getElementById('holdcount').innerHTML=ho.length;
