@@ -367,7 +367,6 @@ body.locked .ec{cursor:default}
 .ld .lnum{margin-top:6px;font-size:12px;color:#9fb2ca;font-weight:700}
 .ld .lnum b{color:#eaf1f8}
 .ld .lcat{margin-top:5px;font-size:11px;color:#7f93ad;font-weight:600;line-height:1.5}
-.lkwrap{display:flex;justify-content:center;margin:6px 0 1px}
 .lkst{display:inline-flex;align-items:baseline;gap:5px;font-size:10.5px;font-weight:900;
   letter-spacing:.3px;padding:2px 8px;border-radius:5px;white-space:nowrap;
   background:#15304d;color:#7fd8ff;border:1px solid #2c4a73}
@@ -618,10 +617,6 @@ function lkLatest(o){
 }
 function lkStatus(o,station){
   if(station!=='Tech') return '';
-  return '<div class="lkwrap">'+lkBubble(o)+'</div>';
-}
-// the bubble itself, centred on its own line by lkStatus above
-function lkBubble(o){
   var b=lkLatest(o);
   // Nothing recorded is a TO-DO, not a neutral blank: somebody still has to
   // find out whether this order's devices are locked (Rob, 2026-10-06). Shown
@@ -788,8 +783,7 @@ function renderCards(list, station, more){
       +'<button class="notebtn'+(o.note?' has':'')+'" data-note="'+esc(o.id)+'" title="'+(o.note?'View / edit note':'Add note')+'">&#128221;</button>'
       +lkBtn(o,station)
       +'<span class="ecage'+(band===2?' over':'')+'">'+o.days+'d</span></div>'
-      +'<div class="ecm">'+stationHere(o,station)+badges+'</div>'
-      +lkStatus(o,station)
+      +'<div class="ecm">'+stationHere(o,station)+badges+lkStatus(o,station)+'</div>'
       +orderTotal(o,station)+'</div>';
   });
   if(more>0) h+='<div class="ezmore">+ '+more+' more</div>';
