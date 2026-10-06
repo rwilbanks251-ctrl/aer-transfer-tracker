@@ -165,6 +165,7 @@ body.locked .ec{cursor:default}
 .trkt.warn{border-color:#6a5410}.trkt.warn .tv{color:#ffd782}
 .trkt.bad{border-color:#7a2b2b}.trkt.bad .tv{color:#ff6b6b}
 .trkt.flow .tv{color:#F0B429}
+.trkt.hot .tv{color:#ff9f43}
 .trkt.soon{cursor:default;opacity:.5}
 .trkt.soon .tv{font-size:15px;color:#9fb2ca;font-weight:800}
 .trkt.soon:hover{background:#0e1c31;border-color:#24406a}
@@ -360,9 +361,9 @@ body.locked .ec{cursor:default}
   background:linear-gradient(90deg,#8a6a12,#F0B429)}
 .trt .trk2 i.hit{background:linear-gradient(90deg,#2c6b41,#4ad17c)}
 .ecp{margin:5px 0 1px}
-.ecp .epl .tagdl{background:transparent;border:1px solid #2c4a73;color:#7fd8ff;border-radius:5px;
+.ld .lh .tagdl,.ecp .epl .tagdl{background:transparent;border:1px solid #2c4a73;color:#7fd8ff;border-radius:5px;
   padding:0 5px;margin-left:7px;font-size:11px;line-height:1.5;cursor:pointer;font-family:inherit}
-.ecp .epl .tagdl:hover{border-color:#F0B429;color:#F0B429}
+.ld .lh .tagdl:hover,.ecp .epl .tagdl:hover{border-color:#F0B429;color:#F0B429}
 
 .ecp .epl{display:flex;justify-content:space-between;align-items:baseline;
   font-size:10px;font-weight:800;color:#9fb2ca;letter-spacing:.3px;margin-bottom:3px}
@@ -459,6 +460,8 @@ body.locked .ec{cursor:default}
   <div class="trk" id="trackers">
     <div class="trkt flow" id="trk_ops" title="Orders marked ops-complete this week (left Operations In-Progress). Click to list them.">
       <div class="tv" id="trk_ops_v">0</div><div class="tl2">Ops Complete<br>this Week</div></div>
+    <div class="trkt flow" id="trk_rev" title="Orders finished on the floor and waiting on sign-off review. Click to open the queue.">
+      <div class="tv" id="trk_rev_v">0</div><div class="tl2">Orders Need<br>Review</div></div>
     <div class="trkt" id="trk_loc" title="Staged containers with no warehouse location — nobody can be sent to fetch these. Click to open the list.">
       <div class="tv" id="trk_loc_v">0</div><div class="tl2">Location<br>Errors</div></div>
     <div class="trkt" id="trk_ds" title="Data-bearing assets with no certificate of erasure. Click to open the list.">
@@ -853,36 +856,37 @@ function ctnBtn(o){
 // snapshot rather than the staged-container list behind the box icon, so a card
 // could say "0 ctn" while the icon listed several. The per-station "here" line
 // and the container button are both accurate, so the total added nothing but
-// Container tags for the step this progress bar measures. The card carries
-// every container the order has staged anywhere, each tagged with its station,
-// so the export is filtered to the one the bar is about - exporting a Tracked
-// Recycling card's bar should not hand back Data Capture's totes.
-// Price is left blank; it is filled in outside this board.
-function tagDownload(id, station){
-  var row=lkFindRow(id);
-  var all=(row&&row.containers)||[];
-  var tags=all.filter(function(c){ return String(c.station||'')===String(station); })
-              .map(function(c){ return c.label; })
-              .filter(function(v,i,a){ return v && a.indexOf(v)===i; });
-  if(!tags.length){ alert('No containers staged at '+station+' for order '+id+'.'); return; }
-  var lines=['TagID,Price'].concat(tags.map(function(t){
-    return lkCsvCell(t)+',';          // shared quoting, no regex
-  }));
-  var d=new Date();
-  var stamp=('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)+'-'+d.getFullYear();
-  var blob=new Blob([String.fromCharCode(65279)+lines.join(String.fromCharCode(13)+String.fromCharCode(10))],{type:'text/csv;charset=utf-8;'});
+// TagID/Price export. Commodity load bars ONLY (Rob, 2026-10-06): the station
+// progress bars had one briefly and did not need it. Price is left blank - it
+// is filled in outside this board.
+function tagCsv(tags, filename, label){
+  tags=(tags||[]).filter(function(v,i,a){ return v && a.indexOf(v)===i; });
+  if(!tags.length){ alert('No containers to export for '+label+'.'); return; }
+  var lines=['TagID,Price'].concat(tags.map(function(t){ return lkCsvCell(t)+','; }));
+  var NL=String.fromCharCode(13)+String.fromCharCode(10);
+  var blob=new Blob([String.fromCharCode(65279)+lines.join(NL)],{type:'text/csv;charset=utf-8;'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=id+' '+station+' containers '+stamp+'.csv';
+  a.download=filename;
   document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },0);
 }
+function stamp(){
+  var d=new Date();
+  return ('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)+'-'+d.getFullYear();
+}
+// The containers counted toward that stream's next load.
+function cmdTagDownload(stream){
+  var C=(lastData&&lastData.commodity)||{};
+  var s=C[stream];
+  var name={ousei:'OUSEI',srg:'SRG',steel:'SRG STEEL'}[stream]||stream;
+  tagCsv((s&&s.tags)||[], name+' containers '+stamp()+'.csv', name);
+}
 document.addEventListener('click',function(ev){
-  var b=ev.target.closest&&ev.target.closest('[data-tags]');
+  var b=ev.target.closest&&ev.target.closest('[data-cmdtags]');
   if(!b) return;
   ev.stopPropagation(); ev.preventDefault();
-  var p=String(b.getAttribute('data-tags')||'').split('|');
-  if(p.length===2) tagDownload(p[0],p[1]);
+  cmdTagDownload(b.getAttribute('data-cmdtags'));
 },true);
 // doubt. The slot now carries a PROGRESS bar, per station:
 //   Tracked Recycling - commodity weight booked off the order, over that plus
@@ -892,26 +896,22 @@ document.addEventListener('click',function(ev){
 //                       rather than being marked done.
 // A bar is omitted when there is nothing to measure, never drawn at 0% for
 // want of data - that reads as 'nothing done' on an order nobody has touched.
-function progBar(label, done, total, pct, unit, o, station){
-  var dl = (o && station)
-    ? '<button class="tagdl" data-tags="'+esc(o.id)+'|'+esc(station)+'"'
-      +' title="Export container tags for this step">&#11015;</button>'
-    : '';
+function progBar(label, done, total, pct, unit){
   return '<div class="ecp"><div class="epl">'
     +'<span>'+lbs(done)+' / '+lbs(total)+' '+unit+' '+label+'</span>'
-    +'<b>'+pct+'%</b>'+dl+'</div>'
+    +'<b>'+pct+'%</b></div>'
     +'<div class="epk"><i class="'+(pct>=100?'hit':'')+'" style="width:'+Math.min(100,pct)+'%"></i></div></div>';
 }
 function orderTotal(o, station){
   if(station==='Tracked Recycling'){
     if(o.tr_pct===null||o.tr_pct===undefined||!(o.tr_total>0)) return '';
-    return progBar('torn down', o.tr_done, o.tr_total, o.tr_pct, 'lbs', o, station);
+    return progBar('torn down', o.tr_done, o.tr_total, o.tr_pct, 'lbs');
   }
   if(station==='Tech'||station==='Data Capture'){
     var p=(o.step_progress||{})[station];
     if(!p||!p.start||p.pct===null||p.pct===undefined) return '';
     var unit=(station==='Tech')?'devices':'lbs';
-    return progBar('complete', p.done, p.start, p.pct, unit, o, station);
+    return progBar('complete', p.done, p.start, p.pct, unit);
   }
   return '';
 }
@@ -1102,6 +1102,13 @@ function applyDept(){
     if(p) p.style.display=(dept==='all'||dept===k)?'':'none';
   });
 }
+(function(){
+  var t=document.getElementById('trk_rev');
+  if(t) t.addEventListener('click',function(){
+    var sel=document.getElementById('deptsel');
+    if(sel){ sel.value='signoff'; sel.dispatchEvent(new Event('change')); }
+  });
+})();
 (function(){
   var sel=document.getElementById('deptsel');
   try{ dept=localStorage.getItem('stations_dept')||'all'; }catch(_){}
@@ -1674,8 +1681,10 @@ function loadRow(name, s){
   if(s.unstaged>0) nums += ' &middot; '+lbs(s.unstaged)+' not yet on a load';
   var cats=Object.keys(s.cats||{}).slice(0,5).map(function(k){
     return esc(k)+' '+lbs(s.cats[k]); }).join(' &middot; ');
+  var key={'OUSEI':'ousei','SRG':'srg','SRG STEEL':'steel'}[name]||'';
+  var dl=key?('<button class="tagdl" data-cmdtags="'+key+'" title="Export container tags for this load">&#11015;</button>'):'';
   return '<div class="ld"><div class="lh"><span class="ln">'+esc(name)+'</span>'
-    +'<span class="lp'+hit+'">'+p+'%</span></div>'
+    +'<span class="lp'+hit+'">'+p+'%'+dl+'</span></div>'
     +'<div class="lk"><i class="'+(hit?'hit':'')+'" style="width:'+Math.min(100,p)+'%"></i></div>'
     +'<div class="lnum">'+nums+'</div>'
     +(cats?('<div class="lcat">'+cats+'</div>'):'')+'</div>';
@@ -1774,6 +1783,12 @@ function paint(d){
   renderHoldPop();
   var cw=(d.completed_week||[]).length;
   document.getElementById('trk_ops_v').innerHTML=cw;
+  // Orders finished on the floor and awaiting sign-off review.
+  var rv=((d.signoff||{}).pending||[]).length;
+  var rvEl=document.getElementById('trk_rev_v');
+  if(rvEl) rvEl.innerHTML=rv;
+  var rvT=document.getElementById('trk_rev');
+  if(rvT) rvT.classList.toggle('hot', rv>0);
   if(document.getElementById('comppop').style.display==='block') renderCompPop();
   renderAudit(d);            // keeps the Compliance count live even on the board view
   renderDrives(d);           // same for Drive Management
