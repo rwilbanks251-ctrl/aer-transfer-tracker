@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AER Stations</title>
+<title>AER Intelligence</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
@@ -296,6 +296,18 @@ body.locked .ec{cursor:default}
 .pgbar{height:22px;background:#0e1c31;border-radius:11px;overflow:hidden;border:1px solid #24406a}
 .pgbar i{display:block;height:100%;background:linear-gradient(90deg,#8a6a12,#F0B429);border-radius:11px}
 .pgnums{font-size:14px;color:#c7d3e2;margin-top:6px}.pgnums b{color:#ffc247}
+/* Tracked Recycling daily / weekly goal - same idea as the tech board's weekly
+   target bar, but two bars sized to sit inside the section header. */
+.trt{display:flex;gap:14px;padding:4px 10px 8px}
+.trt .trb{flex:1 1 0;min-width:0}
+.trt .trh{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:11px;color:#9fb2ca;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+.trt .trh b{color:#ffc247;font-size:12px}
+.trt .trp{font-weight:900;color:#F0B429}
+.trt .trk2{height:7px;background:#0e1c31;border-radius:4px;overflow:hidden;border:1px solid #24406a}
+.trt .trk2 i{display:block;height:100%;border-radius:4px;
+  background:linear-gradient(90deg,#8a6a12,#F0B429)}
+.trt .trk2 i.hit{background:linear-gradient(90deg,#2c6b41,#4ad17c)}
 .cbar{margin-bottom:5px}
 .cbar .ct{display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px;color:#c7d3e2}
 .cbar .ct .cw{font-weight:800;color:#ffc247}
@@ -316,7 +328,7 @@ body.locked .ec{cursor:default}
 .notewarn{color:#ffc247}
 </style></head><body>
 <div class="top">
-  <div class="tl"><h1>AER <span class="a">|</span> Stations</h1>
+  <div class="tl"><h1>AER <span class="a">|</span> Intelligence</h1>
     <select class="deptsel" id="deptsel" title="Show one department full-width, or all three">
       <option value="all">All Departments</option>
       <option value="dc">Data Capture</option>
@@ -388,6 +400,7 @@ body.locked .ec{cursor:default}
         <div class="subcol"><div class="sublbl uns">Unsorted</div><div class="scroll drop" id="tech_unsorted" data-station="Tech" data-bucket="unsorted"></div></div>
       </div></div>
     <div class="panel sec" id="sec_tr"><h2><span class="n">TRACKED RECYCLING</span><span class="hx" id="trhint"></span></h2>
+      <div class="trt" id="trtarget"></div>
       <div class="secgrid">
         <div class="subcol"><div class="sublbl">To Process</div><div class="scroll drop" id="tr_regular" data-station="Tracked Recycling" data-bucket="regular"></div></div>
         <div class="subcol"><div class="sublbl ez">&#9889; EZ</div><div class="scroll drop" id="tr_ez" data-station="Tracked Recycling" data-bucket="ez"></div></div>
@@ -629,6 +642,17 @@ function applyDept(){
   });
   var rb=document.getElementById('resetbtn');
   if(rb) rb.style.display=(board&&!locked)?'':'none';
+  // An embedded overview is a whole board - it carries its own header, clock
+  // and "Updated .." footer. Leaving ours on screen too renders two of each and
+  // reads as a duplicate window, so hide the outer chrome and keep only the
+  // title + dropdown needed to switch back.
+  ['trackers','holdbox','p90'].forEach(function(id){
+    var e=document.getElementById(id);
+    if(e) e.style.display=ov?'none':'';
+  });
+  var ck=document.querySelector('.top .clock'), ft=document.querySelector('.foot');
+  if(ck) ck.style.display=ov?'none':'';
+  if(ft) ft.style.display=ov?'none':'';
   if(audit){ if(lastData) renderAudit(lastData); return; }
   if(drv){ if(lastData) renderDrives(lastData); return; }
   if(ov){ return; }
@@ -1036,6 +1060,19 @@ function saveNote(text){
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeNote(); closeCtn(); } });
 })();
 
+function renderTRTarget(d){
+  var T=d.totals||{};
+  var dayT=T.tr_target_day||5000, wkT=T.tr_target_week||25000;
+  var day=T.tr_today||0, wk=T.tr_week||0;
+  function bar(label,val,target){
+    var pct=target?Math.round(100*val/target):0, w=Math.min(100,pct);
+    return '<div class="trb"><div class="trh"><span>'+label+' &middot; <b>'+lbs(val)+'</b> / '+lbs(target)+' lbs</span>'
+      +'<span class="trp">'+pct+'%</span></div>'
+      +'<div class="trk2"><i class="'+(pct>=100?'hit':'')+'" style="width:'+w+'%"></i></div></div>';
+  }
+  return bar('Today',day,dayT)+bar('This week',wk,wkT);
+}
+
 function renderFlow(d){
   var T=d.totals||{};
   function cell(l,today,week,unit){
@@ -1126,6 +1163,8 @@ function paint(d){
     document.getElementById(p[0]+'_unsorted').innerHTML=renderCards(unl,p[1],0);
     document.getElementById(p[2]).innerHTML=hint(reg.length+ezl.length+unl.length, ezl.length, unl.length);
   });
+  var trt=document.getElementById('trtarget');
+  if(trt) trt.innerHTML=renderTRTarget(d);
   var ho=vis(d.hold_orders);
   window._held=ho;
   document.getElementById('holdcount').innerHTML=ho.length;
