@@ -328,12 +328,15 @@ function lkDownload(id){
     if(msg) msg.textContent='No device list available for this order yet.';
     return;
   }
+  var today=new Date();
+  // BD Notified (P1) is the day the sheet goes out, i.e. today; Due Date P1
+  // is a week after that.
   var due=new Date(); due.setDate(due.getDate()+7);
   var lines=[LK_COLS.map(lkCsvCell).join(',')];
   rep.rows.forEach(function(a){
     lines.push([id, rep.rep||'', rep.cst||'', rep.location||'',
                 a.type||'', a.serial||'', a.model||'', '1', 'N/A', lkUsDate(due),
-                '', '', '', '', ''].map(lkCsvCell).join(','));
+                lkUsDate(today), '', '', '', ''].map(lkCsvCell).join(','));
   });
   // BOM so Excel opens it as UTF-8 rather than mangling accented names
   var blob=new Blob(['﻿'+lines.join('
