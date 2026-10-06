@@ -348,6 +348,14 @@ body.locked .ec{cursor:default}
 .trt .trk2 i{display:block;height:100%;border-radius:4px;
   background:linear-gradient(90deg,#8a6a12,#F0B429)}
 .trt .trk2 i.hit{background:linear-gradient(90deg,#2c6b41,#4ad17c)}
+.ecp{margin:5px 0 1px}
+.ecp .epl{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:10px;font-weight:800;color:#9fb2ca;letter-spacing:.3px;margin-bottom:3px}
+.ecp .epl b{color:#F0B429;font-size:11px}
+.ecp .epk{height:6px;background:#0e1c31;border-radius:4px;overflow:hidden;border:1px solid #24406a}
+.ecp .epk i{display:block;height:100%;border-radius:4px;
+  background:linear-gradient(90deg,#8a6a12,#F0B429)}
+.ecp .epk i.hit{background:linear-gradient(90deg,#2c6b41,#4ad17c)}
 .cbar{margin-bottom:5px}
 .cbar .ct{display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px;color:#c7d3e2}
 .cbar .ct .cw{font-weight:800;color:#ffc247}
@@ -540,10 +548,20 @@ function ctnBtn(o){
 // snapshot rather than the staged-container list behind the box icon, so a card
 // could say "0 ctn" while the icon listed several. The per-station "here" line
 // and the container button are both accurate, so the total added nothing but
-// doubt. Kept as an empty-returning stub rather than deleted so the single
-// call site in renderCards() stays untouched; drop both together if the line
-// is never coming back.
-function orderTotal(o){ return ''; }
+// doubt. The slot now carries the Tracked Recycling teardown bar: commodity
+// weight already booked off the order, over that plus what is still staged
+// there. TR only - the other stations count items, not pounds. tr_pct is null
+// when there is no weight to measure, and the bar is omitted rather than drawn
+// at 0%, which would read as "nothing done" on an order nobody has weighed.
+function orderTotal(o, station){
+  if(station!=='Tracked Recycling') return '';
+  if(o.tr_pct===null||o.tr_pct===undefined||!(o.tr_total>0)) return '';
+  var p=o.tr_pct;
+  return '<div class="ecp"><div class="epl">'
+    +'<span>'+lbs(o.tr_done)+' / '+lbs(o.tr_total)+' lbs torn down</span>'
+    +'<b>'+p+'%</b></div>'
+    +'<div class="epk"><i class="'+(p>=100?'hit':'')+'" style="width:'+Math.min(100,p)+'%"></i></div></div>';
+}
 
 // Compact, DRAGGABLE order card for a station column. Drag a card into the EZ
 // column (or back to To Process) to (un)tag it EZ — persisted server-side.
@@ -563,7 +581,7 @@ function renderCards(list, station, more){
       +'<button class="notebtn'+(o.note?' has':'')+'" data-note="'+esc(o.id)+'" title="'+(o.note?'View / edit note':'Add note')+'">&#128221;</button>'
       +'<span class="ecage'+(band===2?' over':'')+'">'+o.days+'d</span></div>'
       +'<div class="ecm">'+stationHere(o,station)+badges+'</div>'
-      +orderTotal(o)+'</div>';
+      +orderTotal(o,station)+'</div>';
   });
   if(more>0) h+='<div class="ezmore">+ '+more+' more</div>';
   return h;
