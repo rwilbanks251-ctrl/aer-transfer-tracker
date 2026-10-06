@@ -360,6 +360,10 @@ body.locked .ec{cursor:default}
   background:linear-gradient(90deg,#8a6a12,#F0B429)}
 .trt .trk2 i.hit{background:linear-gradient(90deg,#2c6b41,#4ad17c)}
 .ecp{margin:5px 0 1px}
+.ecp .epl .tagdl{background:transparent;border:1px solid #2c4a73;color:#7fd8ff;border-radius:5px;
+  padding:0 5px;margin-left:7px;font-size:11px;line-height:1.5;cursor:pointer;font-family:inherit}
+.ecp .epl .tagdl:hover{border-color:#F0B429;color:#F0B429}
+
 .ecp .epl{display:flex;justify-content:space-between;align-items:baseline;
   font-size:10px;font-weight:800;color:#9fb2ca;letter-spacing:.3px;margin-bottom:3px}
 .ecp .epl b{color:#F0B429;font-size:11px}
@@ -713,12 +717,15 @@ function lkDownload(id){
     if(msg) msg.textContent='No device list available for this order yet.';
     return;
   }
+  var today=new Date();
+  // BD Notified (P1) is the day the sheet goes out, i.e. today; Due Date P1
+  // is a week after that.
   var due=new Date(); due.setDate(due.getDate()+7);
   var lines=[LK_COLS.map(lkCsvCell).join(',')];
   rep.rows.forEach(function(a){
     lines.push([id, rep.rep||'', rep.cst||'', rep.location||'',
                 a.type||'', a.serial||'', a.model||'', '1', 'N/A', lkUsDate(due),
-                '', '', '', '', ''].map(lkCsvCell).join(','));
+                lkUsDate(today), '', '', '', ''].map(lkCsvCell).join(','));
   });
   // BOM so Excel opens it as UTF-8 rather than mangling accented names
   var blob=new Blob(['﻿'+lines.join('
@@ -811,6 +818,39 @@ function ctnBtn(o){
 // snapshot rather than the staged-container list behind the box icon, so a card
 // could say "0 ctn" while the icon listed several. The per-station "here" line
 // and the container button are both accurate, so the total added nothing but
+// Container tags for the step this progress bar measures. The card carries
+// every container the order has staged anywhere, each tagged with its station,
+// so the export is filtered to the one the bar is about - exporting a Tracked
+// Recycling card's bar should not hand back Data Capture's totes.
+// Price is left blank; it is filled in outside this board.
+function tagDownload(id, station){
+  var row=lkFindRow(id);
+  var all=(row&&row.containers)||[];
+  var tags=all.filter(function(c){ return String(c.station||'')===String(station); })
+              .map(function(c){ return c.label; })
+              .filter(function(v,i,a){ return v && a.indexOf(v)===i; });
+  if(!tags.length){ alert('No containers staged at '+station+' for order '+id+'.'); return; }
+  var lines=['TagID,Price'].concat(tags.map(function(t){
+    return (/[",
+]/.test(t) ? '"'+t.replace(/"/g,'""')+'"' : t)+',';
+  }));
+  var d=new Date();
+  var stamp=('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)+'-'+d.getFullYear();
+  var blob=new Blob(['﻿'+lines.join('
+')],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=id+' '+station+' containers '+stamp+'.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },0);
+}
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest&&ev.target.closest('[data-tags]');
+  if(!b) return;
+  ev.stopPropagation(); ev.preventDefault();
+  var p=String(b.getAttribute('data-tags')||'').split('|');
+  if(p.length===2) tagDownload(p[0],p[1]);
+},true);
 // doubt. The slot now carries a PROGRESS bar, per station:
 //   Tracked Recycling - commodity weight booked off the order, over that plus
 //                       what is still staged there.
@@ -819,22 +859,26 @@ function ctnBtn(o){
 //                       rather than being marked done.
 // A bar is omitted when there is nothing to measure, never drawn at 0% for
 // want of data - that reads as 'nothing done' on an order nobody has touched.
-function progBar(label, done, total, pct, unit){
+function progBar(label, done, total, pct, unit, o, station){
+  var dl = (o && station)
+    ? '<button class="tagdl" data-tags="'+esc(o.id)+'|'+esc(station)+'"'
+      +' title="Export this step's container tags">&#11015;</button>'
+    : '';
   return '<div class="ecp"><div class="epl">'
     +'<span>'+lbs(done)+' / '+lbs(total)+' '+unit+' '+label+'</span>'
-    +'<b>'+pct+'%</b></div>'
+    +'<b>'+pct+'%</b>'+dl+'</div>'
     +'<div class="epk"><i class="'+(pct>=100?'hit':'')+'" style="width:'+Math.min(100,pct)+'%"></i></div></div>';
 }
 function orderTotal(o, station){
   if(station==='Tracked Recycling'){
     if(o.tr_pct===null||o.tr_pct===undefined||!(o.tr_total>0)) return '';
-    return progBar('torn down', o.tr_done, o.tr_total, o.tr_pct, 'lbs');
+    return progBar('torn down', o.tr_done, o.tr_total, o.tr_pct, 'lbs', o, station);
   }
   if(station==='Tech'||station==='Data Capture'){
     var p=(o.step_progress||{})[station];
     if(!p||!p.start||p.pct===null||p.pct===undefined) return '';
     var unit=(station==='Tech')?'devices':'lbs';
-    return progBar('complete', p.done, p.start, p.pct, unit);
+    return progBar('complete', p.done, p.start, p.pct, unit, o, station);
   }
   return '';
 }
