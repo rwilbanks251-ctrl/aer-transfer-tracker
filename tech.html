@@ -116,6 +116,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .tr .num{text-align:center;min-width:60px}.tr .num .v{font-size:24px;font-weight:900}.tr .num .l{font-size:11px;color:#9fb2ca;text-transform:uppercase}
 .v.g{color:#43d17a}.v.r{color:#ff6b6b}.v.o{color:#ffc247}.v.big{color:#fff;font-size:30px}
 .empty{color:#43d17a;font-size:22px;font-weight:800;padding:20px 0}
+.lkwrap{display:flex;justify-content:center;margin:6px 0 1px}
 .lkst{display:inline-flex;align-items:baseline;gap:5px;font-size:10.5px;font-weight:900;
   letter-spacing:.3px;padding:2px 8px;border-radius:5px;white-space:nowrap;
   background:#15304d;color:#7fd8ff;border:1px solid #2c4a73}
@@ -249,6 +250,10 @@ function lkLatest(o){
 }
 function lkStatus(o,station){
   if(station!=='Tech') return '';
+  return '<div class="lkwrap">'+lkBubble(o)+'</div>';
+}
+// the bubble itself, centred on its own line by lkStatus above
+function lkBubble(o){
   var b=lkLatest(o);
   if(!b) return '<span class="lkst none">&#128274; no unlock info</span>';
   var cls = b.key==='na' ? 'na' : (b.key.indexOf('_unl')>0 ? 'ok' : 'wait');
@@ -392,7 +397,8 @@ function renderOrders(d){
     o.unlock_info=(window._unlockMap||{})[String(o.id)]||o.unlock_info||{};
     h+='<div class="ord b'+band+(o.priority?' prio':'')+'"><div class="oh"><div class="oid">'+esc(o.id)+'<span class="acct">'+acct+'</span>'+xf+prio+tag+lock+lkBtn(o,'Tech')+'</div>'
       +'<div class="age'+(band===2?' over':'')+'">'+o.age+'<small>days in queue</small></div></div>'
-      +'<div class="meta">'+meta+' '+lkStatus(o,'Tech')+'</div>'
+      +'<div class="meta">'+meta+'</div>'
+      +lkStatus(o,'Tech')
       +progBar(o.prog)
       +'<div class="chips">'+chips+'</div>'+note+'</div>';
   });
