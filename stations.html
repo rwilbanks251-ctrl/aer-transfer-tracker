@@ -363,6 +363,9 @@ body.locked .ec{cursor:default}
   background:linear-gradient(90deg,#8a6a12,#F0B429)}
 .trt .trk2 i.hit{background:linear-gradient(90deg,#2c6b41,#4ad17c)}
 .ecm .wdr{color:#7fd8ff}
+.ecm .ddr{color:#ff9d6b}
+.ecm .drvline{display:inline-block;margin-left:7px;padding-left:7px;
+  border-left:1px solid #2c4a72;color:#9fb2ca}
 .ecc{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
 .ecchip{background:#3a2f10;color:#f6d68a;border-radius:20px;padding:1px 8px;
   font-size:10.5px;font-weight:700;white-space:nowrap}
@@ -613,12 +616,19 @@ function stationHere(o, station){
   } else if(station==='Tech'){
     if(s.items) parts.push('<b>'+s.items.toLocaleString()+'</b> items');
     if(s.lbs) parts.push('<b>'+lbs(s.lbs)+'</b> lbs');
-    if(o.wipe_drives) parts.push('<b class="wdr">'+o.wipe_drives+'</b> drives to wipe');
   } else {  // Tracked Recycling
     if(s.lbs) parts.push('<b>'+lbs(s.lbs)+'</b> lbs');
     if(s.items) parts.push('<b>'+s.items.toLocaleString()+'</b> items');
   }
-  return (parts.join(' &middot; ')||'in process')+' here';
+  // Drives ride on EVERY card for the order, not just the Tech one. Drive
+  // Management is a side branch: 202292 is active in Tech alone, so hanging
+  // the destroy count off a Tracked Recycling card would have hidden it
+  // completely. Separate line so it never reads as station material.
+  var dr=[];
+  if(o.wipe_drives) dr.push('<b class="wdr">'+o.wipe_drives+'</b> to wipe');
+  if(o.destroy_drives) dr.push('<b class="ddr">'+o.destroy_drives+'</b> to destroy');
+  var head=(parts.join(' &middot; ')||'in process')+' here';
+  return head + (dr.length? '<span class="drvline">▪ '+dr.join(' &middot; ')+'</span>' : '');
 }
 
 // CONTAINER button — mirrors the note icon. Lit when the order has staged
