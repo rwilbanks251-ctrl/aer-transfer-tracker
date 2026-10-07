@@ -47,6 +47,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
   border-radius:9px;padding:8px 12px;margin-bottom:7px}
 .ck.pass{border-left-color:#43d17a}.ck.fail{border-left-color:#ff6b6b}
 .ck.sign{border-left-color:#ffd782}
+.ck.na{border-left-color:#5b6f8c;opacity:.75}
+.ck.na .tag{background:#1c2a40;color:#9fb2ca}
+.ckitems{margin-top:5px;max-height:190px;overflow-y:auto;font-size:11.5px;
+  font-family:Consolas,monospace;color:#cfe0f2;background:#0a1626;
+  border:1px solid #1f3655;border-radius:5px;padding:4px 7px;line-height:1.5}
+.ckitems .miss{color:#ff9d8a}
 .ck .h{display:flex;align-items:baseline;gap:9px}
 .ck .lab{font-size:13px;font-weight:800;color:#eaf1f8;flex:1 1 auto}
 .ck .tag{font-size:10px;font-weight:900;padding:1px 7px;border-radius:4px}
@@ -1397,14 +1403,16 @@ function sgPaint(c){
         : (c.final_done ? 'Signed off.' : 'All checks clear.'))
      + '</span></div>';
   (c.checks||[]).forEach(function(ck){
-    var cls = ck.ok===true?'pass':(ck.ok===false?'fail':'sign');
-    var tag = ck.ok===true?'PASS':(ck.ok===false?'FAIL':'SIGN-OFF');
+    var cls = ck.na?'na':(ck.ok===true?'pass':(ck.ok===false?'fail':'sign'));
+    var tag = ck.na?'N/A':(ck.ok===true?'PASS':(ck.ok===false?'FAIL':'CHECK'));
     var e = ex[ck.key];
     if(e){ cls='sign'; tag='EXCEPTION'; }
     h += '<div class="ck '+cls+'"><div class="h"><span class="lab">'+esc(ck.label)+'</span>'
       +'<span class="tag">'+tag+'</span></div>'
       +'<div class="det">'+esc(ck.detail||'')+'</div>'
       +((ck.evidence&&ck.evidence.length)?('<div class="det">e.g. '+esc(ck.evidence.join(' | '))+'</div>'):'')
+      +((ck.items&&ck.items.length)?('<div class="ckitems">'+ck.items.map(function(x){
+          return '<div'+(/^MISSING/.test(x)?' class="miss"':'')+'>'+esc(x)+'</div>';}).join('')+'</div>'):'')
       +(e?('<div class="exc">Exception: '+esc(e.reason)+' &mdash; approved by '+esc(e.approved_by)+'</div>'):'')
       +((ck.ok===false&&!e)?('<div class="fix">'+esc(ck.fix||'')
           +' <button class="sgbtn exc" data-exc="'+esc(ck.key)+'">Document exception (Rob)</button></div>'):'')
