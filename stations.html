@@ -54,6 +54,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
   border:1px solid #1f3655;border-radius:5px;padding:4px 7px;line-height:1.5}
 .ckitems .miss{color:#ff9d8a}
 .ck.insk{cursor:pointer}.ck.insk:hover{border-color:#3a5f92}
+.sgbtn.rf{margin-left:8px;padding:2px 9px;font-size:11px}
 .insbox{margin-top:6px;white-space:pre-wrap;font-size:12.5px;line-height:1.45;color:#e8f1fb;
   background:#0a1626;border:1px solid #1f3655;border-radius:5px;padding:7px 9px}
 .ck .h{display:flex;align-items:baseline;gap:9px}
@@ -1338,13 +1339,22 @@ function sn(v){
 // audit-view call. Approvals POST to /signoff - every gate (password, "fix it
 // or get an exception", Afshan+TJ before Rob) is enforced SERVER-side, so a
 // crafted POST cannot skip the chain.
-var SG_SEL = null, SG_BUSY = false, SG_WAIT = null;
+var SG_SEL = null, SG_BUSY = false, SG_WAIT = null, SG_REFRESH = null;
 
 function renderSignoff(d){
   var P = ((d && d.signoff) || {}).pending || [];
   if(SG_WAIT){
     var wc=(((d||{}).signoff||{}).checklists||{})[SG_WAIT];
     if(wc && SG_SEL===SG_WAIT){ SG_WAIT=null; sgPaint(wc); }
+  }
+  if(SG_REFRESH){
+    var rc=(((d||{}).signoff||{}).checklists||{})[SG_REFRESH.oid];
+    // The rebuilt checklist echoes the request stamp back - compared as stamps,
+    // not clocks, so a publisher clock a few minutes off cannot strand it.
+    if(rc && (rc.refresh_req||0) >= SG_REFRESH.req && SG_SEL===SG_REFRESH.oid){
+      SG_REFRESH=null; sgPaint(rc);
+      var m=document.getElementById('sgmsg'); if(m) m.innerHTML='&#10003; Refreshed from live data.';
+    }
   }
   var el = document.getElementById('sg_list');
   var hint = document.getElementById('sg1hint');
@@ -1391,7 +1401,9 @@ function sgPaint(c){
   }
   var h2 = document.getElementById('sg2hint');
   if(h2) h2.innerHTML = esc(c.order)+' &middot; '+(c.assets||0)+' assets'
-    +(c.went_to_tech?' &middot; went to Tech':'');
+    +(c.went_to_tech?' &middot; went to Tech':'')
+    +(c.built_at?' &middot; checked '+esc(c.built_at):'')
+    +' <button class="sgbtn rf" data-chkrf="1" title="Re-read Makor and the diag tools now">&#10227; Refresh</button>';
   var ex = c.exceptions||{}, appr = c.approvals||{};
   var h = '<div class="sgbar">';
   ['afshan','tj','rob'].forEach(function(w){
@@ -1443,6 +1455,31 @@ function sgPost(body, okMsg){
 
 document.addEventListener('click', function(ev){
   if(!ev.target.closest) return;
+  var rf = ev.target.closest('[data-chkrf]');
+  if(rf && SG_SEL){
+    var oid = SG_SEL, det = document.getElementById('sg_detail');
+    var note = function(t){ var m=document.getElementById('sgmsg'); if(m) m.innerHTML=t; };
+    rf.disabled = true; rf.innerHTML = 'Refreshing&hellip;';
+    if(EDGE_MODE){
+      // Public board: ask the publisher. It re-reads every source, which takes
+      // 1-5 minutes; the checklist repaints itself when the rebuild lands.
+      fetch(EDGE, {method:'POST', headers:{'Content-Type':'application/json'},
+                   body: JSON.stringify({action:'chkrefresh', id:oid})})
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          if(!j || !j.ok){ note('&#9888; refresh request failed'); rf.disabled=false; rf.innerHTML='&#10227; Refresh'; return; }
+          SG_REFRESH = {oid:String(oid), req:j.at};
+          note('Refresh requested &mdash; re-reading Makor and the diag tools on the publisher. This takes 1&ndash;5 minutes; the checklist updates on its own.');
+        })
+        .catch(function(){ note('&#9888; refresh request failed'); rf.disabled=false; rf.innerHTML='&#10227; Refresh'; });
+    } else {
+      det.innerHTML = '<div class="audempty">Re-reading Makor and the diag tools for '+esc(oid)+'&hellip;</div>';
+      fetch('/checklist?order='+encodeURIComponent(oid)+'&force=1', {cache:'no-store'})
+        .then(function(r){return r.json();}).then(sgPaint)
+        .catch(function(){ det.innerHTML='<div class="audempty">Refresh failed.</div>'; });
+    }
+    return;
+  }
   var ik = ev.target.closest('[data-insk]');
   if(ik){
     var bx = ik.querySelector('.insbox');
