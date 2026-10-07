@@ -1329,10 +1329,14 @@ function sn(v){
 // audit-view call. Approvals POST to /signoff - every gate (password, "fix it
 // or get an exception", Afshan+TJ before Rob) is enforced SERVER-side, so a
 // crafted POST cannot skip the chain.
-var SG_SEL = null, SG_BUSY = false;
+var SG_SEL = null, SG_BUSY = false, SG_WAIT = null;
 
 function renderSignoff(d){
   var P = ((d && d.signoff) || {}).pending || [];
+  if(SG_WAIT){
+    var wc=(((d||{}).signoff||{}).checklists||{})[SG_WAIT];
+    if(wc && SG_SEL===SG_WAIT){ SG_WAIT=null; sgPaint(wc); }
+  }
   var el = document.getElementById('sg_list');
   var hint = document.getElementById('sg1hint');
   if(hint) hint.innerHTML = P.length + ' order' + (P.length===1?'':'s');
@@ -1356,6 +1360,15 @@ function sgPick(oid){
   renderSignoff(lastData);
   var det = document.getElementById('sg_detail');
   det.innerHTML = '<div class="audempty">Loading checklist for '+esc(oid)+'&hellip;</div>';
+  // Public board: no server to fetch from - the publisher ships each pending
+  // order's checklist inside the data. A cold one is still being built there.
+  if(EDGE_MODE){
+    var pc=(((lastData||{}).signoff||{}).checklists||{})[String(oid)];
+    if(pc){ SG_WAIT=null; sgPaint(pc); }
+    else { SG_WAIT=String(oid);
+      det.innerHTML='<div class="audempty">Checklist for <b>'+esc(oid)+'</b> is being built on the publisher.<br>It appears here on its own within a few minutes.</div>'; }
+    return;
+  }
   fetch('/checklist?order='+encodeURIComponent(oid), {cache:'no-store'})
     .then(function(r){return r.json();}).then(sgPaint)
     .catch(function(){ det.innerHTML='<div class="audempty">Could not load.</div>'; });
@@ -1420,6 +1433,11 @@ document.addEventListener('click', function(ev){
   var row = ev.target.closest('[data-sg]');
   if(row){ sgPick(row.getAttribute('data-sg')); return; }
   var ab = ev.target.closest('[data-appr]');
+  var eb0 = ev.target.closest('[data-exc]');
+  if((ab||eb0) && SG_SEL && EDGE_MODE){
+    alert('Approvals cannot be recorded from this page yet - only on the board served from the publisher laptop.');
+    return;
+  }
   if(ab && SG_SEL){
     var who = ab.getAttribute('data-appr');
     var pw = prompt('Password for '+who.toUpperCase()+':');
