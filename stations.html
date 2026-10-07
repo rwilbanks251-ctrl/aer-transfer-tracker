@@ -1417,7 +1417,7 @@ function sgPaint(c){
       +(ins?('<div class="insbox" style="display:none">'+esc(ck.instructions)+'</div>'):'')
       +((ck.evidence&&ck.evidence.length)?('<div class="det">e.g. '+esc(ck.evidence.join(' | '))+'</div>'):'')
       +((ck.items&&ck.items.length)?('<div class="ckitems">'+ck.items.map(function(x){
-          return '<div'+(/^MISSING/.test(x)?' class="miss"':'')+'>'+esc(x)+'</div>';}).join('')+'</div>'):'')
+          return '<div'+(/^(MISSING|OVER)/.test(x)?' class="miss"':'')+'>'+esc(x)+'</div>';}).join('')+'</div>'):'')
       +(e?('<div class="exc">Exception: '+esc(e.reason)+' &mdash; approved by '+esc(e.approved_by)+'</div>'):'')
       +((ck.ok===false&&!e)?('<div class="fix">'+esc(ck.fix||'')
           +' <button class="sgbtn exc" data-exc="'+esc(ck.key)+'">Document exception (Rob)</button></div>'):'')
