@@ -53,6 +53,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
   font-family:Consolas,monospace;color:#cfe0f2;background:#0a1626;
   border:1px solid #1f3655;border-radius:5px;padding:4px 7px;line-height:1.5}
 .ckitems .miss{color:#ff9d8a}
+.ck.insk{cursor:pointer}.ck.insk:hover{border-color:#3a5f92}
+.insbox{margin-top:6px;white-space:pre-wrap;font-size:12.5px;line-height:1.45;color:#e8f1fb;
+  background:#0a1626;border:1px solid #1f3655;border-radius:5px;padding:7px 9px}
 .ck .h{display:flex;align-items:baseline;gap:9px}
 .ck .lab{font-size:13px;font-weight:800;color:#eaf1f8;flex:1 1 auto}
 .ck .tag{font-size:10px;font-weight:900;padding:1px 7px;border-radius:4px}
@@ -1407,9 +1410,11 @@ function sgPaint(c){
     var tag = ck.na?'N/A':(ck.ok===true?'PASS':(ck.ok===false?'FAIL':'CHECK'));
     var e = ex[ck.key];
     if(e){ cls='sign'; tag='EXCEPTION'; }
-    h += '<div class="ck '+cls+'"><div class="h"><span class="lab">'+esc(ck.label)+'</span>'
+    var ins = (typeof ck.instructions==='string');
+    h += '<div class="ck '+cls+(ins?' insk':'')+'"'+(ins?' data-insk="1"':'')+'><div class="h"><span class="lab">'+esc(ck.label)+'</span>'
       +'<span class="tag">'+tag+'</span></div>'
       +'<div class="det">'+esc(ck.detail||'')+'</div>'
+      +(ins?('<div class="insbox" style="display:none">'+esc(ck.instructions)+'</div>'):'')
       +((ck.evidence&&ck.evidence.length)?('<div class="det">e.g. '+esc(ck.evidence.join(' | '))+'</div>'):'')
       +((ck.items&&ck.items.length)?('<div class="ckitems">'+ck.items.map(function(x){
           return '<div'+(/^MISSING/.test(x)?' class="miss"':'')+'>'+esc(x)+'</div>';}).join('')+'</div>'):'')
@@ -1438,6 +1443,15 @@ function sgPost(body, okMsg){
 
 document.addEventListener('click', function(ev){
   if(!ev.target.closest) return;
+  var ik = ev.target.closest('[data-insk]');
+  if(ik){
+    var bx = ik.querySelector('.insbox');
+    if(bx){ var open = bx.style.display==='none';
+      bx.style.display = open ? 'block' : 'none';
+      var dt = ik.querySelector('.det');
+      if(dt) dt.textContent = open ? "This order's instructions:" : "Click to show this order's instructions."; }
+    return;
+  }
   var row = ev.target.closest('[data-sg]');
   if(row){ sgPick(row.getAttribute('data-sg')); return; }
   var ab = ev.target.closest('[data-appr]');
