@@ -1612,7 +1612,11 @@ function stPaint(c){
       +'<span class="tag">BLOCKER</span></div>'
       +(b.fix?('<div class="det">Fix: '+esc(b.fix)+'</div>'):'')+'</div>';
   });
-  h+=ckRowsHTML(c, false);
+  // settlement is not concerned with data security - those checks stay on
+  // Order Sign-Off only (Rob, 2026-10-07)
+  var SKIP={validation:1, erasure:1, destruction:1, datasecurity:1, tiktok_offsite:1};
+  h+=ckRowsHTML({checks:(c.checks||[]).filter(function(k){ return !SKIP[k.key]; }),
+                 exceptions:c.exceptions}, false);
   det.innerHTML=h;
 }
 document.addEventListener('click', function(ev){
