@@ -179,6 +179,17 @@ body{
 .stat b{font-size:18px; font-weight:600; line-height:1; font-variant-numeric:tabular-nums}
 .stat span{font-size:9px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted)}
 .stat.miss b{color:var(--bad)}
+.restart{
+  position:absolute; top:6px; right:8px; z-index:2;
+  display:flex; align-items:center; gap:4px; cursor:pointer;
+  background:rgba(0,0,0,.28); border:1px solid rgba(200,145,47,.45); border-radius:9px;
+  padding:5px 9px; color:var(--amber);
+  font-family:"Chakra Petch",sans-serif; font-weight:600; font-size:11px;
+  letter-spacing:.06em; text-transform:uppercase;
+  transition:color .16s, border-color .16s, background .16s;
+}
+.restart span{font-size:13px; line-height:1}
+.restart:hover,.restart:focus-visible{color:var(--cream); border-color:var(--amber); background:rgba(0,0,0,.5)}
 .me-chip{
   display:flex; align-items:center; background:var(--panel-2);
   border:1px solid var(--edge); border-radius:10px; padding:7px 11px;
@@ -333,7 +344,7 @@ body{
   display:none; flex-direction:column; gap:3px; align-items:center;
   background:linear-gradient(180deg,#26301F,#1A2018);
   border:1px solid rgba(200,145,47,.4); border-radius:14px;
-  padding:8px 14px 7px; box-shadow:var(--shadow);
+  padding:8px 14px 7px; box-shadow:var(--shadow); position:relative;
 }
 .callout[data-show="1"]{display:flex}
 .callout span{
@@ -426,6 +437,7 @@ body{
   .sheet{padding:4px 4px 0; border-radius:10px}
   /* in blitz the called name must stay put while you hunt the board */
   .callout{position:sticky; top:0; z-index:40; padding:9px 12px; border-radius:11px}
+  .restart{top:5px; right:6px; padding:4px 7px; font-size:10px}
   .callout span{font-size:8px}
   .callout strong{font-size:clamp(24px,9vw,36px)}
   .callout small{font-size:9.5px}
@@ -481,6 +493,9 @@ body{
 
 <div class="wrap">
   <div class="callout" id="callout">
+    <button type="button" class="restart" id="btn-restart" title="Start this run over">
+      <span aria-hidden="true">&#8635;</span> Restart
+    </button>
     <span>Call the spot</span>
     <strong id="callout-name">&mdash;</strong>
     <small id="callout-meta">streak 0</small>
@@ -946,7 +961,9 @@ function setMode(m){
 document.querySelectorAll(".modes button").forEach(function(b){
   b.addEventListener("click", function(){ setMode(b.dataset.mode); });
 });
-document.getElementById("btn-reset").addEventListener("click", function(){ setMode(st.mode); });
+function restartRun(){ setMode(st.mode); }
+document.getElementById("btn-reset").addEventListener("click", restartRun);
+document.getElementById("btn-restart").addEventListener("click", restartRun);
 document.getElementById("btn-logout").addEventListener("click", function(){
   me = null; pw = null;
   try { localStorage.removeItem(LS_USER); localStorage.removeItem(LS_PW); } catch (e) {}
