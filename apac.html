@@ -25,6 +25,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .filterbar input{flex:1;background:#0e1c31;border:2px solid #24406a;border-radius:8px;color:#fff;padding:9px 14px;font-size:14px;outline:none}
 .filterbar input:focus{border-color:#F0B429}
 .filterbar input::placeholder{color:#5c7089}
+.crushbtn{background:transparent;color:#ffd782;border:1px solid #6a5410;border-radius:8px;padding:0 14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap}
+.crushbtn:hover{background:#2a2410}
+.crushbtn.off{color:#7f93ad;border-color:#2a3a50}
 .factabs{display:flex;gap:6px}
 .factabs button{background:#0e1c31;border:2px solid #24406a;color:#9fb2ca;border-radius:8px;padding:0 16px;font-size:13px;font-weight:700;cursor:pointer}
 .factabs button.active{background:#F0B429;color:#152B47;border-color:#F0B429}
@@ -84,6 +87,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
         <button data-fac="APAC">APAC</button>
         <button data-fac="Penang">Malaysia</button>
       </div>
+      <button class="crushbtn" id="crushbtn" title="Show or hide APAC Crushing orders (AMD) - the board's numbers follow"></button>
     </div>
     <div class="scroll" id="orders_queue"></div>
   </div>
@@ -153,7 +157,19 @@ function renderInitiated(list){
   return h;
 }
 
-var LAST_QUEUE=[], CUR_FAC='all';
+var LAST_QUEUE=[], CUR_FAC='all', LAST_D=null;
+// APAC CRUSHING toggle (Rob, 2026-10-07): AMD's "APAC Crushing" program is 11
+// long-running orders (85-110 days) that dwarf the rest - P90 99d with them,
+// 12d without. Per browser. Hidden = gone from the list AND the numbers.
+var HIDE_CRUSH=false;
+try{ HIDE_CRUSH=localStorage.getItem('apac_hide_crush')==='1'; }catch(_){}
+function isCrush(o){ return /crush/i.test(String(o.program||'')); }
+function paintCrushBtn(){
+  var b=document.getElementById('crushbtn'); if(!b) return;
+  var n=LAST_QUEUE.filter(isCrush).length;
+  b.innerHTML=(HIDE_CRUSH?'Crushing: Hidden':'Crushing: Shown')+(n?(' ('+n+')'):'');
+  b.classList.toggle('off', HIDE_CRUSH);
+}
 
 function matchesFilter(o, q){
   if(!q) return true;
@@ -166,15 +182,22 @@ function matchesFilter(o, q){
 function renderFiltered(){
   var q=(document.getElementById('q').value||'').trim().toLowerCase();
   var filtered=LAST_QUEUE.filter(function(o){
-    return (CUR_FAC==='all'||o.facility===CUR_FAC) && matchesFilter(o,q);
+    return (CUR_FAC==='all'||o.facility===CUR_FAC) && matchesFilter(o,q)
+           && !(HIDE_CRUSH && isCrush(o));
   });
   var emptyMsg=LAST_QUEUE.length?'No matching orders.':'No open APAC or Malaysia orders on the floor.';
   document.getElementById('orders_queue').innerHTML=renderOrders(filtered,{empty:emptyMsg});
-  var hint=filtered.length+' of '+LAST_QUEUE.length+' orders &middot; oldest first';
+  var hint=filtered.length+' of '+LAST_QUEUE.length+' orders &middot; oldest first'
+    +(HIDE_CRUSH?' &middot; crushing hidden':'');
   document.getElementById('qhint').innerHTML=hint;
 }
 
 document.getElementById('q').addEventListener('input', renderFiltered);
+document.getElementById('crushbtn').addEventListener('click', function(){
+  HIDE_CRUSH=!HIDE_CRUSH;
+  try{ localStorage.setItem('apac_hide_crush', HIDE_CRUSH?'1':'0'); }catch(_){}
+  if(LAST_D) paint(LAST_D); else { paintCrushBtn(); renderFiltered(); }
+});
 document.getElementById('factabs').addEventListener('click', function(e){
   var btn=e.target.closest('button[data-fac]');
   if(!btn) return;
@@ -202,16 +225,30 @@ function invKpi(inv){
 
 function paint(d){
   if(d.loading){document.getElementById('orders_queue').innerHTML='<div class="empty mut">Loading live data&hellip;</div>';return;}
+  LAST_D=d;
   var T=d.totals;
   var sla=T.sla||45;
+  var ex='';
+  if(HIDE_CRUSH){
+    var q=(d.queue||[]).filter(function(o){ return !isCrush(o); });
+    var ages=q.map(function(o){ return o.days||0; }).sort(function(a,b){ return a-b; });
+    var k=Math.ceil(0.9*ages.length);
+    T={total_open:q.length,
+       apac:q.filter(function(o){ return o.facility==='APAC'; }).length,
+       penang:q.filter(function(o){ return o.facility==='Penang'; }).length,
+       oldest:ages.length?ages[ages.length-1]:0,
+       p90:ages.length?ages[Math.min(ages.length-1,Math.max(0,k-1))]:0, sla:sla};
+    ex=' &middot; excl. crushing';
+  }
   document.getElementById('kpis').innerHTML=
-    kpi(T.total_open,'On the floor (Ops In-Progress)')
+    kpi(T.total_open,'On the floor (Ops In-Progress)'+ex)
     +kpi(T.apac||0,'At APAC')
     +'<div class="kpi"><div class="v" style="color:#7fd8ff">'+(T.penang||0)+'</div><div class="l">At Malaysia</div></div>'
-    +kpi(T.oldest,'Oldest (days)','hot')
-    +p90kpi(T.p90||0,'P90 &middot; goal &lt;'+sla+'d',sla)
+    +kpi(T.oldest,'Oldest (days)'+ex,'hot')
+    +p90kpi(T.p90||0,'P90 &middot; goal &lt;'+sla+'d'+ex,sla)
     +invKpi(d.inventory);
   LAST_QUEUE=d.queue||[];
+  paintCrushBtn();
   renderFiltered();
   var IT=d.initiated_totals||{};
   document.getElementById('inithint').innerHTML=(IT.count||0)+' orders &middot; oldest first'
