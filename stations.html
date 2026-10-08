@@ -518,6 +518,7 @@ body.locked .ec{cursor:default}
       </optgroup>
       <optgroup label="&#9472;&#9472; ADMIN &#9472;&#9472;">
         <option value="ov_apac">&nbsp;&nbsp;APAC</option>
+        <option value="settle">&nbsp;&nbsp;Settlements</option>
       </optgroup>
     </select>
     <div class="spacer"></div>
@@ -585,6 +586,14 @@ body.locked .ec{cursor:default}
       <div class="scroll auditcol" id="sg_list"></div></div>
     <div class="panel sec"><h2><span class="n">CHECKLIST</span><span class="hx" id="sg2hint"></span></h2>
       <div class="scroll auditcol" id="sg_detail"></div></div>
+  </div>
+</div>
+<div class="grid2" id="stlview" style="display:none">
+  <div class="ordersrow sgrow">
+    <div class="panel sec"><h2><span class="n">SETTLEMENTS &middot; PENDING FIXES</span><span class="hx" id="st1hint"></span></h2>
+      <div class="scroll auditcol" id="st_list"></div></div>
+    <div class="panel sec"><h2><span class="n">CHECKLIST</span><span class="hx" id="st2hint"></span></h2>
+      <div class="scroll auditcol" id="st_detail"></div></div>
   </div>
 </div>
 <div class="grid2" id="ovview" style="display:none">
@@ -1183,7 +1192,10 @@ function applyDept(){
   if(window.ddWide!==(dept==='all')){ window.ddWide=(dept==='all'); if(window.fitZoom) fitZoom(true); }
   var audit=(dept==='compliance'), drv=(dept==='drives'), sg=(dept==='signoff'),
       cmd=(dept==='commodity'),
-      ov=(dept.indexOf('ov_')===0), board=!audit&&!drv&&!ov&&!sg&&!cmd;
+      ov=(dept.indexOf('ov_')===0), stl=(dept==='settle'),
+      board=!audit&&!drv&&!ov&&!sg&&!cmd&&!stl;
+  var stv=document.getElementById('stlview');
+  if(stv) stv.style.display=stl?'':'none';
   var bv=document.getElementById('boardview'), av=document.getElementById('auditview'),
       dv=document.getElementById('drivesview'), ovv=document.getElementById('ovview');
   if(bv) bv.style.display=board?'':'none';
@@ -1220,6 +1232,7 @@ function applyDept(){
   if(audit){ if(lastData) renderAudit(lastData); return; }
   if(drv){ if(lastData) renderDrives(lastData); return; }
   if(sg){ if(lastData) renderSignoff(lastData); return; }
+  if(stl){ if(lastData) renderSettle(lastData); return; }
   if(cmd){ if(lastData) renderCommodity(lastData); return; }
   if(ov){ return; }
   ['dc','tech','tr'].forEach(function(k){
@@ -1240,7 +1253,7 @@ function applyDept(){
   // ADMIN views (Rob, 2026-10-07): password "uru", asked once per browser
   // tab (sessionStorage). In-page, so a deterrent like the board lock - the
   // embedded board's own public URL is not protected by it.
-  var ADMIN_VIEWS={ov_apac:1};
+  var ADMIN_VIEWS={ov_apac:1, settle:1};
   function adminOk(){ try{ return sessionStorage.getItem('dd_admin')==='1'; }catch(_){ return false; } }
   if(ADMIN_VIEWS[dept] && !adminOk()) dept='all';
   if(sel){ sel.value=dept; sel.addEventListener('change',function(){
@@ -1342,7 +1355,7 @@ function renderCompPop(){
     var rb=document.getElementById('resetbtn');
     if(rb) rb.style.display = (locked || dept==='compliance' || dept==='commodity' || dept==='drives'
                            || dept==='signoff'
-                           || dept.indexOf('ov_')===0) ? 'none' : '';
+                           || dept.indexOf('ov_')===0 || dept==='settle') ? 'none' : '';
   }
   // Password gate on the LOCK button - restored 2026-10-06. It was briefly
   // removed when "remove the password dialog after clicking the key" was read
@@ -1505,6 +1518,15 @@ function sgPaint(c){
         ? ('Blocked: '+c.unresolved.length+' check(s) failing - fix them, or Rob documents an exception')
         : (c.final_done ? 'Signed off.' : 'All checks clear.'))
      + '</span></div>';
+  h += ckRowsHTML(c, true);
+  det.innerHTML = h;
+}
+
+// Check rows for a checklist - shared by Order Sign-Off and Settlements so the
+// two can never render a check differently. allowExc = show the sign-off
+// exception button (Settlements is a fix list, not the approval chain).
+function ckRowsHTML(c, allowExc){
+  var ex = c.exceptions||{}, h='';
   (c.checks||[]).forEach(function(ck){
     var cls = ck.na?'na':(ck.ok===true?'pass':(ck.ok===false?'fail':'sign'));
     var tag = ck.na?'N/A':(ck.ok===true?'PASS':(ck.ok===false?'FAIL':'CHECK'));
@@ -1520,11 +1542,106 @@ function sgPaint(c){
           return '<div'+(/^(MISSING|OVER)/.test(x)?' class="miss"':'')+'>'+esc(x)+'</div>';}).join('')+'</div>'):'')
       +(e?('<div class="exc">Exception: '+esc(e.reason)+' &mdash; approved by '+esc(e.approved_by)+'</div>'):'')
       +((ck.ok===false&&!e)?('<div class="fix">'+esc(ck.fix||'')
-          +' <button class="sgbtn exc" data-exc="'+esc(ck.key)+'">Document exception (Rob)</button></div>'):'')
+          +(allowExc?' <button class="sgbtn exc" data-exc="'+esc(ck.key)+'">Document exception (Rob)</button>':'')+'</div>'):'')
       +'</div>';
   });
-  det.innerHTML = h;
+  return h;
 }
+
+// SETTLEMENTS view (Admin) - list + checklist, mirrors Order Sign-Off without
+// the approval chain. Each card's blockers from the settlements sheet sit at
+// the top of its checklist; the automated checks follow.
+var ST_SEL=null, ST_WAIT=null, ST_REFRESH=null;
+function stItem(oid){
+  var S=((lastData||{}).settlements||{}).items||[];
+  for(var i=0;i<S.length;i++) if(S[i].order===oid) return S[i];
+  return null;
+}
+function renderSettle(d){
+  var S=(d&&d.settlements)||{items:[],checklists:{}}, L=S.items||[];
+  var el=document.getElementById('st_list'); if(!el) return;
+  var h1=document.getElementById('st1hint');
+  if(h1) h1.innerHTML=L.length+' order'+(L.length===1?'':'s');
+  el.innerHTML=L.length ? L.map(function(o){
+      var st = o.error ? ('<span style="color:#ff9d8a">could not build: '+esc(o.error)+'</span>')
+             : !o.built ? '<span style="color:#7f93ad">checking&hellip;</span>'
+             : (o.fails ? ('<span style="color:#ff6b6b;font-weight:800">'+o.fails+' check'+(o.fails===1?'':'s')+' to fix</span>')
+                        : '<span class="ok">&#10003; automated checks clear</span>');
+      var nb=(o.blockers||[]).length;
+      return '<div class="sgo'+(ST_SEL===o.order?' on':'')+'" data-stl="'+esc(o.order)+'">'
+        +'<div class="r1"><span class="oid">'+esc(o.order)+'</span>'
+        +'<span class="ac">'+esc(o.account||'')+'</span>'
+        +'<span class="dt">#'+esc(o.settlement||'')+'</span></div>'
+        +'<div class="st">'+esc(o.owner||'')
+        +((o.amounts&&o.amounts.length)?(' &middot; '+o.amounts.map(esc).join(' / ')):'')+'</div>'
+        +'<div class="st">'+st+(nb?(' &middot; <span style="color:#ffd782;font-weight:800">'+nb+' blocker'+(nb===1?'':'s')+'</span>'):'')+'</div></div>';
+    }).join('')
+    : '<div class="audempty">No settlement orders.</div>';
+  var C=S.checklists||{};
+  if(ST_WAIT && C[ST_WAIT] && ST_SEL===ST_WAIT){ var w=ST_WAIT; ST_WAIT=null; stPaint(C[w]); }
+  if(ST_REFRESH && ST_SEL===ST_REFRESH.oid){
+    var rc=C[ST_REFRESH.oid];
+    if(rc && (rc.refresh_req||0)>=ST_REFRESH.req){
+      ST_REFRESH=null; stPaint(rc);
+      var m=document.getElementById('stmsg'); if(m) m.innerHTML='&#10003; Refreshed from live data.';
+    }
+  }
+}
+function stPick(oid){
+  ST_SEL=String(oid);
+  renderSettle(lastData);
+  var c=((((lastData||{}).settlements||{}).checklists)||{})[ST_SEL];
+  if(c){ ST_WAIT=null; stPaint(c); }
+  else { ST_WAIT=ST_SEL;
+    document.getElementById('st_detail').innerHTML='<div class="audempty">Checklist for <b>'+esc(oid)
+      +'</b> is being built on the publisher.<br>It appears here on its own within a few minutes.</div>'; }
+}
+function stPaint(c){
+  var det=document.getElementById('st_detail');
+  if(!c || c.error){ det.innerHTML='<div class="audempty"><b>'+esc((c&&c.error)||'No data')+'</b></div>'; return; }
+  var it=stItem(String(c.order))||{};
+  var h2=document.getElementById('st2hint');
+  if(h2) h2.innerHTML=esc(c.order)+' &middot; '+(c.assets||0)+' assets'
+    +(c.built_at?' &middot; checked '+esc(c.built_at):'')
+    +' <button class="sgbtn rf" data-stlrf="1" title="Re-read Makor and the diag tools now">&#10227; Refresh</button>';
+  var h='<div class="sgbar"><span class="sgmsg" id="stmsg">Settlement #'+esc(it.settlement||'')
+    +(it.owner?(' &middot; '+esc(it.owner)):'')
+    +((it.amounts&&it.amounts.length)?(' &middot; '+it.amounts.map(esc).join(' / ')):'')+'</span></div>';
+  (it.blockers||[]).forEach(function(b){
+    h+='<div class="ck sign"><div class="h"><span class="lab">Settlement blocker: '+esc(b.issue||'')+'</span>'
+      +'<span class="tag">BLOCKER</span></div>'
+      +(b.fix?('<div class="det">Fix: '+esc(b.fix)+'</div>'):'')+'</div>';
+  });
+  h+=ckRowsHTML(c, false);
+  det.innerHTML=h;
+}
+document.addEventListener('click', function(ev){
+  if(!ev.target.closest) return;
+  var row=ev.target.closest('[data-stl]');
+  if(row){ stPick(row.getAttribute('data-stl')); return; }
+  var rf=ev.target.closest('[data-stlrf]');
+  if(rf && ST_SEL){
+    var oid=ST_SEL;
+    var note=function(t){ var m=document.getElementById('stmsg'); if(m) m.innerHTML=t; };
+    rf.disabled=true; rf.innerHTML='Refreshing&hellip;';
+    if(EDGE_MODE){
+      fetch(EDGE,{method:'POST',headers:{'Content-Type':'application/json'},
+                  body:JSON.stringify({action:'chkrefresh', id:oid})})
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          if(!j||!j.ok){ note('&#9888; refresh request failed'); rf.disabled=false; rf.innerHTML='&#10227; Refresh'; return; }
+          ST_REFRESH={oid:oid, req:j.at};
+          note('Refresh requested &mdash; re-reading Makor and the diag tools on the publisher. This takes 1&ndash;5 minutes; the checklist updates on its own.');
+        })
+        .catch(function(){ note('&#9888; refresh request failed'); rf.disabled=false; rf.innerHTML='&#10227; Refresh'; });
+    } else {
+      document.getElementById('st_detail').innerHTML='<div class="audempty">Re-reading Makor and the diag tools for '+esc(oid)+'&hellip;</div>';
+      fetch('/checklist?order='+encodeURIComponent(oid)+'&force=1',{cache:'no-store'})
+        .then(function(r){return r.json();}).then(stPaint)
+        .catch(function(){ document.getElementById('st_detail').innerHTML='<div class="audempty">Refresh failed.</div>'; });
+    }
+  }
+});
 
 function sgPost(body, okMsg){
   if(SG_BUSY) return;
@@ -2018,6 +2135,7 @@ function paint(d){
   renderAudit(d);            // keeps the Compliance count live even on the board view
   renderDrives(d);           // same for Drive Management
   renderSignoff(d);          // and the sign-off queue
+  renderSettle(d);           // and the settlements list
   renderCommodity(d);        // and the commodity load bars / awaiting-customer list
   paintTrackers(d);          // header tiles read the same numbers renderAudit shows
   // id -> order map for the note modal
