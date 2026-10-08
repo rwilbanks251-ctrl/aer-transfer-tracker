@@ -56,6 +56,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .sgo .dt{font-size:11px;color:#ffd782;font-weight:800}
 .sgo .st{font-size:10.5px;color:#7f93ad;margin-top:2px}
 .sgo .ok{color:#43d17a;font-weight:800}
+.sgo .pf{font-size:10.5px;font-weight:900;letter-spacing:.04em;padding:1px 7px;border-radius:4px;white-space:nowrap}
+.sgo .pf.p{background:#14361f;color:#43d17a;border:1px solid #2c6b41}
+.sgo .pf.f{background:#3a1414;color:#ff6b6b;border:1px solid #7a2a2a}
+.sgo .pf.w{background:#16263f;color:#7f93ad;border:1px solid #24406a}
 .ck{background:#0e1c31;border:1.5px solid #24406a;border-left-width:4px;
   border-radius:9px;padding:8px 12px;margin-bottom:7px}
 .ck.pass{border-left-color:#43d17a}.ck.fail{border-left-color:#ff6b6b}
@@ -1451,13 +1455,25 @@ function renderSignoff(d){
   var hint = document.getElementById('sg1hint');
   if(hint) hint.innerHTML = P.length + ' order' + (P.length===1?'':'s');
   if(!el) return;
+  var CK = ((d||{}).signoff||{}).checklists || {};
+  // PASS / FAIL per card (Rob, 2026-10-08) - from the same checklist the
+  // detail pane shows: a failing check with a documented exception is cleared.
+  function pfBadge(oid){
+    var c = CK[String(oid)];
+    if(!c) return '<span class="pf w">CHECKING</span>';
+    if(c.error) return '<span class="pf f" title="'+esc(c.error)+'">ERROR</span>';
+    var ex = c.exceptions||{};
+    var n = Array.isArray(c.unresolved) ? c.unresolved.length
+          : (c.checks||[]).filter(function(k){ return k.ok===false && !ex[k.key]; }).length;
+    return n ? '<span class="pf f">FAIL '+n+'</span>' : '<span class="pf p">PASS</span>';
+  }
   el.innerHTML = P.length ? P.map(function(o){
       var done = (o.approved_by||[]).map(function(x){return x.toUpperCase();}).join(' + ');
       var wait = (o.awaiting||[]).map(function(x){return x.toUpperCase();}).join(' + ');
       return '<div class="sgo'+(SG_SEL===String(o.order)?' on':'')+'" data-sg="'+esc(o.order)+'">'
         +'<div class="r1"><span class="oid">'+esc(o.order)+'</span>'
         +'<span class="ac">'+esc(o.account||'')+'</span>'
-        +'<span class="dt">'+esc(o.completed||'')+'</span></div>'
+        +'<span class="dt">'+esc(o.completed||'')+'</span>'+pfBadge(o.order)+'</div>'
         +'<div class="st">'+(done?('<span class="ok">'+done+' approved</span> &middot; '):'')
         +'awaiting '+esc(wait)+'</div></div>';
     }).join('')
