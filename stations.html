@@ -1714,7 +1714,26 @@ document.addEventListener('click', function(ev){
     return;
   }
   if(eb0 && SG_SEL && EDGE_MODE){
-    alert('Exceptions can only be documented on the board served from the publisher laptop for now.');
+    // Public board: the stations function checks Rob's password, then the
+    // publisher writes the exception to the sign-off log within a minute.
+    var ckE = eb0.getAttribute('data-exc'), oidX = SG_SEL;
+    var whyE = prompt('Why can this check not be satisfied? (recorded in the audit trail)');
+    if(!whyE || !whyE.trim()) return;
+    var pwX = prompt('Password for ROB to approve the exception:');
+    if(pwX===null) return;
+    var noteX = function(t){ var m=document.getElementById('sgmsg'); if(m) m.innerHTML=t; };
+    eb0.disabled = true; noteX('Checking&hellip;');
+    fetch(EDGE, {method:'POST', headers:{'Content-Type':'application/json'},
+                 body: JSON.stringify({action:'exception', order:oidX, who:'rob', pw:pwX,
+                                       check:ckE, reason:whyE.trim()})})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(j && j.ok){
+          eb0.innerHTML = '&#8987; exception recording&hellip;';
+          noteX('&#10003; Exception accepted &mdash; recording it now (the check clears within a minute or two).');
+        } else { eb0.disabled = false; noteX('&#9888; '+esc((j&&j.error)||'exception failed')); }
+      })
+      .catch(function(){ eb0.disabled = false; noteX('&#9888; exception request failed'); });
     return;
   }
   if(ab && SG_SEL){
