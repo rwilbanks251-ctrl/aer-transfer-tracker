@@ -675,8 +675,8 @@ function stationHere(o, station){
     if(s.items) parts.push('<b>'+s.items.toLocaleString()+'</b> items');
     if(s.lbs) parts.push('<b>'+lbs(s.lbs)+'</b> lbs');
   } else if(station==='Tech'){
-    if(s.items) parts.push('<b>'+s.items.toLocaleString()+'</b> items');
-    if(s.lbs) parts.push('<b>'+lbs(s.lbs)+'</b> lbs');
+    // no items / lbs line on Tech cards (Rob, 2026-10-07) - the category chips
+    // and the devices-complete bar already say what is there
   } else {  // Tracked Recycling
     if(s.lbs) parts.push('<b>'+lbs(s.lbs)+'</b> lbs');
     if(s.items) parts.push('<b>'+s.items.toLocaleString()+'</b> items');
@@ -688,6 +688,7 @@ function stationHere(o, station){
   var dr=[];
   if(o.wipe_drives) dr.push('<b class="wdr">'+o.wipe_drives+'</b> to wipe');
   if(o.destroy_drives) dr.push('<b class="ddr">'+o.destroy_drives+'</b> to destroy');
+  if(station==='Tech') return dr.length ? ('<span class="drvline" style="margin-left:0;padding-left:0;border-left:0">▪ '+dr.join(' &middot; ')+'</span>') : '';
   var head=(parts.join(' &middot; ')||'in process')+' here';
   return head + (dr.length? '<span class="drvline">▪ '+dr.join(' &middot; ')+'</span>' : '');
 }
