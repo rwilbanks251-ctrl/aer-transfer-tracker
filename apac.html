@@ -53,6 +53,22 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .opsstale{background:#5a1616;color:#ffb0b0;border-radius:4px;padding:1px 7px;font-weight:900}
 .notewarn{color:#ffc247}
 </style></head><body>
+<script>
+// EMBED MODE: shown inside the Dragon Dropper's Admin > APAC tab (?embed=1).
+// No header, footer or birthday banner of its own, and the main area FILLS
+// the frame (the TV formula 100vh-252px assumes a header that is hidden).
+(function(){
+  try{
+    if(new URLSearchParams(location.search).get('embed')!=='1') return;
+    var css='.top{display:none!important}.foot{display:none!important}'
+          + '.bdaybanner{display:none!important}'
+          + 'body{padding-top:10px;height:100vh;display:flex;flex-direction:column}'
+          + '.grid{flex:1 1 auto;min-height:0;height:auto!important}';
+    var st=document.createElement('style'); st.textContent=css;
+    document.head.appendChild(st);
+  }catch(_){}
+})();
+</script>
 <div class="top">
   <h1>AER <span class="a">|</span> APAC / Malaysia Order Tracker</h1>
   <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
