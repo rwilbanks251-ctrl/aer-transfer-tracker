@@ -1413,7 +1413,7 @@ function sn(v){
 // audit-view call. Approvals POST to /signoff - every gate (password, "fix it
 // or get an exception", Afshan+TJ before Rob) is enforced SERVER-side, so a
 // crafted POST cannot skip the chain.
-var SG_SEL = null, SG_BUSY = false, SG_WAIT = null, SG_REFRESH = null, SG_MODE = 'duncan';
+var SG_SEL = null, SG_BUSY = false, SG_WAIT = null, SG_REFRESH = null, SG_MODE = 'duncan', SG_APPR = null;
 
 function renderSignoff(d){
   // the same view serves Duncan and APAC sign-off; SG_MODE picks the queue
@@ -1429,6 +1429,22 @@ function renderSignoff(d){
     if(rc && (rc.refresh_req||0) >= SG_REFRESH.req && SG_SEL===SG_REFRESH.oid){
       SG_REFRESH=null; sgPaint(rc);
       var m=document.getElementById('sgmsg'); if(m) m.innerHTML='&#10003; Refreshed from live data.';
+    }
+  }
+  if(SG_APPR){
+    // A public-board approval: repaint once the publisher has recorded it,
+    // or say why it refused (it re-checks the criteria itself).
+    var SD=((d||{}).signoff||{}), ac=(SD.checklists||{})[SG_APPR.oid];
+    var rr=(SD.approval_results||{})[SG_APPR.oid+':'+SG_APPR.who];
+    var gone=!P.some(function(o){ return String(o.order)===SG_APPR.oid; });
+    if(rr && rr.at>=SG_APPR.at && !rr.ok){
+      var m0=document.getElementById('sgmsg'); if(m0) m0.innerHTML='&#9888; Not recorded: '+esc(rr.msg||'');
+      SG_APPR=null;
+    } else if((ac && (ac.approvals||{})[SG_APPR.who]) || gone){
+      var w0=SG_APPR.who, o0=SG_APPR.oid; SG_APPR=null;
+      if(ac && SG_SEL===o0) sgPaint(ac);
+      var m1=document.getElementById('sgmsg');
+      if(m1) m1.innerHTML='&#10003; '+w0.toUpperCase()+' approval recorded'+(gone?' &mdash; order signed off.':'.');
     }
   }
   var el = document.getElementById('sg_list');
@@ -1676,8 +1692,29 @@ document.addEventListener('click', function(ev){
   if(row){ sgPick(row.getAttribute('data-sg')); return; }
   var ab = ev.target.closest('[data-appr]');
   var eb0 = ev.target.closest('[data-exc]');
-  if((ab||eb0) && SG_SEL && EDGE_MODE){
-    alert('Approvals cannot be recorded from this page yet - only on the board served from the publisher laptop.');
+  if(ab && SG_SEL && EDGE_MODE){
+    // Public board: the stations function checks the password and every
+    // criterion, then the publisher records it within a minute.
+    var whoE = ab.getAttribute('data-appr'), oidE = SG_SEL;
+    var pwE = prompt('Password for '+whoE.toUpperCase()+':');
+    if(pwE===null) return;
+    var noteE = function(t){ var m=document.getElementById('sgmsg'); if(m) m.innerHTML=t; };
+    ab.disabled = true; noteE('Checking&hellip;');
+    fetch(EDGE, {method:'POST', headers:{'Content-Type':'application/json'},
+                 body: JSON.stringify({action:'approve', order:oidE, who:whoE, pw:pwE})})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(j && j.ok){
+          SG_APPR = {oid:String(oidE), who:whoE, at:j.at};
+          ab.innerHTML = '&#8987; '+whoE.toUpperCase()+' approving&hellip;';
+          noteE('&#10003; '+whoE.toUpperCase()+' approval accepted &mdash; all criteria met. Recording it now (shows within a minute).');
+        } else { ab.disabled = false; noteE('&#9888; '+esc((j&&j.error)||'approval failed')); }
+      })
+      .catch(function(){ ab.disabled = false; noteE('&#9888; approval request failed'); });
+    return;
+  }
+  if(eb0 && SG_SEL && EDGE_MODE){
+    alert('Exceptions can only be documented on the board served from the publisher laptop for now.');
     return;
   }
   if(ab && SG_SEL){
