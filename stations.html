@@ -3,22 +3,35 @@
 <title>AER Dragon Dropper</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
-/* Dragon Dropper is worked on a LAPTOP, not a wall TV (Rob,
-   2026-10-06), so the page carries its own standard zoom instead of
-   depending on whatever each browser happens to be set to. The tech
-   and warehouse boards are untouched - they still run full size on
-   their TVs, including when embedded in the overview tabs here. */
-html{zoom:0.8}
-body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overflow:hidden}
-.top{display:flex;justify-content:space-between;align-items:center;padding:18px 34px;background:#152B47;border-bottom:4px solid #F0B429}
-.top h1{font-size:34px;font-weight:900}.top h1 .a{color:#F0B429}
-.top .tl{display:flex;align-items:center;gap:18px}
-.deptsel{background:#0e1c31;color:#fff;border:1.5px solid #24406a;border-radius:9px;padding:8px 12px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer}
+html{height:100%}
+/* ZOOM (Rob, 2026-10-07): fitted to the viewer's screen at load and on window
+   resize - designed at 1600x820 CSS px, clamped 62%-150%. --z carries it so
+   heights can undo it: a vh unit is NOT scaled by CSS zoom, so a zoomed
+   "100vh" layout fell short of the screen (the old fixed 0.8 left the bottom
+   fifth of a 1080p screen empty). Body = exactly one screen, a flex column:
+   header, then the active view takes whatever height is left. */
+:root{--z:1}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overflow:hidden;
+     height:calc(100vh / var(--z));display:flex;flex-direction:column}
+/* HEADER (Rob, 2026-10-07 - "modern, clean, spaced"): two tiers.
+   Bar = identity, view picker, board controls, clock.
+   Strip = the numbers the floor is held to, as evenly spaced tiles. */
+.top{flex:0 0 auto;position:relative;z-index:20;background:#152B47;
+     box-shadow:0 4px 16px rgba(0,0,0,.35)}
+.bar{display:flex;align-items:center;gap:14px;height:58px;padding:0 22px;
+     background:linear-gradient(180deg,#1a3458 0%,#152B47 100%)}
+.brand{display:flex;align-items:center;gap:11px;white-space:nowrap}
+.brand .logo{background:#F0B429;color:#152B47;font-weight:900;font-size:13px;
+     letter-spacing:.8px;border-radius:7px;padding:6px 8px;line-height:1}
+.brand .bn{font-size:21px;font-weight:800;letter-spacing:.2px}
+.bar .spacer{flex:1 1 auto}
+.ctl{display:flex;align-items:center;gap:8px}
+.deptsel{background:#0f2340;color:#fff;border:1px solid #2a4a74;border-radius:10px;height:36px;padding:0 12px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-left:6px}
+.deptsel:hover{border-color:#3d6699}
 .deptsel:focus{outline:none;border-color:#F0B429}
 .deptsel option{background:#12233c;color:#fff}
 .deptsel optgroup{background:#0e1c31;color:#F0B429;font-weight:900;font-style:normal;letter-spacing:.4px}
-.resetbtn{background:transparent;color:#ffd782;border:1.5px solid #6a5410;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px}
+.resetbtn{background:transparent;color:#ffd782;border:1px solid #6a5410;border-radius:10px;height:36px;padding:0 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.2px;white-space:nowrap}
 .resetbtn:hover{background:#F0B429;color:#152B47;border-color:#F0B429}
 .resetbtn:active{transform:translateY(1px)}
 /* Compliance view — two equal columns, each independently scrollable so a long
@@ -93,8 +106,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
    box left on this page it clipped its own bottom (body there is overflow
    hidden). So render it at its NATIVE size and scale the whole frame down to
    fit - an overview should show the entire board, just smaller. */
-#ovview{padding:0 34px 14px;overflow:hidden}
-#ovframe{width:1920px;height:1080px;border:0;border-radius:12px;background:#152B47;
+#ovview{padding:12px 22px 10px;overflow:hidden}
+#ovframe{width:1920px;height:1000px;border:0;border-radius:12px;background:#152B47;
   display:block;transform-origin:top left;flex:0 0 auto}
 .drvrow .scroll.auditcol{padding:6px 8px 8px;flex:1 1 auto;min-height:0;
   overflow-y:auto;overflow-x:hidden}
@@ -136,15 +149,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 .audempty b{color:#43d17a}
 .audpend{color:#9fb2ca;font-size:12.5px;padding:18px 10px;line-height:1.7}
 .audpend b{color:#ffd782}
-.lockbtn{background:transparent;color:#8fe0a8;border:1.5px solid #2c6b41;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px}
+.lockbtn{background:transparent;color:#8fe0a8;border:1px solid #2c6b41;border-radius:10px;height:36px;padding:0 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.2px;white-space:nowrap}
 .lockbtn:hover{background:#14361f}
 .lockbtn.on{color:#ff9b9b;border-color:#6a1616}
 .lockbtn.on:hover{background:#2a1414}
 body.locked .ec{cursor:default}
-.xferbtn{background:transparent;color:#7fd8ff;border:1.5px solid #1f6b85;border-radius:9px;padding:8px 15px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px;white-space:nowrap}
+.xferbtn{background:transparent;color:#7fd8ff;border:1px solid #1f6b85;border-radius:10px;height:36px;padding:0 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.2px;white-space:nowrap}
 .xferbtn:hover{background:#0d3a4a}
 .xferbtn.off{color:#7f93ad;border-color:#2a3a50}
-.comppop{position:fixed;top:76px;left:34px;z-index:50;width:390px;max-height:72vh;overflow-y:auto;background:#12233c;border:1.5px solid #2c6b41;border-radius:12px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.comppop{position:fixed;top:122px;left:22px;z-index:50;width:390px;max-height:72vh;overflow-y:auto;background:#12233c;border:1.5px solid #2c6b41;border-radius:12px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
 .comppop .cp-h{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#43d17a;font-weight:800;margin:2px 4px 8px}
 .comppop .cp-row{display:flex;align-items:center;gap:8px;background:#0e1c31;border-left:4px solid #43d17a;border-radius:0 8px 8px 0;padding:7px 10px;margin-bottom:6px}
 .comppop .cp-main{flex:1;min-width:0}
@@ -152,34 +165,38 @@ body.locked .ec{cursor:default}
 .comppop .cp-sub{font-size:11px;color:#9fb2ca;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .comppop .cp-date{font-size:12px;color:#43d17a;font-weight:800;white-space:nowrap}
 .comppop .cp-empty{color:#9fb2ca;font-size:13px;text-align:center;padding:16px}
-.p90{display:flex;align-items:center;gap:12px;background:#0e1c31;border:1px solid #24406a;border-radius:9px;padding:5px 13px}
+.p90{display:flex;align-items:center;gap:14px;background:rgba(14,28,49,.65);border:1px solid #2a4a74;border-radius:12px;padding:0 14px;height:48px;flex:0 0 auto}
 .p90 .tag{font-size:9.5px;color:#9fb2ca;text-transform:uppercase;letter-spacing:1px;font-weight:800}
 .p90 .grp{display:flex;flex-direction:column;line-height:1}
 .p90 .grp .gl{font-size:9px;color:#9fb2ca;text-transform:uppercase;letter-spacing:.4px}
 .p90 .grp .gv{font-size:19px;font-weight:900}.p90 .grp .gv small{font-size:11px;font-weight:700}
-.top .clock{text-align:right}.top .clock .t{font-size:34px;font-weight:900;color:#F0B429;line-height:1}
-.top .clock .d{font-size:15px;color:#B8C4D4}
+.top .clock{text-align:right;padding-left:14px;margin-left:2px;border-left:1px solid rgba(255,255,255,.1)}
+.top .clock .t{font-size:24px;font-weight:800;color:#F0B429;line-height:1;letter-spacing:.3px}
+.top .clock .d{font-size:11.5px;color:#9fb2ca;margin-top:3px}
 /* TRACKERS — the header strip that replaced the weather widget
    (Rob, 2026-09-25). One tile per number the supervisors are held to.
    Ops Complete is throughput (amber, click = the completions popover);
    the three error tiles are targets-to-ZERO (green at 0, amber when not,
    red when the gap is a real security finding) and click straight into
    the matching Compliance column. */
-.trk{display:flex;align-items:stretch;gap:9px}
-.trkt{background:#0e1c31;border:1.5px solid #24406a;border-radius:11px;
-      padding:6px 13px;min-width:92px;text-align:center;cursor:pointer;
-      user-select:none;display:flex;flex-direction:column;justify-content:center}
-.trkt:hover{background:#16263f;border-color:#35598f}
-.trkt .tv{font-size:27px;font-weight:900;line-height:1;color:#eaf1f8}
-.trkt .tl2{font-size:9px;text-transform:uppercase;letter-spacing:.5px;
-           color:#9fb2ca;margin-top:3px;line-height:1.25;font-weight:800}
+.strip{display:flex;align-items:stretch;gap:10px;padding:9px 22px 10px;
+       background:#10233d;border-top:1px solid rgba(255,255,255,.05);
+       border-bottom:2px solid #F0B429}
+.trk{display:flex;align-items:stretch;gap:10px;flex:1 1 auto;min-width:0}
+.trkt{background:rgba(14,28,49,.65);border:1px solid #2a4a74;border-radius:12px;
+      padding:0 14px;height:48px;flex:1 1 0;min-width:0;cursor:pointer;
+      user-select:none;display:flex;flex-direction:row;align-items:center;gap:11px}
+.trkt:hover{background:#16263f;border-color:#3d6699}
+.trkt .tv{font-size:23px;font-weight:800;line-height:1;color:#eaf1f8;flex:0 0 auto}
+.trkt .tl2{font-size:10px;text-transform:uppercase;letter-spacing:.6px;
+           color:#9fb2ca;line-height:1.25;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .trkt.ok{border-color:#2c6b45}.trkt.ok .tv{color:#43d17a}
 .trkt.warn{border-color:#6a5410}.trkt.warn .tv{color:#ffd782}
 .trkt.bad{border-color:#7a2b2b}.trkt.bad .tv{color:#ff6b6b}
 .trkt.flow .tv{color:#F0B429}
 .trkt.hot .tv{color:#ff9f43}
 .trkt.soon{cursor:default;opacity:.5}
-.trkt.soon .tv{font-size:15px;color:#9fb2ca;font-weight:800}
+.trkt.soon .tv{font-size:11px;color:#9fb2ca;font-weight:800;line-height:1.15}
 .trkt.soon:hover{background:#0e1c31;border-color:#24406a}
 .kpis{display:flex;gap:16px;padding:16px 34px}
 .kpi{flex:1;background:#152B47;border:2px solid #24406a;border-radius:14px;padding:12px 8px;text-align:center}
@@ -187,17 +204,18 @@ body.locked .ec{cursor:default}
 .kpi .v small{font-size:18px;color:#9fb2ca;font-weight:700}
 .kpi .l{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#9fb2ca;margin-top:4px}
 .kpi.hot{border-color:#F0B429;background:#1c2f4d}.kpi.hot .v{color:#43d17a}
-.grid2{display:flex;flex-direction:column;gap:14px;padding:6px 34px 14px;height:calc(100vh - 150px)}
+.grid2{display:flex;flex-direction:column;gap:14px;padding:12px 22px 10px;flex:1 1 auto;min-height:0}
 .ordersrow{display:flex;gap:16px;flex:3 1 0;min-height:0}
 .ordersrow .panel{flex:1 1 0;min-height:0}
 /* HOLD box in the header (between the trackers and the clock) */
-.holdbox{display:flex;align-items:center;gap:10px;background:#0e1c31;border:1.5px solid #6a5410;border-radius:12px;padding:7px 15px;cursor:pointer;user-select:none}
+.holdbox{display:flex;align-items:center;gap:10px;background:rgba(14,28,49,.65);border:1px solid #6a5410;border-radius:12px;padding:0 14px;height:48px;flex:0 0 auto;cursor:pointer;user-select:none}
 .holdbox:hover{background:#161d2e}
 .holdbox.dragover{border-color:#F0B429;background:#1c2f4d;outline:2px dashed #F0B429;outline-offset:2px}
-.holdbox .hb-ic{font-size:26px;color:#ffd782;line-height:1}
-.holdbox .hb-n{font-size:26px;font-weight:900;color:#ffd782;line-height:1}
-.holdbox .hb-l{font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:#9fb2ca;line-height:1.15}
-.holdpop{position:fixed;top:76px;right:180px;z-index:50;width:340px;max-height:72vh;overflow-y:auto;background:#12233c;border:1.5px solid #6a5410;border-radius:12px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.holdbox .hb-ic{font-size:20px;color:#ffd782;line-height:1}
+.holdbox .hb-n{font-size:23px;font-weight:800;color:#ffd782;line-height:1}
+.holdbox .hb-t{display:flex;align-items:center;gap:10px}
+.holdbox .hb-l{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#9fb2ca;line-height:1.15}
+.holdpop{position:fixed;top:122px;right:22px;z-index:50;width:340px;max-height:72vh;overflow-y:auto;background:#12233c;border:1.5px solid #6a5410;border-radius:12px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
 .holdpop .hp-h{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#ffd782;font-weight:800;margin:2px 4px 8px}
 .holdpop .hp-row{display:flex;align-items:center;gap:8px;background:#0e1c31;border-left:4px solid #ffd782;border-radius:0 8px 8px 0;padding:7px 10px;margin-bottom:6px}
 .holdpop .hp-row .hp-main{flex:1;min-width:0}
@@ -309,7 +327,7 @@ body.locked .ec{cursor:default}
 .nm-actions .nm-del:hover{background:#2a1414}
 .nm-actions .nm-save{background:#F0B429;color:#152B47;border:none;border-radius:9px;padding:9px 18px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
 .nm-actions .nm-save:hover{filter:brightness(1.08)}
-.notebanner{margin:0 34px 12px;background:#1c2f4d;border:2px solid #F0B429;border-radius:12px;padding:11px 18px;color:#ffe08a;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px;overflow:hidden}
+.notebanner{flex:0 0 auto;margin:10px 22px 0;background:#1c2f4d;border:2px solid #F0B429;border-radius:12px;padding:11px 18px;color:#ffe08a;font-size:19px;font-weight:700;display:flex;align-items:center;gap:12px;overflow:hidden}
 .notebanner .nb-ic{font-size:24px;line-height:1;animation:iconpulse 1.6s ease-in-out infinite}
 .notebanner .nb-by{color:#9fb2ca;font-size:13px;font-weight:600;margin-left:auto;white-space:nowrap}
 .notebanner{position:relative}
@@ -447,13 +465,40 @@ body.locked .ec{cursor:default}
 .co .meta b{color:#7fd8ff}.co .meta .ntx{color:#9fb2ca}
 .empty{color:#43d17a;font-size:22px;font-weight:800;padding:20px 0}
 .empty.mut{color:#9fb2ca}
-.foot{display:flex;justify-content:space-between;padding:0 34px 12px;font-size:13px;color:#7f93ad}
+.foot{display:flex;justify-content:space-between;padding:0 22px 8px;font-size:12px;color:#6f84a0;flex:0 0 auto}
 .stale{color:#ffc247}
 .opsstale{background:#5a1616;color:#ffb0b0;border-radius:4px;padding:1px 7px;font-weight:900}
 .notewarn{color:#ffc247}
 </style></head><body>
+<script>
+/* FIT_ZOOM: size the page to the viewer's screen. A resize that comes with a
+   devicePixelRatio change is the browser's own Ctrl+/- zoom - left alone so
+   that still works; a plain window resize re-fits. */
+(function(){
+  var BIAS=1.0, lastDpr=0;
+  // pick the right width before first paint from the saved department choice
+  try{ var _d=localStorage.getItem('stations_dept'); window.ddWide=(!_d||_d==='all'); }catch(e){ window.ddWide=true; }
+  function fit(force){
+    var dpr=window.devicePixelRatio||1;
+    if(!force && lastDpr && Math.abs(dpr-lastDpr)>0.001){ lastDpr=dpr; return; }
+    lastDpr=dpr;
+    // Design widths: the 9-column All Departments view needs ~2300 CSS px,
+    // every other view is laid out for 1600.
+    var dw=window.ddWide?2300:1600;
+    var z=Math.min(window.innerWidth/dw, window.innerHeight/820);
+    z=Math.max(0.62, Math.min(1.5, z))*BIAS;
+    var r=document.documentElement;
+    r.style.zoom=z; r.style.setProperty('--z', z);
+    if(window.fitOv) setTimeout(window.fitOv, 0);
+  }
+  window.fitZoom=fit;
+  fit(true);
+  window.addEventListener('resize', function(){ fit(false); });
+})();
+</script>
 <div class="top">
-  <div class="tl"><h1>AER <span class="a">|</span> Dragon Dropper</h1>
+  <div class="bar">
+    <div class="brand"><span class="logo">AER</span><span class="bn">Dragon Dropper</span></div>
     <select class="deptsel" id="deptsel" title="Show one department full-width, or all three">
       <option value="all">All Departments</option>
       <optgroup label="&#9472;&#9472; PRIORITY BOARDS &#9472;&#9472;">
@@ -472,12 +517,17 @@ body.locked .ec{cursor:default}
         <option value="signoff">&nbsp;&nbsp;Order Sign-Off</option>
       </optgroup>
     </select>
+    <div class="spacer"></div>
+    <div class="ctl">
     <button class="lockbtn" id="lockbtn" title="Lock / unlock drag-and-drop for this screen"></button>
     <button class="resetbtn" id="resetbtn" title="Move every card back to its department's Unsorted column, sorted by date received (clears To Process, EZ, Hold and manual order)">&#8635; Reset order</button>
     <button class="xferbtn" id="xferbtn" title="Show or hide transfer (XFER / Livermore) orders on this screen"></button>
-    <div class="p90" id="p90" title="90th-percentile age (days since received) of all open orders; goal under the 45-day SLA"></div></div>
-  <div class="comppop" id="comppop" style="display:none"></div>
-  <div class="trk" id="trackers">
+    </div>
+    <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
+  </div>
+  <div class="strip">
+    <div class="p90" id="p90" title="90th-percentile age (days since received) of all open orders; goal under the 45-day SLA"></div>
+    <div class="trk" id="trackers">
     <div class="trkt flow" id="trk_ops" title="Orders marked ops-complete this week (left Operations In-Progress). Click to list them.">
       <div class="tv" id="trk_ops_v">0</div><div class="tl2">Ops Complete<br>this Week</div></div>
     <div class="trkt flow" id="trk_rev" title="Orders finished on the floor and waiting on sign-off review. Click to open the queue.">
@@ -491,11 +541,12 @@ body.locked .ec{cursor:default}
     <div class="trkt soon" id="trk_com" title="Commodity inventory errors — not built yet.">
       <div class="tv">Coming<br>Soon</div><div class="tl2">Commodity<br>Inv. Errors</div></div>
   </div>
-  <div class="holdbox drop" id="holdbox" data-bucket="hold" title="Drag an order here for Hold / Special Projects. Click to see them and release.">
+    <div class="holdbox drop" id="holdbox" data-bucket="hold" title="Drag an order here for Hold / Special Projects. Click to see them and release.">
     <div class="hb-ic">&#9208;</div><div class="hb-t"><div class="hb-n" id="holdcount">0</div><div class="hb-l">Hold /<br>Special Projects</div></div>
   </div>
+  </div>
+  <div class="comppop" id="comppop" style="display:none"></div>
   <div class="holdpop" id="holdpop" style="display:none"></div>
-  <div class="clock"><div class="t" id="clock">--:--</div><div class="d" id="cdate"></div></div>
 </div>
 <div class="notebanner" id="notebanner" style="display:none"></div>
 <div class="grid2" id="cmdview" style="display:none">
@@ -1098,13 +1149,26 @@ var OV_URLS = EDGE_MODE
 function fitOv(){
   var wrap=document.getElementById('ovview'), fr=document.getElementById('ovframe');
   if(!wrap||!fr||wrap.style.display==='none') return;
-  var w=wrap.clientWidth, h=wrap.clientHeight;
+  // content box: clientWidth/Height include the padding, which overran the
+  // right edge by the padding's width
+  var cs=getComputedStyle(wrap);
+  var w=wrap.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),
+      h=wrap.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
   if(!w||!h) return;
-  var sc=Math.min(w/1920, h/1080);
+  // FILL the area (Rob, 2026-10-07 - the min(w/1920, h/1080) fit letterboxed
+  // the board into ~70% of each side). Scale by whichever runs out first of
+  // 1920 wide / 1000 tall - below that the embedded TV boards squeeze their
+  // bottom - then size the frame's logical box to the area's full shape, so
+  // the embedded board lays itself out edge to edge.
+  var sc=Math.min(w/1920, h/1000);
+  fr.style.width=(w/sc)+'px'; fr.style.height=(h/sc)+'px';
   fr.style.transform='scale('+sc+')';
 }
 window.addEventListener('resize', fitOv);
 function applyDept(){
+  // All Departments is nine columns wide and needs a wider layout to fit;
+  // every other view reads best at the standard width. Re-fit on switch.
+  if(window.ddWide!==(dept==='all')){ window.ddWide=(dept==='all'); if(window.fitZoom) fitZoom(true); }
   var audit=(dept==='compliance'), drv=(dept==='drives'), sg=(dept==='signoff'),
       cmd=(dept==='commodity'),
       ov=(dept==='ov_tech'||dept==='ov_wh'), board=!audit&&!drv&&!ov&&!sg&&!cmd;
@@ -1139,10 +1203,8 @@ function applyDept(){
   // its own chrome - so the Dragon Dropper header stays put (Rob, 2026-10-06).
   // Only the board-specific widgets come off, since they describe this board's
   // columns, not the overview being shown.
-  ['trackers','holdbox','p90'].forEach(function(id){
-    var e=document.getElementById(id);
-    if(e) e.style.display=ov?'none':'';
-  });
+  // The status strip (P90, trackers, Hold) now stays on every view,
+  // overviews included, so the header never changes shape (Rob, 2026-10-07).
   if(audit){ if(lastData) renderAudit(lastData); return; }
   if(drv){ if(lastData) renderDrives(lastData); return; }
   if(sg){ if(lastData) renderSignoff(lastData); return; }
@@ -1896,7 +1958,6 @@ function paint(d){
     nb.classList.toggle('equinox',!!d.equinox);
     nb.style.display='flex'; bandH+=nb.offsetHeight+12;
   } else { nb.style.display='none'; nb.classList.remove('sparkle'); nb.classList.remove('equinox'); }
-  document.querySelector('.grid2').style.height=bandH?('calc(100vh - '+(150+bandH)+'px)'):'';
   // keep each column's scroll position across the 60s repaint
   var sp={}; document.querySelectorAll('.scroll.drop').forEach(function(z){sp[z.id]=z.scrollTop;});
   var S=d.sections||{};
