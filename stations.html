@@ -922,10 +922,17 @@ document.addEventListener('click',function(ev){
 },true);
 
 
-function ctnBtn(o){
-  var n=(o.containers||[]).length;
-  return '<button class="ctnbtn'+(n?' has':'')+'" data-ctn="'+esc(o.id)+'" title="'
-    + (n? (n+' staged container'+(n===1?'':'s')+' — click for locations')
+// A card lives in ONE station's column, so its container list is that
+// station's containers only (Rob, 2026-10-07 - 202372's Tech card listed its
+// Tracked Recycling containers too). No station = the whole order (drive tab).
+function ctnFor(o, station){
+  var l=o.containers||[];
+  return station ? l.filter(function(c){ return c.station===station; }) : l;
+}
+function ctnBtn(o, station){
+  var n=ctnFor(o, station).length;
+  return '<button class="ctnbtn'+(n?' has':'')+'" data-ctn="'+esc(o.id)+'" data-st="'+esc(station||'')+'" title="'
+    + (n? (n+' staged container'+(n===1?'':'s')+(station?(' at '+station):'')+' — click for locations')
         : 'No staged containers with a location')
     + '">&#128230;'+(n?('<span class="cb">'+n+'</span>'):'')+'</button>';
 }
@@ -1030,7 +1037,7 @@ function renderCards(list, station, more){
     if(o.destruction) badges+='<span class="mb des">&#128293;</span>';
     h+='<div class="ec b'+band+(o.priority?' prio':'')+'" draggable="true" data-id="'+esc(o.id)+'" data-station="'+esc(station)+'">'
       +'<div class="ecr"><span class="ecid">'+esc(o.id)+(o.account?(' <span class="ecac">&middot; '+esc(o.account)+'</span>'):'')+'</span>'
-      +ctnBtn(o)
+      +ctnBtn(o,station)
       +'<button class="notebtn'+(o.note?' has':'')+'" data-note="'+esc(o.id)+'" title="'+(o.note?'View / edit note':'Add note')+'">&#128221;</button>'
       +lkBtn(o,station)
       +'<span class="ecage'+(band===2?' over':'')+'">'+o.days+'d</span></div>'
@@ -1744,18 +1751,19 @@ function renderAudit(d){
 // Per-order CONTAINERS — read-only pick list: which containers are staged for
 // this order and the warehouse location to pull each one from. Grouped by
 // station, next-to-grab first; already-in-process ones are dimmed.
-function openCtn(id){
+function openCtn(id, station){
   // On the Drive Management tab the relevant container is the drive TOTE,
   // not the order's staged WQ/asset containers - different work, different
   // thing to go and fetch. Those rows live in their own map.
   var o=(dept==='drives' && (window._drvById||{})[id])
       || (window._byId||{})[id] || {id:id};
-  var list=o.containers||[];
+  var list=ctnFor(o, station);
   document.getElementById('cm-title').innerHTML='&#128230; #'+esc(id)
-    +(o.account?(' <span style="color:#9fb2ca;font-weight:600;font-size:14px">'+esc(o.account)+'</span>'):'');
+    +(o.account?(' <span style="color:#9fb2ca;font-weight:600;font-size:14px">'+esc(o.account)+'</span>'):'')
+    +(station?(' <span style="color:#F0B429;font-weight:800;font-size:13px;letter-spacing:.5px;text-transform:uppercase;margin-left:6px">'+esc(station)+'</span>'):'');
   var h='';
   if(!list.length){
-    h='<div class="cm-empty">No staged containers found for this order.<br>'
+    h='<div class="cm-empty">No staged containers'+(station?(' at '+esc(station)):'')+' for this order.<br>'
      +'<span style="color:#7f93ad">Containerized material shows here once it is staged at Sorting, '
      +'Data Capture or Tracked Recycling. Loose material and Tech-only work have no container record.</span></div>';
   } else {
@@ -1812,7 +1820,7 @@ function saveNote(text){
     var nb=e.target.closest?e.target.closest('.notebtn'):null;
     if(nb){ e.stopPropagation(); openNote(nb.getAttribute('data-note')); return; }
     var cb=e.target.closest?e.target.closest('.ctnbtn'):null;
-    if(cb){ e.stopPropagation(); openCtn(cb.getAttribute('data-ctn')); }
+    if(cb){ e.stopPropagation(); openCtn(cb.getAttribute('data-ctn'), cb.getAttribute('data-st')||''); }
   });
   var m=document.getElementById('notemodal');
   document.getElementById('nm-close').addEventListener('click',closeNote);
