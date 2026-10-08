@@ -1567,6 +1567,16 @@ function renderSettle(d){
         +'<div class="st">'+st+(nb?(' &middot; <span style="color:#ffd782;font-weight:800">'+nb+' blocker'+(nb===1?'':'s')+'</span>'):'')+'</div></div>';
     }).join('')
     : '<div class="audempty">No settlement orders.</div>';
+  var AP=S.approved||[];
+  if(AP.length){
+    el.innerHTML += '<div class="st" style="margin:10px 4px 4px;color:#7f93ad;font-weight:800">APPROVED</div>'
+      + AP.map(function(a){
+          var dt=a.at?new Date(Number(a.at)).toLocaleDateString():'';
+          return '<div class="sgo" style="opacity:.6"><div class="r1"><span class="oid">'+esc(a.order)+'</span>'
+            +'<span class="ac">'+esc(a.account||'')+'</span><span class="dt">#'+esc(a.settlement||'')+'</span></div>'
+            +'<div class="st"><span class="ok">&#10003; approved by '+esc(String(a.who||'').toUpperCase())+' '+esc(dt)+'</span></div></div>';
+        }).join('');
+  }
   var C=S.checklists||{};
   if(ST_WAIT && C[ST_WAIT] && ST_SEL===ST_WAIT){ var w=ST_WAIT; ST_WAIT=null; stPaint(C[w]); }
   if(ST_REFRESH && ST_SEL===ST_REFRESH.oid){
@@ -1605,14 +1615,42 @@ function stPaint(c){
   // settlement is not concerned with data security - those checks stay on
   // Order Sign-Off only (Rob, 2026-10-07)
   var SKIP={validation:1, erasure:1, destruction:1, datasecurity:1, tiktok_offsite:1};
-  h+=ckRowsHTML({checks:(c.checks||[]).filter(function(k){ return !SKIP[k.key]; }),
-                 exceptions:c.exceptions}, false);
+  var shown=(c.checks||[]).filter(function(k){ return !SKIP[k.key]; });
+  var ex=c.exceptions||{};
+  var failing=shown.filter(function(k){ return k.ok===false && !ex[k.key]; }).length;
+  var nb=(it.blockers||[]).length;
+  h+='<div class="sgbar"><button class="sgbtn" data-stlappr="'+esc(c.order)+'"'+(failing?' disabled':'')+'>'
+    +'&#10003; Approve settlement (Rob)</button> <span class="sgmsg" id="stamsg">'
+    +(failing ? ('Blocked: '+failing+' check'+(failing===1?'':'s')+' failing - fix them first')
+              : ('All automated checks clear'+(nb?(' &middot; approving confirms the '+nb+' blocker'+(nb===1?' is':'s are')+' resolved'):'')))
+    +'</span></div>';
+  h+=ckRowsHTML({checks:shown, exceptions:c.exceptions}, false);
   det.innerHTML=h;
 }
 document.addEventListener('click', function(ev){
   if(!ev.target.closest) return;
   var row=ev.target.closest('[data-stl]');
   if(row){ stPick(row.getAttribute('data-stl')); return; }
+  var sa=ev.target.closest('[data-stlappr]');
+  if(sa && !sa.disabled){
+    // Always goes through the stations function - it checks Rob's password
+    // and the criteria, and keeps the durable approval record.
+    var oidA=sa.getAttribute('data-stlappr');
+    var pwA=prompt('Password for ROB to approve settlement '+oidA+':');
+    if(pwA===null) return;
+    var noteA=function(t){ var m=document.getElementById('stamsg'); if(m) m.innerHTML=t; };
+    sa.disabled=true; noteA('Checking&hellip;');
+    fetch(EDGE,{method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({action:'settleapprove', order:oidA, who:'rob', pw:pwA})})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(j && j.ok){ sa.innerHTML='&#10003; Approved'; sa.classList.add('done');
+          noteA('&#10003; Settlement '+esc(oidA)+' approved &mdash; it leaves the list within a minute.'); }
+        else { sa.disabled=false; noteA('&#9888; '+esc((j&&j.error)||'approval failed')); }
+      })
+      .catch(function(){ sa.disabled=false; noteA('&#9888; approval request failed'); });
+    return;
+  }
   var rf=ev.target.closest('[data-stlrf]');
   if(rf && ST_SEL){
     var oid=ST_SEL;
