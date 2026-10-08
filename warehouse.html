@@ -150,8 +150,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 (function(){
   try{
     if(new URLSearchParams(location.search).get('embed')!=='1') return;
+    // With its header and footer hidden the board must FILL the frame: its
+    // main area kept the TV formula (100vh minus a header that is no longer
+    // there), so it stopped ~125px short and squeezed its bottom row (Rob,
+    // 2026-10-07). Body becomes a flex column and the main area takes the
+    // rest; !important also beats the inline height the banner code sets.
     var css='.top{display:none!important}.foot{display:none!important}'
-          + '.bdaybanner{display:none!important}body{padding-top:10px}';
+          + '.bdaybanner{display:none!important}'
+          + 'body{padding-top:10px;height:100vh;display:flex;flex-direction:column}'
+          + '.grid2{flex:1 1 auto;min-height:0;height:auto!important}';
     var st=document.createElement('style'); st.textContent=css;
     document.head.appendChild(st);
   }catch(_){}
@@ -196,7 +203,9 @@ function renderOrders(list, opts){
   var sla=opts.sla||45, h='';
   list.forEach(function(o){
     var band=o.days>sla?2:(o.days>sla-10?1:0);
-    var tag=band===2?('<span class="slatag">OVERDUE +'+(o.days-sla)+'d</span>')
+    // no OVERDUE +Nd tag (Rob, 2026-10-07): the red band and red age already
+    // say it, and the tag cluttered the card
+    var tag=band===2?''
            :(band===1?('<span class="slatag warn">due in '+o.due_in+'d</span>'):'');
     var des=o.destruction?'<span class="destag">&#128293; FULL DESTRUCTION</span>':'';
     var audit=o.audit?'<span class="audittag">&#128269; AUDIT</span>':'';
