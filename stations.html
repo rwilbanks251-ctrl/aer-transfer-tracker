@@ -516,6 +516,9 @@ body.locked .ec{cursor:default}
         <option value="compliance">&nbsp;&nbsp;Errors</option>
         <option value="signoff">&nbsp;&nbsp;Order Sign-Off</option>
       </optgroup>
+      <optgroup label="&#9472;&#9472; ADMIN &#9472;&#9472;">
+        <option value="ov_apac">&nbsp;&nbsp;APAC</option>
+      </optgroup>
     </select>
     <div class="spacer"></div>
     <div class="ctl">
@@ -1148,8 +1151,9 @@ var dept='all';
 // local ports; on the public page we use their GitHub Pages copies (Supabase
 // Storage force-serves uploaded HTML as text/plain, so it cannot be framed).
 var OV_URLS = EDGE_MODE
-  ? {ov_tech:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/tech?embed=1', ov_wh:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/warehouse?embed=1'}
-  : {ov_tech:'http://'+location.hostname+':8777/?embed=1', ov_wh:'http://'+location.hostname+':8781/?embed=1'};
+  ? {ov_tech:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/tech?embed=1', ov_wh:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/warehouse?embed=1', ov_apac:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/apac?embed=1'}
+  : {ov_tech:'http://'+location.hostname+':8777/?embed=1', ov_wh:'http://'+location.hostname+':8781/?embed=1',
+     ov_apac:'http://'+location.hostname+':8784/?embed=1'};
 
 // Scale the embedded board so all of it is visible. Measured off #ovview's own
 // box, which is in the same coordinate space as the frame, so the page zoom
@@ -1179,7 +1183,7 @@ function applyDept(){
   if(window.ddWide!==(dept==='all')){ window.ddWide=(dept==='all'); if(window.fitZoom) fitZoom(true); }
   var audit=(dept==='compliance'), drv=(dept==='drives'), sg=(dept==='signoff'),
       cmd=(dept==='commodity'),
-      ov=(dept==='ov_tech'||dept==='ov_wh'), board=!audit&&!drv&&!ov&&!sg&&!cmd;
+      ov=(dept.indexOf('ov_')===0), board=!audit&&!drv&&!ov&&!sg&&!cmd;
   var bv=document.getElementById('boardview'), av=document.getElementById('auditview'),
       dv=document.getElementById('drivesview'), ovv=document.getElementById('ovview');
   if(bv) bv.style.display=board?'':'none';
@@ -1233,7 +1237,21 @@ function applyDept(){
 (function(){
   var sel=document.getElementById('deptsel');
   try{ dept=localStorage.getItem('stations_dept')||'all'; }catch(_){}
+  // ADMIN views (Rob, 2026-10-07): password "uru", asked once per browser
+  // tab (sessionStorage). In-page, so a deterrent like the board lock - the
+  // embedded board's own public URL is not protected by it.
+  var ADMIN_VIEWS={ov_apac:1};
+  function adminOk(){ try{ return sessionStorage.getItem('dd_admin')==='1'; }catch(_){ return false; } }
+  if(ADMIN_VIEWS[dept] && !adminOk()) dept='all';
   if(sel){ sel.value=dept; sel.addEventListener('change',function(){
+    if(ADMIN_VIEWS[sel.value] && !adminOk()){
+      var pw=prompt('Admin password:');
+      if(pw===null || String(pw).trim().toLowerCase()!=='uru'){
+        if(pw!==null) alert('Wrong password.');
+        sel.value=dept; return;
+      }
+      try{ sessionStorage.setItem('dd_admin','1'); }catch(_){}
+    }
     dept=sel.value; try{localStorage.setItem('stations_dept',dept);}catch(_){}
     applyDept();
   }); }
@@ -1324,7 +1342,7 @@ function renderCompPop(){
     var rb=document.getElementById('resetbtn');
     if(rb) rb.style.display = (locked || dept==='compliance' || dept==='commodity' || dept==='drives'
                            || dept==='signoff'
-                           || dept==='ov_tech' || dept==='ov_wh') ? 'none' : '';
+                           || dept.indexOf('ov_')===0) ? 'none' : '';
   }
   // Password gate on the LOCK button - restored 2026-10-06. It was briefly
   // removed when "remove the password dialog after clicking the key" was read
