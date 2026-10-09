@@ -522,8 +522,10 @@ body.locked .ec{cursor:default}
       </optgroup>
       <optgroup label="&#9472;&#9472; ADMIN &#9472;&#9472;">
         <option value="ov_apac">&nbsp;&nbsp;APAC</option>
+        <option value="ov_emea">&nbsp;&nbsp;EMEA</option>
         <option value="settle">&nbsp;&nbsp;Settlements</option>
         <option value="apsign">&nbsp;&nbsp;APAC Sign-Off</option>
+        <option value="emsign">&nbsp;&nbsp;EMEA Sign-Off</option>
       </optgroup>
     </select>
     <div class="spacer"></div>
@@ -1165,9 +1167,10 @@ var dept='all';
 // local ports; on the public page we use their GitHub Pages copies (Supabase
 // Storage force-serves uploaded HTML as text/plain, so it cannot be framed).
 var OV_URLS = EDGE_MODE
-  ? {ov_tech:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/tech?embed=1', ov_wh:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/warehouse?embed=1', ov_apac:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/apac?embed=1'}
+  ? {ov_tech:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/tech?embed=1', ov_wh:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/warehouse?embed=1', ov_apac:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/apac?embed=1',
+     ov_emea:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/emea?embed=1'}
   : {ov_tech:'http://'+location.hostname+':8777/?embed=1', ov_wh:'http://'+location.hostname+':8781/?embed=1',
-     ov_apac:'http://'+location.hostname+':8784/?embed=1'};
+     ov_apac:'http://'+location.hostname+':8784/?embed=1', ov_emea:'http://'+location.hostname+':8785/?embed=1'};
 
 // Scale the embedded board so all of it is visible. Measured off #ovview's own
 // box, which is in the same coordinate space as the frame, so the page zoom
@@ -1195,7 +1198,7 @@ function applyDept(){
   // All Departments is nine columns wide and needs a wider layout to fit;
   // every other view reads best at the standard width. Re-fit on switch.
   if(window.ddWide!==(dept==='all')){ window.ddWide=(dept==='all'); if(window.fitZoom) fitZoom(true); }
-  var audit=(dept==='compliance'), drv=(dept==='drives'), sg=(dept==='signoff'||dept==='apsign'),
+  var audit=(dept==='compliance'), drv=(dept==='drives'), sg=(dept==='signoff'||dept==='apsign'||dept==='emsign'),
       cmd=(dept==='commodity'),
       ov=(dept.indexOf('ov_')===0), stl=(dept==='settle'),
       board=!audit&&!drv&&!ov&&!sg&&!cmd&&!stl;
@@ -1237,12 +1240,13 @@ function applyDept(){
   if(audit){ if(lastData) renderAudit(lastData); return; }
   if(drv){ if(lastData) renderDrives(lastData); return; }
   if(sg){
-    var mode=(dept==='apsign')?'apac':'duncan';
+    var mode=(dept==='apsign')?'apac':(dept==='emsign')?'emea':'duncan';
     if(SG_MODE!==mode){ SG_MODE=mode; SG_SEL=null; SG_WAIT=null; SG_REFRESH=null;
       var dd=document.getElementById('sg_detail'); if(dd) dd.innerHTML='';
       var h2=document.getElementById('sg2hint'); if(h2) h2.innerHTML=''; }
     var tt=document.getElementById('sg1title');
-    if(tt) tt.innerHTML=(mode==='apac')?'APAC &middot; AWAITING SIGN-OFF':'AWAITING SIGN-OFF';
+    if(tt) tt.innerHTML=(mode==='apac')?'APAC &middot; AWAITING SIGN-OFF':
+                        (mode==='emea')?'EMEA &middot; AWAITING SIGN-OFF':'AWAITING SIGN-OFF';
     if(lastData) renderSignoff(lastData); return;
   }
   if(stl){ if(lastData) renderSettle(lastData); return; }
@@ -1259,7 +1263,7 @@ function applyDept(){
   // ADMIN views (Rob, 2026-10-07): password "uru", asked once per browser
   // tab (sessionStorage). In-page, so a deterrent like the board lock - the
   // embedded board's own public URL is not protected by it.
-  var ADMIN_VIEWS={ov_apac:1, settle:1, apsign:1};
+  var ADMIN_VIEWS={ov_apac:1, ov_emea:1, settle:1, apsign:1, emsign:1};
   function adminOk(){ try{ return sessionStorage.getItem('dd_admin')==='1'; }catch(_){ return false; } }
   if(ADMIN_VIEWS[dept] && !adminOk()) dept='all';
   if(sel){ sel.value=dept; sel.addEventListener('change',function(){
@@ -1332,7 +1336,7 @@ function renderCompPop(){
     var rb=document.getElementById('resetbtn');
     if(rb) rb.style.display = (locked || dept==='compliance' || dept==='commodity' || dept==='drives'
                            || dept==='signoff'
-                           || dept.indexOf('ov_')===0 || dept==='settle' || dept==='apsign') ? 'none' : '';
+                           || dept.indexOf('ov_')===0 || dept==='settle' || dept==='apsign' || dept==='emsign') ? 'none' : '';
   }
   // Password gate on the LOCK button - restored 2026-10-06. It was briefly
   // removed when "remove the password dialog after clicking the key" was read
@@ -1420,8 +1424,9 @@ function sn(v){
 var SG_SEL = null, SG_BUSY = false, SG_WAIT = null, SG_REFRESH = null, SG_MODE = 'duncan', SG_APPR = null;
 
 function renderSignoff(d){
-  // the same view serves Duncan and APAC sign-off; SG_MODE picks the queue
-  var P = ((d && d.signoff) || {})[SG_MODE==='apac' ? 'apac_pending' : 'pending'] || [];
+  // the same view serves Duncan, APAC and EMEA sign-off; SG_MODE picks the queue
+  var P = ((d && d.signoff) || {})[SG_MODE==='apac' ? 'apac_pending' :
+                                    SG_MODE==='emea' ? 'emea_pending' : 'pending'] || [];
   if(SG_WAIT){
     var wc=(((d||{}).signoff||{}).checklists||{})[SG_WAIT];
     if(wc && SG_SEL===SG_WAIT){ SG_WAIT=null; sgPaint(wc); }
