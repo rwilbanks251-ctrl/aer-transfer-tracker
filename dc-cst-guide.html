@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Data Capture — CST Notification Guide</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--ink:#152b47;--muted:#5b6b80;--line:#dde2ea;--navy:#152b47;--amber:#f0b429;--soft:#fff4d6;--red:#b42318}
+@media (prefers-color-scheme: dark){:root{--bg:#0d1a2b;--card:#14243a;--ink:#e6edf6;--muted:#9aaabf;--line:#263a55;--navy:#0a1626;--soft:#3a2f12;--red:#ff8a7a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,Arial,sans-serif}
+header{background:var(--navy);color:#fff;border-bottom:4px solid var(--amber);padding:18px 16px}
+header h1{margin:0;font-size:26px}
+header p{margin:4px 0 0;color:#c8d3e2;font-size:14px}
+main{max-width:860px;margin:0 auto;padding:18px 16px 40px}
+section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin-bottom:14px}
+h2{font-size:20px;margin:0 0 8px}
+h3{font-size:16px;margin:14px 0 6px}
+ol,ul{margin:6px 0;padding-left:22px} li{margin-bottom:4px}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:8px 0}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.tbl{overflow-x:auto}
+blockquote{margin:8px 0;padding:10px 14px;background:var(--soft);border-left:4px solid var(--amber);border-radius:0 6px 6px 0}
+.warn{color:var(--red);font-weight:600}
+.note{color:var(--muted);font-size:14px}
+</style></head><body>
+<header>
+  <h1>Data Capture — CST Notification Guide</h1>
+  <p>Quick reference only, not a controlled EHS procedure.</p>
+</header>
+<main>
+
+<section>
+  <p>When an order finishes Data Capture, the CST is told how it went and sent the matching report. Which report depends on one thing: whether a validation file was loaded against the order.</p>
+  <h2>The step at a glance</h2>
+  <ol>
+    <li>Order completes Data Capture</li>
+    <li>Identify the CST for that account</li>
+    <li>Run the Check In Validation Report</li>
+    <li>If nothing comes back, pull the Audit Report - Basic</li>
+    <li>Send the Teams message to the CST: <b>Data Capture is done here</b></li>
+    <li>The CST messages the Warehouse Supervisor to hold or continue</li>
+  </ol>
+</section>
+
+<section>
+  <h2>1. Confirm the order is data captured</h2>
+  <p>All assets on the work order have been captured and the order has left the Data Capture step. Do not send anything while material is still being captured: the report will be incomplete and the CST will be working from the wrong numbers.</p>
+  <p>Note the <b>work order number</b>. It appears in every message below.</p>
+</section>
+
+<section>
+  <h2>2. Identify the CST</h2>
+  <p>The CST is named on the order itself.</p>
+  <ol>
+    <li>In the <b>search bar at the top right</b>, set the dropdown to <b>Inbound Order</b>, enter the <b>work order number</b> and open the order.</li>
+    <li>On the <b>Basic Info</b> tab, look at <b>Internal Resources</b> in the left-hand column.</li>
+    <li>The person listed as <b>Account Administrator</b> is the CST.</li>
+  </ol>
+  <p class="warn">Do not use the Account Owner directly above them. That is a different role.</p>
+</section>
+
+<section>
+  <h2>3. Run the Check In Validation Report</h2>
+  <p>Do not go hunting for a validation file first. <b>Running this report is the check.</b> If a file was loaded against the order, the report compares it against what we captured. If there was none, the report comes back with nothing, and that is your answer.</p>
+  <ol>
+    <li>From the Makor home screen, go to <b>Reports &gt; Operations</b>.</li>
+    <li>Find <b>Check In Validation Report</b>. Its description reads <i>"Compares Receiving Assets with Validation File"</i>. It is the first row.</li>
+    <li>Click <b>View</b>.</li>
+    <li>Enter the work order number in the <b>Order Id</b> box at the top.</li>
+    <li>Press <b>View Report</b>.</li>
+    <li>To send it on, export it to <b>Excel</b> using the <b>save icon</b> in the report toolbar.</li>
+  </ol>
+  <div class="tbl"><table>
+    <tr><th>What comes back</th><th>What it means</th><th>What you send</th></tr>
+    <tr><td>Rows comparing the file against what we captured</td><td>A validation file was present</td><td><b>Check In Validation Report</b></td></tr>
+    <tr><td>Nothing (the pager reads <b>of 0</b>)</td><td>No validation file</td><td><b>Audit Report - Basic</b> (step 4)</td></tr>
+  </table></div>
+  <p>If you get a comparison, read it before sending: <b>were there discrepancies, or not?</b> That decides which message you use in step 5.</p>
+  <p class="note">Most orders will not have a validation file. On a recent large account, 19 of 68 orders had one.</p>
+</section>
+
+<section>
+  <h2>4. If nothing came back: Audit Report - Basic</h2>
+  <ol>
+    <li>In the <b>search bar at the top right</b>, set the dropdown to <b>Inbound Order</b>.</li>
+    <li>Enter the <b>work order number</b> and search.</li>
+    <li>Open the order from the results.</li>
+    <li>On the <b>Basic Info</b> tab, look down the right-hand column for <b>Reports</b>, just under Order Status.</li>
+    <li>Open the <b>Report</b> dropdown and choose <b>Audit Report - Basic</b>. It is the first entry in the list.</li>
+    <li>Set <b>Type</b> to <b>Excel</b>. (CSV and PDF are also offered.)</li>
+    <li>Press <b>View</b>. The report downloads.</li>
+  </ol>
+  <p class="warn">Take care in that dropdown. Audit Report - Data Security, Audit Report - Detailed and Audit Report - Settlement sit directly beneath Basic: four near-identical names in a row. They are different reports. Do not substitute one for another.</p>
+</section>
+
+<section>
+  <h2>5. Send the Teams message</h2>
+  <p>Replace <b>#1234</b> with the real work order number, and <b>attach the report you named</b>. The message and the attachment must match.</p>
+  <h3>No validation file</h3>
+  <blockquote>Hello CST, Work Order #1234 was completed in Data Capture and there was no validation file present, here is the Audit Report - Basic.</blockquote>
+  <h3>Validation file, no discrepancies</h3>
+  <blockquote>Hello CST, Work Order #1234 was completed in Data Capture and a validation file was present, there were no discrepancies when compared to the validation file, here is the Check In Validation Report.</blockquote>
+  <h3>Validation file, discrepancies found</h3>
+  <blockquote>Hello CST, Work Order #1234 was completed in Data Capture and a validation file was present, there were discrepancies when compared to the validation file, here is the Check In Validation Report.</blockquote>
+  <p>Send the message as written. The wording tells the CST three things at once: that capture is finished, whether there was anything to check against, and whether it matched.</p>
+</section>
+
+<section>
+  <h2>6. What happens next</h2>
+  <p><b>Your part ends with the message in step 5.</b> From there the CST messages the <b>Warehouse Supervisor</b> for the facility holding the material, who either places the order on hold or lets processing continue. Data Capture does not send that message and does not need to chase it.</p>
+  <h3>What the CST sends (for reference)</h3>
+  <p class="note">These go from the CST to the supervisor, not from Data Capture.</p>
+  <p><b>On hold</b></p>
+  <blockquote>Hello Warehouse Supervisor, Work Order #1234 needs to be placed on hold until further update.</blockquote>
+  <p><b>Clear to continue</b></p>
+  <blockquote>Hello Warehouse Supervisor, Work Order #1234 is clear to continue processing.</blockquote>
+  <h3>If the CST does not reply</h3>
+  <p>If the CST has not replied by the time the order reaches <b>Tracked Recycling</b>, it is processed in its <b>normal priority</b>. Silence is not a hold: only an explicit instruction from the CST stops an order. Do not park material or pause processing while waiting for an answer.</p>
+  <p>Data Capture does not place orders on hold, release them, or act on a customer instruction.</p>
+</section>
+
+<section>
+  <h2>Quick reference</h2>
+  <div class="tbl"><table>
+    <tr><th>Validation file?</th><th>Discrepancies?</th><th>Report</th><th>Message</th></tr>
+    <tr><td>No</td><td>-</td><td>Audit Report - Basic</td><td>"no validation file present"</td></tr>
+    <tr><td>Yes</td><td>No</td><td>Check In Validation Report</td><td>"no discrepancies when compared"</td></tr>
+    <tr><td>Yes</td><td>Yes</td><td>Check In Validation Report</td><td>"there were discrepancies when compared"</td></tr>
+  </table></div>
+  <p><b>Data Capture notifies the CST. The CST messages the Warehouse Supervisor to hold or continue. No reply by the time the order reaches Tracked Recycling → processed in normal priority.</b></p>
+</section>
+
+</main></body></html>
