@@ -1682,7 +1682,9 @@ function stPaint(c){
     +(failing ? ('Blocked: '+failing+' check'+(failing===1?'':'s')+' failing - fix them first')
               : ('All automated checks clear'+(nb?(' &middot; approving confirms the '+nb+' blocker'+(nb===1?' is':'s are')+' resolved'):'')))
     +'</span></div>';
-  h+=ckRowsHTML({checks:shown, exceptions:c.exceptions}, false);
+  // Exception button on Settlements too (Rob, 2026-10-09) - same Rob-only,
+  // password-checked exception as sign-off, recorded against the order.
+  h+=ckRowsHTML({checks:shown, exceptions:c.exceptions}, true);
   det.innerHTML=h;
 }
 document.addEventListener('click', function(ev){
@@ -1809,15 +1811,19 @@ document.addEventListener('click', function(ev){
       .catch(function(){ ab.disabled = false; noteE('&#9888; approval request failed'); });
     return;
   }
-  if(eb0 && SG_SEL && EDGE_MODE){
+  // The exception button lives on Order Sign-Off AND Settlements; each view
+  // has its own selected order and message line.
+  var excStl = !!(eb0 && eb0.closest('#stlview'));
+  var excOid = excStl ? ST_SEL : SG_SEL, excMsg = excStl ? 'stamsg' : 'sgmsg';
+  if(eb0 && excOid && EDGE_MODE){
     // Public board: the stations function checks Rob's password, then the
     // publisher writes the exception to the sign-off log within a minute.
-    var ckE = eb0.getAttribute('data-exc'), oidX = SG_SEL;
+    var ckE = eb0.getAttribute('data-exc'), oidX = excOid;
     var whyE = prompt('Why can this check not be satisfied? (recorded in the audit trail)');
     if(!whyE || !whyE.trim()) return;
     var pwX = prompt('Password for ROB to approve the exception:');
     if(pwX===null) return;
-    var noteX = function(t){ var m=document.getElementById('sgmsg'); if(m) m.innerHTML=t; };
+    var noteX = function(t){ var m=document.getElementById(excMsg); if(m) m.innerHTML=t; };
     eb0.disabled = true; noteX('Checking&hellip;');
     fetch(EDGE, {method:'POST', headers:{'Content-Type':'application/json'},
                  body: JSON.stringify({action:'exception', order:oidX, who:'rob', pw:pwX,
@@ -1841,12 +1847,12 @@ document.addEventListener('click', function(ev){
     return;
   }
   var eb = ev.target.closest('[data-exc]');
-  if(eb && SG_SEL){
+  if(eb && excOid){
     var why = prompt('Why can this check not be satisfied? (recorded in the audit trail)');
     if(!why) return;
     var pw2 = prompt('Password for ROB to approve the exception:');
     if(pw2===null) return;
-    sgPost({order:SG_SEL, who:'rob', pw:pw2, action:'exception',
+    sgPost({order:excOid, who:'rob', pw:pw2, action:'exception',
             check:eb.getAttribute('data-exc'), reason:why}, 'Exception recorded');
   }
 });
