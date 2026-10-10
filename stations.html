@@ -247,6 +247,16 @@ body.locked .ec{cursor:default}
 .plsec h3 .c{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none;white-space:nowrap}
 .pli{display:flex;gap:10px;padding:8px 6px;border-top:1px solid #1d3352;align-items:flex-start;border-radius:6px}
 .plsec h3+.pli,.plnote+.pli{border-top:0}
+/* SORTING view: one wide queue column + a narrow weekly tally */
+.auditrow.sortrow{grid-template-columns:2fr 1fr}
+.ar .sopin{color:#F0B429;font-weight:900;margin-right:6px}
+.ar.next{border-color:#43d17a;box-shadow:0 0 0 1px #43d17a inset}
+.sowk{display:flex;flex-direction:column;gap:12px;padding:4px 2px}
+.sowk .big{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.sowk .lbl{font-size:13px;color:#9fb2ca;text-transform:uppercase;letter-spacing:1px}
+.sowk table{width:100%;border-collapse:collapse;font-size:15px}
+.sowk td{padding:4px 2px;border-bottom:1px solid #1d3352}
+.sowk td.n{text-align:right;font-variant-numeric:tabular-nums;color:#fff}
 .plnote{font-size:14px;line-height:1.4;color:#fff;background:#1b3050;border-left:3px solid #F0B429;border-radius:0 6px 6px 0;padding:7px 10px;margin:0 0 6px;white-space:pre-line}
 .pli .bx{flex:0 0 22px;height:22px;border-radius:6px;border:2px solid #3d6699;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#0e1c31;margin-top:1px}
 .pli.done .bx{background:#43d17a;border-color:#43d17a}
@@ -538,6 +548,7 @@ body.locked .ec{cursor:default}
       <option value="all">All Departments</option>
       <option value="plan">&#9745; Weekly Plan</option>
       <optgroup label="&#9472;&#9472; PRIORITY BOARDS &#9472;&#9472;">
+        <option value="sorting">&nbsp;&nbsp;Sorting</option>
         <option value="dc">&nbsp;&nbsp;Data Capture</option>
         <option value="tech">&nbsp;&nbsp;Tech</option>
         <option value="drives">&nbsp;&nbsp;Drive Management</option>
@@ -598,6 +609,14 @@ body.locked .ec{cursor:default}
       <div class="scroll auditcol" id="cmd_loads"></div></div>
     <div class="panel sec"><h2><span class="n">AWAITING CUSTOMER</span><span class="hx" id="c2hint"></span></h2>
       <div class="scroll auditcol" id="cmd_orders"></div></div>
+  </div>
+</div>
+<div class="grid2" id="sortview" style="display:none">
+  <div class="ordersrow auditrow sortrow">
+    <div class="panel sec"><h2><span class="n">SORTING &middot; NEXT CONTAINER AT THE TOP</span><span class="hx" id="so1hint"></span></h2>
+      <div class="scroll auditcol" id="sort_q"></div></div>
+    <div class="panel sec"><h2><span class="n">THIS WEEK</span><span class="hx" id="so2hint"></span></h2>
+      <div class="scroll auditcol" id="sort_wk"></div></div>
   </div>
 </div>
 <div class="grid2" id="planview" style="display:none">
@@ -1235,11 +1254,13 @@ function applyDept(){
   // every other view reads best at the standard width. Re-fit on switch.
   if(window.ddWide!==(dept==='all')){ window.ddWide=(dept==='all'); if(window.fitZoom) fitZoom(true); }
   var audit=(dept==='compliance'), drv=(dept==='drives'), sg=(dept==='signoff'||dept==='apsign'||dept==='emsign'),
-      cmd=(dept==='commodity'), pln=(dept==='plan'),
+      cmd=(dept==='commodity'), pln=(dept==='plan'), srt=(dept==='sorting'),
       ov=(dept.indexOf('ov_')===0), stl=(dept==='settle'),
-      board=!audit&&!drv&&!ov&&!sg&&!cmd&&!stl&&!pln;
+      board=!audit&&!drv&&!ov&&!sg&&!cmd&&!stl&&!pln&&!srt;
   var plv=document.getElementById('planview');
   if(plv) plv.style.display=pln?'flex':'none';
+  var sov=document.getElementById('sortview');
+  if(sov) sov.style.display=srt?'':'none';
   var stv=document.getElementById('stlview');
   if(stv) stv.style.display=stl?'':'none';
   var bv=document.getElementById('boardview'), av=document.getElementById('auditview'),
@@ -1277,6 +1298,7 @@ function applyDept(){
   // The status strip (P90, trackers, Hold) now stays on every view,
   // overviews included, so the header never changes shape (Rob, 2026-10-07).
   if(pln){ if(lastData) renderPlan(lastData); return; }
+  if(srt){ if(lastData) renderSorting(lastData); return; }
   if(audit){ if(lastData) renderAudit(lastData); return; }
   if(drv){ if(lastData) renderDrives(lastData); return; }
   if(sg){
@@ -2199,6 +2221,45 @@ function renderCord(d){
   return h;
 }
 
+// ── SORTING ──────────────────────────────────────────────────────────────────
+// Containers waiting at Sorting in work order: priority pins, then in-house
+// oldest-first, then transfers. The top row is the next one to pull.
+function renderSorting(d){
+  var q=document.getElementById('sort_q'), w=document.getElementById('sort_wk');
+  if(!q||!w) return;
+  var S=(d&&d.sorting)||{queue:[]}, L=(S.queue||[]).filter(function(x){ return !(hideXfer&&x.xfer); });
+  var h1=document.getElementById('so1hint');
+  if(h1) h1.innerHTML=L.length+' container'+(L.length===1?'':'s')+' &middot; '+lbs(S.queue_lbs||0)+' lbs';
+  q.innerHTML=L.length ? L.map(function(x,i){
+      return '<div class="ar'+(i===0?' next':'')+'"><div class="arh">'
+        +(x.priority?'<span class="sopin" title="Supervisor priority">&#9733;</span>':'')
+        +'<span class="arid">'+esc(x.label||'?')+'</span>'
+        +'<span class="arord">'+esc(x.order)+(x.xfer?' &middot; XFER':'')+'</span>'
+        +'<span class="arac">'+esc(x.account||'')+'</span>'
+        +'<span class="arage">'+(x.days||0)+'d</span></div>'
+        +'<div class="arm"><span class="arst">'+esc(x.location||'no location')+'</span>'
+        +'<b>'+lbs(x.weight)+'</b> lbs'+(x.tare?(' &middot; '+esc(x.tare)):'')
+        +(x.category?(' &middot; '+esc(x.category)):'')
+        +(x.in_process?' &middot; <b style="color:#43d17a">in process</b>':'')
+        +(i===0?' &middot; <b style="color:#43d17a">NEXT</b>':'')+'</div></div>';
+    }).join('')
+    : '<div class="audempty">&#10003; <b>Nothing waiting at Sorting.</b></div>';
+  var wk=S.week||{}, rv=S.recv_week||{}, bp=wk.by_person||{}, bd=wk.by_dest||{};
+  var h2=document.getElementById('so2hint'); if(h2) h2.innerHTML='Mon &ndash; today';
+  function tbl(obj, f){
+    var ks=Object.keys(obj).sort(function(a,b){ return f(obj[b])-f(obj[a]); });
+    return ks.length ? '<table>'+ks.map(function(k){ return '<tr><td>'+esc(k)+'</td><td class="n">'+lbs(f(obj[k]))+' lbs</td></tr>'; }).join('')+'</table>'
+                     : '<div class="lbl">none yet</div>';
+  }
+  w.innerHTML='<div class="sowk">'
+    +'<div><div class="lbl">Sorted today</div><div class="big">'+lbs(S.today_lbs||0)+' <small style="font-size:16px">lbs</small></div></div>'
+    +'<div><div class="lbl">Sorted this week</div><div class="big">'+lbs(wk.weight||0)+' <small style="font-size:16px">lbs &middot; '+(wk.containers||0)+' ctn</small></div></div>'
+    +'<div><div class="lbl">Sent to</div>'+tbl(bd, function(v){ return Number(v)||0; })+'</div>'
+    +'<div><div class="lbl">By person</div>'+tbl(bp, function(v){ return Number((v&&v.weight)||v)||0; })+'</div>'
+    +'<div><div class="lbl">Received this week</div><div class="big" style="font-size:24px">'+lbs(rv.weight||0)+' <small style="font-size:14px">lbs &middot; '+(rv.containers||0)+' ctn</small></div></div>'
+    +'</div>';
+}
+
 // ── WEEKLY PLAN ──────────────────────────────────────────────────────────────
 // Auto items carry the status the publisher graded from Makor. MANUAL items use
 // the live tick file (plan_ticks) so a click shows at once, not 10 min later.
@@ -2338,6 +2399,7 @@ function paint(d){
   if(rvT) rvT.classList.toggle('hot', rv>0);
   if(document.getElementById('comppop').style.display==='block') renderCompPop();
   renderPlan(d);             // Weekly Plan tab (cheap; keeps it current when switched to)
+  renderSorting(d);          // Sorting view
   renderAudit(d);            // keeps the Compliance count live even on the board view
   renderDrives(d);           // same for Drive Management
   renderSignoff(d);          // and the sign-off queue
