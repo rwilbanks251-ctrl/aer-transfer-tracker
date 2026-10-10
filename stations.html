@@ -246,7 +246,8 @@ body.locked .ec{cursor:default}
 .plsec h3{font-size:18px;letter-spacing:1.5px;text-transform:uppercase;color:#fff;display:flex;justify-content:space-between;align-items:baseline;margin:0 0 6px;gap:10px}
 .plsec h3 .c{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none;white-space:nowrap}
 .pli{display:flex;gap:10px;padding:8px 6px;border-top:1px solid #1d3352;align-items:flex-start;border-radius:6px}
-.plsec h3+.pli{border-top:0}
+.plsec h3+.pli,.plnote+.pli{border-top:0}
+.plnote{font-size:14px;line-height:1.4;color:#fff;background:#1b3050;border-left:3px solid #F0B429;border-radius:0 6px 6px 0;padding:7px 10px;margin:0 0 6px;white-space:pre-line}
 .pli .bx{flex:0 0 22px;height:22px;border-radius:6px;border:2px solid #3d6699;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#0e1c31;margin-top:1px}
 .pli.done .bx{background:#43d17a;border-color:#43d17a}
 .pli.unknown .bx{border-style:dashed;border-color:#7f93ad;color:#7f93ad}
@@ -2240,7 +2241,8 @@ function renderPlan(d){
     }).join('');
     done+=sd; all+=items.length;
     return '<div class="plsec"><h3><span>'+esc(s.name)+'</span><span class="c">'+sd+' / '+items.length
-      +(s.who?(' &middot; '+esc(s.who)):'')+'</span></h3>'+rows+'</div>';
+      +(s.who?(' &middot; '+esc(s.who)):'')+'</span></h3>'
+      +(s.note?('<div class="plnote">'+esc(s.note)+'</div>'):'')+rows+'</div>';
   }).join('');
   var pct=all?Math.round(100*done/all):0;
   hd.innerHTML='<span class="plt">'+esc(P.title||'Weekly Plan')+'</span><span class="plw">'+esc(P.week||'')+'</span>'
