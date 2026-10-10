@@ -253,6 +253,8 @@ body.locked .ec{cursor:default}
 .pli .tx{flex:1 1 auto;min-width:0;font-size:15px;line-height:1.35}
 .pli.done .tx .t{color:#9fb2ca}
 .pli .dt{font-size:12.5px;color:#9fb2ca;margin-top:2px}
+.pli a.pll{display:inline-block;margin-top:4px;font-size:13px;font-weight:700;color:#F0B429;text-decoration:none;border:1px solid #6a5410;border-radius:6px;padding:2px 8px}
+.pli a.pll:hover{background:#2a2410}
 .pli.open .dt{color:#ffd782}
 .pli .tg{flex:0 0 auto;font-size:10.5px;font-weight:800;letter-spacing:.6px;padding:2px 6px;border-radius:4px;background:#1b3050;color:#9fb2ca;margin-top:2px}
 .pli .tg.m{background:#3a2f12;color:#ffd782}
@@ -2231,6 +2233,7 @@ function renderPlan(d){
         +'" data-on="'+(st==='done'?1:0)+'" title="'+(it.kind==='manual'?'Manual: tick when done':'Clears itself from Makor')+'">'
         +'<span class="bx">'+(st==='done'?'&#10003;':(st==='unknown'?'?':''))+'</span>'
         +'<div class="tx"><div class="t">'+esc(it.text)+'</div>'
+        +((it.link&&/^https:[/][/]/.test(it.link))?('<a class="pll" href="'+esc(it.link)+'" target="_blank" rel="noopener">'+esc(it.link_text||'Open the guide')+' &#8599;</a>'):'')
         +(det?'<div class="dt">'+esc(det)+'</div>':'')
         +(it.note?'<div class="dt">'+esc(it.note)+'</div>':'')+pb+'</div>'
         +'<span class="tg'+(it.kind==='manual'?' m':'')+'">'+(it.kind==='manual'?'MANUAL':'MAKOR')+'</span></div>';
@@ -2247,6 +2250,7 @@ function renderPlan(d){
 document.addEventListener('click', function(ev){
   if(!ev.target.closest) return;
   if(ev.target.closest('#lockbtn')){ setTimeout(function(){ if(lastData) renderPlan(lastData); },60); return; }
+  if(ev.target.closest('a.pll')) return;          // the guide link opens; it never ticks the task
   var p=ev.target.closest('.pli.manual');
   if(!p||locked) return;
   var pid=p.getAttribute('data-plan'), iid=p.getAttribute('data-item'), on=p.getAttribute('data-on')!=='1';
