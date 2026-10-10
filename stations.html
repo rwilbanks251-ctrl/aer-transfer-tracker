@@ -233,6 +233,34 @@ body.locked .ec{cursor:default}
 .inforow .panel.inv{flex:1 1 0;min-height:0}
 .inforow .panel.cord{flex:1.15 1 0;min-height:0}
 .panel{background:#12233c;border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;overflow:hidden}
+/* WEEKLY PLAN tab: header progress + one card per owner/station; items tick
+   themselves off from Makor, MANUAL ones by click while the board is unlocked */
+.plhead{display:flex;align-items:center;gap:18px;flex:0 0 auto;background:#12233c;border-radius:16px;padding:12px 20px}
+.plhead .plt{font-size:22px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F0B429;white-space:nowrap}
+.plhead .plw{color:#9fb2ca;font-size:14px;white-space:nowrap}
+.plbar{flex:1 1 auto;height:14px;background:#0b1828;border-radius:8px;overflow:hidden;border:1px solid #24406a}
+.plbar i{display:block;height:100%;background:#43d17a}
+.plpct{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.plgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:4px;align-content:start}
+.plsec{background:#12233c;border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;min-width:0}
+.plsec h3{font-size:18px;letter-spacing:1.5px;text-transform:uppercase;color:#fff;display:flex;justify-content:space-between;align-items:baseline;margin:0 0 6px;gap:10px}
+.plsec h3 .c{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none;white-space:nowrap}
+.pli{display:flex;gap:10px;padding:8px 6px;border-top:1px solid #1d3352;align-items:flex-start;border-radius:6px}
+.plsec h3+.pli{border-top:0}
+.pli .bx{flex:0 0 22px;height:22px;border-radius:6px;border:2px solid #3d6699;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#0e1c31;margin-top:1px}
+.pli.done .bx{background:#43d17a;border-color:#43d17a}
+.pli.unknown .bx{border-style:dashed;border-color:#7f93ad;color:#7f93ad}
+.pli .tx{flex:1 1 auto;min-width:0;font-size:15px;line-height:1.35}
+.pli.done .tx .t{color:#9fb2ca}
+.pli .dt{font-size:12.5px;color:#9fb2ca;margin-top:2px}
+.pli.open .dt{color:#ffd782}
+.pli .tg{flex:0 0 auto;font-size:10.5px;font-weight:800;letter-spacing:.6px;padding:2px 6px;border-radius:4px;background:#1b3050;color:#9fb2ca;margin-top:2px}
+.pli .tg.m{background:#3a2f12;color:#ffd782}
+.pli.manual.ed{cursor:pointer}
+.pli.manual.ed:hover{background:#16304f}
+.pli .pbr{height:6px;background:#0b1828;border-radius:4px;overflow:hidden;margin-top:5px}
+.pli .pbr i{display:block;height:100%;background:#F0B429}
+.pli.done .pbr i{background:#43d17a}
 .panel h2{font-size:20px;letter-spacing:2px;text-transform:uppercase;color:#fff;margin-bottom:12px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:baseline}
 .panel h2 .n{color:#F0B429}
 .panel h2 .hx{font-size:13px;color:#9fb2ca;letter-spacing:0;text-transform:none}
@@ -505,6 +533,7 @@ body.locked .ec{cursor:default}
     <div class="brand"><span class="logo">AER</span><span class="bn">Dragon Dropper</span></div>
     <select class="deptsel" id="deptsel" title="Show one department full-width, or all three">
       <option value="all">All Departments</option>
+      <option value="plan">&#9745; Weekly Plan</option>
       <optgroup label="&#9472;&#9472; PRIORITY BOARDS &#9472;&#9472;">
         <option value="dc">&nbsp;&nbsp;Data Capture</option>
         <option value="tech">&nbsp;&nbsp;Tech</option>
@@ -567,6 +596,10 @@ body.locked .ec{cursor:default}
     <div class="panel sec"><h2><span class="n">AWAITING CUSTOMER</span><span class="hx" id="c2hint"></span></h2>
       <div class="scroll auditcol" id="cmd_orders"></div></div>
   </div>
+</div>
+<div class="grid2" id="planview" style="display:none">
+  <div class="plhead" id="plan_head"></div>
+  <div class="plgrid" id="plan_body"></div>
 </div>
 <div class="grid2" id="auditview" style="display:none">
   <div class="ordersrow auditrow">
@@ -1199,9 +1232,11 @@ function applyDept(){
   // every other view reads best at the standard width. Re-fit on switch.
   if(window.ddWide!==(dept==='all')){ window.ddWide=(dept==='all'); if(window.fitZoom) fitZoom(true); }
   var audit=(dept==='compliance'), drv=(dept==='drives'), sg=(dept==='signoff'||dept==='apsign'||dept==='emsign'),
-      cmd=(dept==='commodity'),
+      cmd=(dept==='commodity'), pln=(dept==='plan'),
       ov=(dept.indexOf('ov_')===0), stl=(dept==='settle'),
-      board=!audit&&!drv&&!ov&&!sg&&!cmd&&!stl;
+      board=!audit&&!drv&&!ov&&!sg&&!cmd&&!stl&&!pln;
+  var plv=document.getElementById('planview');
+  if(plv) plv.style.display=pln?'flex':'none';
   var stv=document.getElementById('stlview');
   if(stv) stv.style.display=stl?'':'none';
   var bv=document.getElementById('boardview'), av=document.getElementById('auditview'),
@@ -1225,7 +1260,8 @@ function applyDept(){
   // the board is locked — see the lock handler)
   ['lockbtn','xferbtn'].forEach(function(id){
     var e=document.getElementById(id);
-    if(e) e.style.display=board?'':'none';
+    // the lock also gates ticking MANUAL items on the Weekly Plan
+    if(e) e.style.display=(board||(pln&&id==='lockbtn'))?'':'none';
   });
   var rb=document.getElementById('resetbtn');
   if(rb) rb.style.display=(board&&!locked)?'':'none';
@@ -1237,6 +1273,7 @@ function applyDept(){
   // columns, not the overview being shown.
   // The status strip (P90, trackers, Hold) now stays on every view,
   // overviews included, so the header never changes shape (Rob, 2026-10-07).
+  if(pln){ if(lastData) renderPlan(lastData); return; }
   if(audit){ if(lastData) renderAudit(lastData); return; }
   if(drv){ if(lastData) renderDrives(lastData); return; }
   if(sg){
@@ -2153,6 +2190,69 @@ function renderCord(d){
   return h;
 }
 
+// ── WEEKLY PLAN ──────────────────────────────────────────────────────────────
+// Auto items carry the status the publisher graded from Makor. MANUAL items use
+// the live tick file (plan_ticks) so a click shows at once, not 10 min later.
+function planStatus(it, T){
+  if(it.kind==='manual'){ var t=T[it.id]; return (t&&t.on)?'done':'open'; }
+  return it.status||'unknown';
+}
+function renderPlan(d){
+  var hd=document.getElementById('plan_head'), bd=document.getElementById('plan_body');
+  if(!hd||!bd) return;
+  var P=d&&d.plan;
+  if(!P){
+    hd.innerHTML='<span class="plt">Weekly Plan</span><span class="plw">No plan loaded for this week yet.</span>';
+    bd.innerHTML=''; return;
+  }
+  var T=((d.plan_ticks||{})[P.id])||{}, done=0, all=0;
+  var html=(P.sections||[]).map(function(s){
+    var items=s.items||[], sd=0;
+    var rows=items.map(function(it){
+      var st=planStatus(it,T); if(st==='done') sd++;
+      var det=it.detail||'';
+      if(it.kind==='manual'){
+        var tk=T[it.id];
+        det=(tk&&tk.on)?('ticked '+fdate(tk.day)):(locked?'decision - unlock the board to tick':'decision - click when done');
+      }
+      var pb='';
+      if(it.progress&&(it.type==='target'||it.progress[1]>1)){
+        var pc=Math.min(100,Math.round(100*it.progress[0]/Math.max(1,it.progress[1])));
+        pb='<div class="pbr"><i style="width:'+pc+'%"></i></div>';
+      }
+      var ed=(it.kind==='manual'&&!locked)?' ed':'';
+      return '<div class="pli '+st+' '+it.kind+ed+'" data-plan="'+esc(P.id)+'" data-item="'+esc(it.id)
+        +'" data-on="'+(st==='done'?1:0)+'" title="'+(it.kind==='manual'?'Manual: tick when done':'Clears itself from Makor')+'">'
+        +'<span class="bx">'+(st==='done'?'&#10003;':(st==='unknown'?'?':''))+'</span>'
+        +'<div class="tx"><div class="t">'+esc(it.text)+'</div>'
+        +(det?'<div class="dt">'+esc(det)+'</div>':'')
+        +(it.note?'<div class="dt">'+esc(it.note)+'</div>':'')+pb+'</div>'
+        +'<span class="tg'+(it.kind==='manual'?' m':'')+'">'+(it.kind==='manual'?'MANUAL':'MAKOR')+'</span></div>';
+    }).join('');
+    done+=sd; all+=items.length;
+    return '<div class="plsec"><h3><span>'+esc(s.name)+'</span><span class="c">'+sd+' / '+items.length
+      +(s.who?(' &middot; '+esc(s.who)):'')+'</span></h3>'+rows+'</div>';
+  }).join('');
+  var pct=all?Math.round(100*done/all):0;
+  hd.innerHTML='<span class="plt">'+esc(P.title||'Weekly Plan')+'</span><span class="plw">'+esc(P.week||'')+'</span>'
+    +'<div class="plbar"><i style="width:'+pct+'%"></i></div><span class="plpct">'+done+' / '+all+' done</span>';
+  var sc=bd.scrollTop; bd.innerHTML=html; bd.scrollTop=sc;
+}
+document.addEventListener('click', function(ev){
+  if(!ev.target.closest) return;
+  if(ev.target.closest('#lockbtn')){ setTimeout(function(){ if(lastData) renderPlan(lastData); },60); return; }
+  var p=ev.target.closest('.pli.manual');
+  if(!p||locked) return;
+  var pid=p.getAttribute('data-plan'), iid=p.getAttribute('data-item'), on=p.getAttribute('data-on')!=='1';
+  var d=lastData||{}; d.plan_ticks=d.plan_ticks||{};
+  var T=d.plan_ticks[pid]=d.plan_ticks[pid]||{};
+  if(on){ var n=new Date();
+    T[iid]={on:true, day:n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2)}; }
+  else delete T[iid];
+  renderPlan(d);
+  ctlWrite('plantick',{plan:pid,item:iid,on:on}).then(function(){ setTimeout(poll,1500); }).catch(function(){});
+});
+
 function paint(d){
   if(d.loading){document.getElementById('dc_regular').innerHTML='<div class="ezmt">Loading live data&hellip;</div>';return;}
   lastData=d;                          // cached so view toggles repaint without a refetch
@@ -2225,6 +2325,7 @@ function paint(d){
   var rvT=document.getElementById('trk_rev');
   if(rvT) rvT.classList.toggle('hot', rv>0);
   if(document.getElementById('comppop').style.display==='block') renderCompPop();
+  renderPlan(d);             // Weekly Plan tab (cheap; keeps it current when switched to)
   renderAudit(d);            // keeps the Compliance count live even on the board view
   renderDrives(d);           // same for Drive Management
   renderSignoff(d);          // and the sign-off queue
