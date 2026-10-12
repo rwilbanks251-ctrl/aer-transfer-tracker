@@ -1358,6 +1358,21 @@ function renderCompPop(){
   });
   pop.innerHTML=h;
 }
+// Hovering the Ops Complete tile shows that list as its tooltip (Rob,
+// 2026-10-12) - still no click action, the tiles stay numbers-only.
+(function(){
+  var t=document.getElementById('trk_ops'), pop=document.getElementById('comppop');
+  if(!t||!pop) return;
+  t.removeAttribute('title');
+  t.addEventListener('mouseenter', function(){
+    renderCompPop();
+    var r=t.getBoundingClientRect();
+    pop.style.top=(r.bottom+6)+'px';
+    pop.style.left=Math.max(8, Math.min(r.left, window.innerWidth-400))+'px';
+    pop.style.display='block';
+  });
+  t.addEventListener('mouseleave', function(){ pop.style.display='none'; });
+})();
 // Tracker tiles are NUMBERS ONLY - no click shortcuts (Rob, 2026-10-07).
 
 // HOLD box — click to open the popover of held orders; each has a Release
