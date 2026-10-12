@@ -546,7 +546,6 @@ body.locked .ec{cursor:default}
     <div class="brand"><span class="logo">AER</span><span class="bn">Dragon Dropper</span></div>
     <select class="deptsel" id="deptsel" title="Show one department full-width, or all three">
       <option value="all">All Departments</option>
-      <option value="plan">&#9745; Weekly Plan</option>
       <optgroup label="&#9472;&#9472; PRIORITY BOARDS &#9472;&#9472;">
         <option value="sorting">&nbsp;&nbsp;Sorting</option>
         <option value="dc">&nbsp;&nbsp;Data Capture</option>
@@ -565,7 +564,6 @@ body.locked .ec{cursor:default}
       </optgroup>
       <optgroup label="&#9472;&#9472; ADMIN &#9472;&#9472;">
         <option value="ov_apac">&nbsp;&nbsp;APAC</option>
-        <option value="ov_emea">&nbsp;&nbsp;EMEA</option>
         <option value="settle">&nbsp;&nbsp;Settlements</option>
         <option value="apsign">&nbsp;&nbsp;APAC Sign-Off</option>
         <option value="emsign">&nbsp;&nbsp;EMEA Sign-Off</option>
@@ -1328,6 +1326,9 @@ function applyDept(){
   var ADMIN_VIEWS={ov_apac:1, ov_emea:1, settle:1, apsign:1, emsign:1};
   function adminOk(){ try{ return sessionStorage.getItem('dd_admin')==='1'; }catch(_){ return false; } }
   if(ADMIN_VIEWS[dept] && !adminOk()) dept='all';
+  // a view that was removed (Weekly Plan, EMEA overview - Rob 2026-10-12) may
+  // still be remembered in this browser; fall back instead of a blank picker
+  if(sel && !sel.querySelector('option[value="'+dept+'"]')) dept='all';
   if(sel){ sel.value=dept; sel.addEventListener('change',function(){
     if(ADMIN_VIEWS[sel.value] && !adminOk()){
       var pw=prompt('Admin password:');
