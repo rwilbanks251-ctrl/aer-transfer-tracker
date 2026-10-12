@@ -1220,10 +1220,10 @@ var dept='all';
 // local ports; on the public page we use their GitHub Pages copies (Supabase
 // Storage force-serves uploaded HTML as text/plain, so it cannot be framed).
 var OV_URLS = EDGE_MODE
-  ? {ov_tech:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/tech?embed=1', ov_wh:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/warehouse?embed=1', ov_apac:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/apac?embed=1',
-     ov_emea:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/emea?embed=1'}
+  ? {ov_tech:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/tech?embed=1', ov_wh:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/warehouse?embed=1', ov_apac:'https://rwilbanks251-ctrl.github.io/aer-transfer-tracker/apac?embed=1'}
   : {ov_tech:'http://'+location.hostname+':8777/?embed=1', ov_wh:'http://'+location.hostname+':8781/?embed=1',
-     ov_apac:'http://'+location.hostname+':8784/?embed=1', ov_emea:'http://'+location.hostname+':8785/?embed=1'};
+     ov_apac:'http://'+location.hostname+':8784/?embed=1'};
+// EMEA overview board removed (Rob, 2026-10-12); EMEA Sign-Off stays.
 
 // Scale the embedded board so all of it is visible. Measured off #ovview's own
 // box, which is in the same coordinate space as the frame, so the page zoom
@@ -1323,7 +1323,7 @@ function applyDept(){
   // ADMIN views (Rob, 2026-10-07): password "uru", asked once per browser
   // tab (sessionStorage). In-page, so a deterrent like the board lock - the
   // embedded board's own public URL is not protected by it.
-  var ADMIN_VIEWS={ov_apac:1, ov_emea:1, settle:1, apsign:1, emsign:1};
+  var ADMIN_VIEWS={ov_apac:1, settle:1, apsign:1, emsign:1};
   function adminOk(){ try{ return sessionStorage.getItem('dd_admin')==='1'; }catch(_){ return false; } }
   if(ADMIN_VIEWS[dept] && !adminOk()) dept='all';
   // a view that was removed (Weekly Plan, EMEA overview - Rob 2026-10-12) may
