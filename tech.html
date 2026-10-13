@@ -683,7 +683,7 @@ function loadWeather(){
 loadWeather(); setInterval(loadWeather, 900000);   // refresh weather every 15 min
 
 function poll(){loadUnlocks().then(function(){
-  return fetch('tech_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint);
+  return fetch('https://opfxjmqscafxfnavjbfa.supabase.co/storage/v1/object/public/aer-dash-k7q2x9/tech.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint);
 }).catch(function(){});}
 poll();setInterval(poll,60000);
 
