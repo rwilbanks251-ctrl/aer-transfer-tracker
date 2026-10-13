@@ -674,7 +674,6 @@ body.locked .ec{cursor:default}
       <div class="trt" id="sorttarget"></div>
       <div class="secgrid">
         <div class="subcol"><div class="sublbl">To Process</div><div class="scroll drop" id="sort_regular" data-station="Sorting" data-bucket="regular"></div></div>
-        <div class="subcol"><div class="sublbl ez">&#9889; EZ</div><div class="scroll drop" id="sort_ez" data-station="Sorting" data-bucket="ez"></div></div>
       </div></div>
     <div class="panel sec" id="sec_dc"><h2><span class="n">DATA CAPTURE</span><span class="hx" id="dchint"></span></h2>
       <div class="trt" id="dctarget"></div>
@@ -2473,7 +2472,8 @@ function paint(d){
     var s=S[p[0]]||{regular:[],ez:[],unsorted:[]};
     var reg=vis(s.regular), ezl=vis(s.ez), unl=vis(s.unsorted);   // show/hide-transfers filter
     document.getElementById(p[0]+'_regular').innerHTML=renderCards(reg,p[1],0);
-    document.getElementById(p[0]+'_ez').innerHTML=renderCards(ezl,p[1],0);
+    var ze=document.getElementById(p[0]+'_ez');            // Sorting has no EZ column
+    if(ze) ze.innerHTML=renderCards(ezl,p[1],0);
     var ue=document.getElementById(p[0]+'_unsorted');      // Sorting has no Unsorted column
     if(ue) ue.innerHTML=renderCards(unl,p[1],0);
     document.getElementById(p[2]).innerHTML=hint(reg.length+ezl.length+unl.length, ezl.length, unl.length);
