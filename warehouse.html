@@ -407,7 +407,7 @@ function loadWeather(){
 }
 loadWeather(); setInterval(loadWeather, 900000);
 
-function poll(){fetch('warehouse_data.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});}
+function poll(){fetch('https://opfxjmqscafxfnavjbfa.supabase.co/storage/v1/object/public/aer-dash-k7q2x9/warehouse.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(paint).catch(function(){});}
 poll();setInterval(poll,60000);
 
 // Kiosk hygiene: reload the page once a night (~3 AM) so a TV left on for
