@@ -661,6 +661,12 @@ body.locked .ec{cursor:default}
 </div>
 <div class="grid2" id="boardview">
   <div class="ordersrow">
+    <div class="panel sec" id="sec_sort" style="display:none"><h2><span class="n">SORTING</span><span class="hx" id="sorthint"></span></h2>
+      <div class="trt" id="sorttarget"></div>
+      <div class="secgrid">
+        <div class="subcol"><div class="sublbl">To Process</div><div class="scroll drop" id="sort_regular" data-station="Sorting" data-bucket="regular"></div></div>
+        <div class="subcol"><div class="sublbl ez">&#9889; EZ</div><div class="scroll drop" id="sort_ez" data-station="Sorting" data-bucket="ez"></div></div>
+      </div></div>
     <div class="panel sec" id="sec_dc"><h2><span class="n">DATA CAPTURE</span><span class="hx" id="dchint"></span></h2>
       <div class="trt" id="dctarget"></div>
       <div class="secgrid">
@@ -1107,7 +1113,9 @@ function renderCards(list, station, more){
     var badges='';
     if(o.priority)    badges+='<span class="mb prio">&#9733;</span>';
     if(o.xfer)        badges+='<span class="mb xf">XFER</span>';
-    if(o.destruction) badges+='<span class="mb des">&#128293;</span>';
+    // Full destruction = the literal phrase in the order instructions (Rob
+    // 2026-09-16); spelled out so it reads at a glance (Rob 2026-10-13).
+    if(o.destruction) badges+='<span class="mb des">&#128293; FULL DESTRUCTION</span>';
     h+='<div class="ec b'+band+(o.priority?' prio':'')+'" draggable="true" data-id="'+esc(o.id)+'" data-station="'+esc(station)+'">'
       +'<div class="ecr"><span class="ecid">'+esc(o.id)+(o.account?(' <span class="ecac">&middot; '+esc(o.account)+'</span>'):'')+'</span>'
       +ctnBtn(o,station)
@@ -1252,7 +1260,7 @@ function applyDept(){
   // every other view reads best at the standard width. Re-fit on switch.
   if(window.ddWide!==(dept==='all')){ window.ddWide=(dept==='all'); if(window.fitZoom) fitZoom(true); }
   var audit=(dept==='compliance'), drv=(dept==='drives'), sg=(dept==='signoff'||dept==='apsign'||dept==='emsign'),
-      cmd=(dept==='commodity'), pln=(dept==='plan'), srt=(dept==='sorting'),
+      cmd=(dept==='commodity'), pln=(dept==='plan'), srt=false,   // Sorting = a board section now
       ov=(dept.indexOf('ov_')===0), stl=(dept==='settle'),
       board=!audit&&!drv&&!ov&&!sg&&!cmd&&!stl&&!pln&&!srt;
   var plv=document.getElementById('planview');
@@ -1316,6 +1324,9 @@ function applyDept(){
     var p=document.getElementById('sec_'+k);
     if(p) p.style.display=(dept==='all'||dept===k)?'':'none';
   });
+  // Sorting has its own view only - All Departments stays DC / Tech / Recycling.
+  var ps=document.getElementById('sec_sort');
+  if(ps) ps.style.display=(dept==='sorting')?'':'none';
 }
 (function(){
   var sel=document.getElementById('deptsel');
@@ -1908,7 +1919,7 @@ function renderDrives(d){
     var badges='';
     if(o.priority)    badges+='<span class="mb prio">&#9733;</span>';
     if(o.xfer)        badges+='<span class="mb xf">XFER</span>';
-    if(o.destruction) badges+='<span class="mb des">&#128293;</span>';
+    if(o.destruction) badges+='<span class="mb des">&#128293; FULL DESTRUCTION</span>';
     var n=o.drv_count||0, f=o.drv_failed||0;
     var meta='<b>'+n+'</b> loose drive'+(n===1?'':'s')
       +(o.drv_types?(' &middot; '+esc(o.drv_types)):'')
@@ -2387,14 +2398,22 @@ function paint(d){
   // keep each column's scroll position across the 60s repaint
   var sp={}; document.querySelectorAll('.scroll.drop').forEach(function(z){sp[z.id]=z.scrollTop;});
   var S=d.sections||{};
-  [['dc','Data Capture','dchint'],['tech','Tech','techhint'],['tr','Tracked Recycling','trhint']].forEach(function(p){
+  [['sort','Sorting','sorthint'],['dc','Data Capture','dchint'],['tech','Tech','techhint'],['tr','Tracked Recycling','trhint']].forEach(function(p){
     var s=S[p[0]]||{regular:[],ez:[],unsorted:[]};
     var reg=vis(s.regular), ezl=vis(s.ez), unl=vis(s.unsorted);   // show/hide-transfers filter
     document.getElementById(p[0]+'_regular').innerHTML=renderCards(reg,p[1],0);
     document.getElementById(p[0]+'_ez').innerHTML=renderCards(ezl,p[1],0);
-    document.getElementById(p[0]+'_unsorted').innerHTML=renderCards(unl,p[1],0);
+    var ue=document.getElementById(p[0]+'_unsorted');      // Sorting has no Unsorted column
+    if(ue) ue.innerHTML=renderCards(unl,p[1],0);
     document.getElementById(p[2]).innerHTML=hint(reg.length+ezl.length+unl.length, ezl.length, unl.length);
   });
+  var stg=document.getElementById('sorttarget');
+  if(stg){ var so=d.sorting||{}, tt=d.totals||{};
+    stg.innerHTML='<div class="flowrow">'
+      +'<div class="flowcell"><div class="fl">Sorted</div><div class="fv">'+lbs(tt.sort_today)+'<small> lbs today</small></div>'
+      +'<div class="fw">'+lbs(tt.sort_week)+' lbs this week</div></div>'
+      +'<div class="flowcell"><div class="fl">Waiting</div><div class="fv">'+lbs(so.queue_lbs)+'<small> lbs</small></div>'
+      +'<div class="fw">'+((so.queue||[]).length)+' containers in Sorting</div></div></div>'; }
   var trt=document.getElementById('trtarget');
   if(trt) trt.innerHTML=renderTRTarget(d);
   var dct=document.getElementById('dctarget');
@@ -2424,7 +2443,7 @@ function paint(d){
   paintTrackers(d);          // header tiles read the same numbers renderAudit shows
   // id -> order map for the note modal
   var by={};
-  ['dc','tech','tr'].forEach(function(k){var s=S[k]||{};['regular','ez','unsorted'].forEach(function(bk){(s[bk]||[]).forEach(function(o){by[o.id]=o;});});});
+  ['sort','dc','tech','tr'].forEach(function(k){var s=S[k]||{};['regular','ez','unsorted'].forEach(function(bk){(s[bk]||[]).forEach(function(o){by[o.id]=o;});});});
   (d.hold_orders||[]).forEach(function(o){by[o.id]=o;});
   window._byId=by;
   Object.keys(sp).forEach(function(id){var z=document.getElementById(id); if(z)z.scrollTop=sp[id];});
