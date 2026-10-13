@@ -1403,56 +1403,62 @@ function wkTable(obj, unit){
   return '<table>'+ks.map(function(k){ var x=obj[k], v=(x&&x.weight!=null)?x.weight:x;
     return '<tr><td>'+esc(k)+'</td><td class="n">'+lbs(v)+' '+unit+'</td></tr>'; }).join('')+'</table>';
 }
-function deptWeekHTML(k, d){
-  var W=(d.dept_week||{})[k]||{}, T=d.totals||{}, done=(d.dept_done||{})[k]||[];
+function deptWeekHTML(k, d, span){
+  var today=(span==='today');
+  var W=((today?d.dept_today:d.dept_week)||{})[k]||{}, T=d.totals||{};
+  var dayIso=String(d.day||'').slice(0,10);
+  var done=((d.dept_done||{})[k]||[]).filter(function(o){ return !today || String(o.date||'').slice(0,10)===dayIso; });
   var name={sort:'Sorting', dc:'Data Capture', tech:'Tech', tr:'Tracked Recycling'}[k];
-  var h='<div class="cp-h">'+name+' &middot; this week <span style="color:#9fb2ca;font-weight:700;text-transform:none">(Mon &ndash; today)</span></div>';
+  var per=today?'today':'this week';
+  var h='<div class="cp-h">'+name+' &middot; '+per+(today?'':' <span style="color:#9fb2ca;font-weight:700;text-transform:none">(Mon &ndash; today)</span>')+'</div>';
   function big(l,v,u){ return '<div class="wk-l">'+l+'</div><div class="wk-big">'+v+' <small>'+(u||'')+'</small></div>'; }
   if(k==='sort'){
     var rv=W.received||{};
-    h+=big('Sorted today', lbs(T.sort_today), 'lbs')+big('Sorted this week', lbs(W.weight), 'lbs &middot; '+(W.containers||0)+' ctn')
+    h+=big('Sorted '+per, lbs(W.weight), 'lbs &middot; '+(W.containers||0)+' ctn')
       +'<div class="wk-l">Sent to</div>'+wkTable(W.by_dest,'lbs')
       +'<div class="wk-l">By person</div>'+wkTable(W.by_person,'lbs')
-      +big('Received this week', lbs(rv.weight), 'lbs &middot; '+(rv.containers||0)+' ctn');
+      +big('Received '+per, lbs(rv.weight), 'lbs &middot; '+(rv.containers||0)+' ctn');
   } else if(k==='dc'){
-    h+=big('Captured this week', lbs(W.captured), 'items &middot; '+lbs(W.weight)+' lbs &middot; '+(W.containers||0)+' ctn')
+    h+=big('Captured '+per, lbs(W.captured), 'items &middot; '+lbs(W.weight)+' lbs &middot; '+(W.containers||0)+' ctn')
       +'<div class="wk-l">Sent on</div><table><tr><td>Tech</td><td class="n">'+lbs(W.to_tech)+' items</td></tr>'
       +'<tr><td>Tracked Recycling</td><td class="n">'+lbs(W.to_recycling)+' items</td></tr></table>'
       +'<div class="wk-l">By person</div>'+wkTable(W.by_person,'items')
       +'<div class="wk-l">By category</div>'+wkTable(W.by_category,'items');
   } else if(k==='tech'){
-    h+=big('Processed this week', lbs((W.inventory||0)+(W.recycling||0)), 'units')
+    h+=big('Processed '+per, lbs((W.inventory||0)+(W.recycling||0)), 'units')
       +'<div class="wk-l">Outcome</div><table><tr><td>To inventory</td><td class="n">'+lbs(W.inventory)+'</td></tr>'
       +'<tr><td>To recycling</td><td class="n">'+lbs(W.recycling)+'</td></tr></table>'
       +'<div class="wk-l">To inventory by person</div>'+wkTable(W.inventory_by_person,'units')
       +'<div class="wk-l">To recycling by person</div>'+wkTable(W.recycling_by_person,'units');
   } else {
-    h+=big('Commodity out this week', lbs(W.out_weight), 'lbs')
+    h+=big('Commodity out '+per, lbs(W.out_weight), 'lbs')
       +big('Material in', lbs(W.in_weight), 'lbs &middot; '+lbs(W.in_items)+' items')
       +'<div class="wk-l">By commodity</div>'+wkTable(W.out_by_category,'lbs')
       +'<div class="wk-l">By person</div>'+wkTable(W.out_by_person,'lbs');
   }
-  h+='<div class="wk-l">Orders completed in '+name+' ('+done.length+')</div>';
+  h+='<div class="wk-l">Orders completed in '+name+' '+per+' ('+done.length+')</div>';
   h+=done.length ? done.map(function(o){
       return '<div class="cp-row"><div class="cp-main"><div class="cp-id">'+esc(o.id)
         +' <span style="font-size:11px;color:#9fb2ca;font-weight:600">'+esc(o.account||'')+'</span></div></div>'
         +'<div class="cp-date">'+fdate(o.date)+'</div></div>'; }).join('')
-    : '<div class="cp-empty" style="padding:6px">none yet this week</div>';
+    : '<div class="cp-empty" style="padding:6px">none yet '+per+'</div>';
   return h;
 }
 (function(){
   var pop=document.getElementById('wkpop'); if(!pop) return;
-  [['sorttarget','sort','sorting'],['dctarget','dc','dc'],['techtarget','tech','tech'],['trtarget','tr','tr']].forEach(function(p){
-    var el=document.getElementById(p[0]); if(!el) return;
-    el.addEventListener('mouseenter', function(){
-      if(dept!==p[2] || !lastData) return;          // only on that department's own board
-      pop.innerHTML=deptWeekHTML(p[1], lastData);
-      var r=el.getBoundingClientRect();
-      pop.style.top=Math.min(r.bottom+6, window.innerHeight-200)+'px';
-      pop.style.left=Math.max(8, Math.min(r.left, window.innerWidth-460))+'px';
-      pop.style.display='block';
-    });
-    el.addEventListener('mouseleave', function(){ pop.style.display='none'; });
+  var BOARD={sort:'sorting', dc:'dc', tech:'tech', tr:'tr'};
+  // Each TODAY / THIS WEEK metric carries data-wk="<dept>|<today|week>";
+  // hovering one shows that period only, on that department's own board.
+  document.addEventListener('mouseover', function(ev){
+    var el=ev.target.closest&&ev.target.closest('[data-wk]');
+    if(!el){ pop.style.display='none'; return; }
+    var kv=el.getAttribute('data-wk').split('|');
+    if(dept!==BOARD[kv[0]] || !lastData){ pop.style.display='none'; return; }
+    pop.innerHTML=deptWeekHTML(kv[0], lastData, kv[1]);
+    var r=el.getBoundingClientRect();
+    pop.style.top=Math.min(r.bottom+6, window.innerHeight-200)+'px';
+    pop.style.left=Math.max(8, Math.min(r.left, window.innerWidth-460))+'px';
+    pop.style.display='block';
   });
 })();
 // Tracker tiles are NUMBERS ONLY - no click shortcuts (Rob, 2026-10-07).
@@ -2227,30 +2233,30 @@ function saveNote(text){
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeNote(); closeCtn(); } });
 })();
 
-function renderTargetBars(day,wk,dayT,wkT,unit){
-  function bar(label,val,target){
+function renderTargetBars(day,wk,dayT,wkT,unit,key){
+  function bar(label,val,target,span){
     var pct=target?Math.round(100*val/target):0, w=Math.min(100,pct);
-    return '<div class="trb"><div class="trh"><span>'+label+' &middot; <b>'+lbs(val)+'</b> / '+lbs(target)+' '+unit+'</span>'
+    return '<div class="trb"'+(key?(' data-wk="'+key+'|'+span+'"'):'')+'><div class="trh"><span>'+label+' &middot; <b>'+lbs(val)+'</b> / '+lbs(target)+' '+unit+'</span>'
       +'<span class="trp">'+pct+'%</span></div>'
       +'<div class="trk2"><i class="'+(pct>=100?'hit':'')+'" style="width:'+w+'%"></i></div></div>';
   }
-  return bar('Today',val0(day),dayT)+bar('This week',val0(wk),wkT);
+  return bar('Today',val0(day),dayT,'today')+bar('This week',val0(wk),wkT,'week');
 }
 function val0(v){ return v||0; }
 
 function renderTRTarget(d){
   var T=d.totals||{};
-  return renderTargetBars(T.tr_today,T.tr_week,T.tr_target_day||6000,T.tr_target_week||30000,'lbs');
+  return renderTargetBars(T.tr_today,T.tr_week,T.tr_target_day||6000,T.tr_target_week||30000,'lbs','tr');
 }
 
 function renderTechTarget(d){
   var T=d.totals||{};
-  return renderTargetBars(T.tech_today,T.tech_week,T.tech_target_day||90,T.tech_target_week||450,'units');
+  return renderTargetBars(T.tech_today,T.tech_week,T.tech_target_day||90,T.tech_target_week||450,'units','tech');
 }
 
 function renderDCTarget(d){
   var T=d.totals||{};
-  return renderTargetBars(T.dc_today,T.dc_week,T.dc_target_day||350,T.dc_target_week||1750,'items');
+  return renderTargetBars(T.dc_today,T.dc_week,T.dc_target_day||350,T.dc_target_week||1750,'items','dc');
 }
 
 function renderFlow(d){
@@ -2480,9 +2486,9 @@ function paint(d){
   });
   var stg=document.getElementById('sorttarget');
   if(stg){ var so=d.sorting||{}, tt=d.totals||{};
-    stg.innerHTML='<div class="flowrow">'
-      +'<div class="flowcell"><div class="fl">Sorted</div><div class="fv">'+lbs(tt.sort_today)+'<small> lbs today</small></div>'
-      +'<div class="fw">'+lbs(tt.sort_week)+' lbs this week</div></div>'
+    stg.innerHTML='<div class="flowrow" style="grid-template-columns:repeat(3,minmax(0,1fr))">'
+      +'<div class="flowcell" data-wk="sort|today"><div class="fl">Sorted today</div><div class="fv">'+lbs(tt.sort_today)+'<small> lbs</small></div></div>'
+      +'<div class="flowcell" data-wk="sort|week"><div class="fl">Sorted this week</div><div class="fv">'+lbs(tt.sort_week)+'<small> lbs</small></div></div>'
       +'<div class="flowcell"><div class="fl">Waiting</div><div class="fv">'+lbs(so.queue_lbs)+'<small> lbs</small></div>'
       +'<div class="fw">'+((so.queue||[]).length)+' containers in Sorting</div></div></div>'; }
   var trt=document.getElementById('trtarget');
