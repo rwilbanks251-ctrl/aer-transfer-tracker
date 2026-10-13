@@ -169,6 +169,14 @@ body.locked .ec{cursor:default}
 .comppop .cp-sub{font-size:11px;color:#9fb2ca;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .comppop .cp-date{font-size:12px;color:#43d17a;font-weight:800;white-space:nowrap}
 .comppop .cp-empty{color:#9fb2ca;font-size:13px;text-align:center;padding:16px}
+.wkpop{width:440px;border-color:#2a4a74}
+.wkpop .cp-h{color:#F0B429}
+.wkpop .wk-big{font-size:22px;font-weight:800;margin:0 4px 6px}
+.wkpop .wk-big small{font-size:12px;color:#9fb2ca;font-weight:700}
+.wkpop .wk-l{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:#9fb2ca;font-weight:800;margin:8px 4px 3px}
+.wkpop table{width:100%;border-collapse:collapse;font-size:12.5px}
+.wkpop td{padding:3px 4px;border-bottom:1px solid #1d3352}
+.wkpop td.n{text-align:right;font-weight:700;white-space:nowrap}
 .p90{display:flex;align-items:center;gap:14px;background:rgba(14,28,49,.65);border:1px solid #2a4a74;border-radius:12px;padding:0 14px;height:48px;flex:0 0 auto}
 .p90 .tag{font-size:9.5px;color:#9fb2ca;text-transform:uppercase;letter-spacing:1px;font-weight:800}
 .p90 .grp{display:flex;flex-direction:column;line-height:1}
@@ -598,6 +606,7 @@ body.locked .ec{cursor:default}
   </div>
   </div>
   <div class="comppop" id="comppop" style="display:none"></div>
+  <div class="comppop wkpop" id="wkpop" style="display:none"></div>
   <div class="holdpop" id="holdpop" style="display:none"></div>
 </div>
 <div class="notebanner" id="notebanner" style="display:none"></div>
@@ -1384,6 +1393,68 @@ function renderCompPop(){
     pop.style.display='block';
   });
   t.addEventListener('mouseleave', function(){ pop.style.display='none'; });
+})();
+// THIS WEEK tooltip (Rob, 2026-10-13): hovering a department's this-week
+// metrics strip on its own priority board shows the week breakdown plus the
+// orders that finished that department this week.
+function wkTable(obj, unit){
+  var ks=Object.keys(obj||{}).filter(function(k){ return Number(obj[k]&&obj[k].weight!=null?obj[k].weight:obj[k]); })
+    .sort(function(a,b){ function v(x){ return Number(obj[x]&&obj[x].weight!=null?obj[x].weight:obj[x])||0; } return v(b)-v(a); });
+  if(!ks.length) return '<div class="cp-empty" style="padding:6px">none yet</div>';
+  return '<table>'+ks.map(function(k){ var x=obj[k], v=(x&&x.weight!=null)?x.weight:x;
+    return '<tr><td>'+esc(k)+'</td><td class="n">'+lbs(v)+' '+unit+'</td></tr>'; }).join('')+'</table>';
+}
+function deptWeekHTML(k, d){
+  var W=(d.dept_week||{})[k]||{}, T=d.totals||{}, done=(d.dept_done||{})[k]||[];
+  var name={sort:'Sorting', dc:'Data Capture', tech:'Tech', tr:'Tracked Recycling'}[k];
+  var h='<div class="cp-h">'+name+' &middot; this week <span style="color:#9fb2ca;font-weight:700;text-transform:none">(Mon &ndash; today)</span></div>';
+  function big(l,v,u){ return '<div class="wk-l">'+l+'</div><div class="wk-big">'+v+' <small>'+(u||'')+'</small></div>'; }
+  if(k==='sort'){
+    var rv=W.received||{};
+    h+=big('Sorted today', lbs(T.sort_today), 'lbs')+big('Sorted this week', lbs(W.weight), 'lbs &middot; '+(W.containers||0)+' ctn')
+      +'<div class="wk-l">Sent to</div>'+wkTable(W.by_dest,'lbs')
+      +'<div class="wk-l">By person</div>'+wkTable(W.by_person,'lbs')
+      +big('Received this week', lbs(rv.weight), 'lbs &middot; '+(rv.containers||0)+' ctn');
+  } else if(k==='dc'){
+    h+=big('Captured this week', lbs(W.captured), 'items &middot; '+lbs(W.weight)+' lbs &middot; '+(W.containers||0)+' ctn')
+      +'<div class="wk-l">Sent on</div><table><tr><td>Tech</td><td class="n">'+lbs(W.to_tech)+' items</td></tr>'
+      +'<tr><td>Tracked Recycling</td><td class="n">'+lbs(W.to_recycling)+' items</td></tr></table>'
+      +'<div class="wk-l">By person</div>'+wkTable(W.by_person,'items')
+      +'<div class="wk-l">By category</div>'+wkTable(W.by_category,'items');
+  } else if(k==='tech'){
+    h+=big('Processed this week', lbs((W.inventory||0)+(W.recycling||0)), 'units')
+      +'<div class="wk-l">Outcome</div><table><tr><td>To inventory</td><td class="n">'+lbs(W.inventory)+'</td></tr>'
+      +'<tr><td>To recycling</td><td class="n">'+lbs(W.recycling)+'</td></tr></table>'
+      +'<div class="wk-l">To inventory by person</div>'+wkTable(W.inventory_by_person,'units')
+      +'<div class="wk-l">To recycling by person</div>'+wkTable(W.recycling_by_person,'units');
+  } else {
+    h+=big('Commodity out this week', lbs(W.out_weight), 'lbs')
+      +big('Material in', lbs(W.in_weight), 'lbs &middot; '+lbs(W.in_items)+' items')
+      +'<div class="wk-l">By commodity</div>'+wkTable(W.out_by_category,'lbs')
+      +'<div class="wk-l">By person</div>'+wkTable(W.out_by_person,'lbs');
+  }
+  h+='<div class="wk-l">Orders completed in '+name+' ('+done.length+')</div>';
+  h+=done.length ? done.map(function(o){
+      return '<div class="cp-row"><div class="cp-main"><div class="cp-id">'+esc(o.id)
+        +' <span style="font-size:11px;color:#9fb2ca;font-weight:600">'+esc(o.account||'')+'</span></div></div>'
+        +'<div class="cp-date">'+fdate(o.date)+'</div></div>'; }).join('')
+    : '<div class="cp-empty" style="padding:6px">none yet this week</div>';
+  return h;
+}
+(function(){
+  var pop=document.getElementById('wkpop'); if(!pop) return;
+  [['sorttarget','sort','sorting'],['dctarget','dc','dc'],['techtarget','tech','tech'],['trtarget','tr','tr']].forEach(function(p){
+    var el=document.getElementById(p[0]); if(!el) return;
+    el.addEventListener('mouseenter', function(){
+      if(dept!==p[2] || !lastData) return;          // only on that department's own board
+      pop.innerHTML=deptWeekHTML(p[1], lastData);
+      var r=el.getBoundingClientRect();
+      pop.style.top=Math.min(r.bottom+6, window.innerHeight-200)+'px';
+      pop.style.left=Math.max(8, Math.min(r.left, window.innerWidth-460))+'px';
+      pop.style.display='block';
+    });
+    el.addEventListener('mouseleave', function(){ pop.style.display='none'; });
+  });
 })();
 // Tracker tiles are NUMBERS ONLY - no click shortcuts (Rob, 2026-10-07).
 
