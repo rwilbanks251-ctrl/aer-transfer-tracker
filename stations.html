@@ -37,6 +37,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0e1c31;color:#fff;overf
 /* Compliance view — two equal columns, each independently scrollable so a long
    findings list never pushes the page (Rob: "columns always scrollable"). */
 .auditrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;min-height:0}
+/* 3 x 2 - must beat .ordersrow{display:flex}, declared later in the sheet */
+.ordersrow.auditrow.six{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.ordersrow.auditrow.six>.panel{display:flex;flex-direction:column;min-height:0}
+.ariss{margin-top:3px;font-size:12px;font-weight:800;color:#F0B429;line-height:1.4}
+.ariss span+span:before{content:" \00b7  ";color:#7f93ad;font-weight:400}
 /* Drive Management is TWO columns (Rob 2026-10-05): failed wipes belong
    in To Destroy, not a column of their own. */
 .drvrow{display:grid;grid-template-columns:1fr 1fr;gap:16px;min-height:0}
@@ -592,11 +598,11 @@ body.locked .ec{cursor:default}
       <div class="tv" id="trk_ops_v">0</div><div class="tl2">Ops Complete<br>this Week</div></div>
     <div class="trkt flow" id="trk_rev" title="Orders finished on the floor and waiting on sign-off review.">
       <div class="tv" id="trk_rev_v">0</div><div class="tl2">Orders Need<br>Review</div></div>
-    <div class="trkt" id="trk_loc" title="Staged containers with no warehouse location — nobody can be sent to fetch these.">
+    <div class="trkt" id="trk_loc" title="Containers and assets with no warehouse location or no container.">
       <div class="tv" id="trk_loc_v">0</div><div class="tl2">Location<br>Errors</div></div>
-    <div class="trkt" id="trk_ds" title="Data-bearing assets with no certificate of erasure.">
+    <div class="trkt" id="trk_ds" title="Wipe not confirmed, DS record missing or mismatched, no certificate of erasure, loose drives with no wipe.">
       <div class="tv" id="trk_ds_v">0</div><div class="tl2">Data Security<br>Errors</div></div>
-    <div class="trkt" id="trk_inv" title="Assets with no container, missing grading, spec or category errors.">
+    <div class="trkt" id="trk_inv" title="Grading, testing / spec and lock errors.">
       <div class="tv" id="trk_inv_v">0</div><div class="tl2">Inventory<br>Errors</div></div>
     <div class="trkt soon" id="trk_com" title="Commodity inventory errors — not built yet.">
       <div class="tv">Coming<br>Soon</div><div class="tl2">Commodity<br>Inv. Errors</div></div>
@@ -631,13 +637,19 @@ body.locked .ec{cursor:default}
   <div class="plgrid" id="plan_body"></div>
 </div>
 <div class="grid2" id="auditview" style="display:none">
-  <div class="ordersrow auditrow">
-    <div class="panel sec"><h2><span class="n">CONTAINERS &mdash; NO LOCATION</span><span class="hx" id="a1hint"></span></h2>
-      <div class="scroll auditcol" id="audit_noloc"></div></div>
-    <div class="panel sec"><h2><span class="n">DATA SECURITY ERRORS</span><span class="hx" id="a2hint"></span></h2>
-      <div class="scroll auditcol" id="audit_ds"></div></div>
-    <div class="panel sec"><h2><span class="n">INVENTORY ERRORS</span><span class="hx" id="a3hint"></span></h2>
-      <div class="scroll auditcol" id="audit_inv"></div></div>
+  <div class="ordersrow auditrow six">
+    <div class="panel sec"><h2><span class="n">LOCATION &amp; CONTAINER</span><span class="hx" id="ah_location"></span></h2>
+      <div class="scroll auditcol" id="as_location"></div></div>
+    <div class="panel sec"><h2><span class="n">GRADING</span><span class="hx" id="ah_grading"></span></h2>
+      <div class="scroll auditcol" id="as_grading"></div></div>
+    <div class="panel sec"><h2><span class="n">TESTING &amp; SPECS</span><span class="hx" id="ah_testing"></span></h2>
+      <div class="scroll auditcol" id="as_testing"></div></div>
+    <div class="panel sec"><h2><span class="n">DATA SECURITY</span><span class="hx" id="ah_security"></span></h2>
+      <div class="scroll auditcol" id="as_security"></div></div>
+    <div class="panel sec"><h2><span class="n">LOCKS</span><span class="hx" id="ah_locks"></span></h2>
+      <div class="scroll auditcol" id="as_locks"></div></div>
+    <div class="panel sec"><h2><span class="n">STORAGE DEVICES</span><span class="hx" id="ah_drives"></span></h2>
+      <div class="scroll auditcol" id="as_drives"></div></div>
   </div>
 </div>
 <div class="grid2" id="drivesview" style="display:none">
@@ -1555,10 +1567,12 @@ function deptWeekHTML(k, d, span){
 // red when a data-security gap is a real one rather than paperwork.
 function paintTrackers(d){
   var C=(d&&d.compliance)||{};
-  var nl=(C.no_location||[]).length,
-      ds=(C.ds_gaps||[]),
-      inv=(C.no_container||[]).length+(C.inventory_errors||[]).length;
-  var sec=ds.filter(function(r){return r.severity!=='clerical';}).length;
+  var S=C.sections||{};
+  function n(k){ return (S[k]||[]).length; }
+  var nl=n('location'),
+      ds=(S.security||[]).concat(S.drives||[]),
+      inv=n('grading')+n('testing')+n('locks');
+  var sec=ds.filter(function(r){return r.severity==='security';}).length;
   function set(id,n,bad){
     var t=document.getElementById(id), v=document.getElementById(id+'_v');
     if(!t||!v) return;
@@ -2087,65 +2101,54 @@ function renderAudit(d){
       +(fix?('<div class="arfix"><span class="fixl">FIX</span>'+esc(fix)+'</div>'):'')
       +'</div>';
   }
-  var h1 = nl.length ? nl.map(function(r){
-      return row(r, r.label,
-        r.assets ? ('<b>'+r.assets+'</b> assets &middot; no warehouse location')
-                 : ('<b>'+lbs(r.weight||0)+'</b> lbs &middot; no warehouse location'),
-        null,
-        'Set the warehouse location on this container in Makor so the floor can be told where to pull it from.');
-    }).join('')
-    : '<div class="audempty">&#10003; <b>All staged containers have a warehouse location.</b><br>Nothing here means every container can be called for by location.</div>';
-
-  // INVENTORY ERRORS — one list, same spirit as the inventory error report:
-  // assets with no container, plus assets missing a certificate of erasure.
-  // DATA SECURITY — real gaps first, then paperwork; an auditor reads top-down
-  var dsSorted = ds.slice().sort(function(a,b){
-    var sa=(a.severity==='clerical')?1:0, sb=(b.severity==='clerical')?1:0;
-    return sa-sb || (b.age||0)-(a.age||0);
-  });
-  var h2 = dsSorted.length ? dsSorted.map(function(r){
-        return row(r, r.label, '<b>'+esc(r.reason||'no DS certificate')+'</b> &middot; '+esc(r.category||'')
-          +(r.model?(' &middot; '+esc(r.model)):'')
-          +(r.container?(' &middot; '+esc(r.container)):'')
-          +(r.location?(' &middot; '+esc(r.location)):''),
-          r.severity, r.fix);
-      }).join('')
-    : (C.ds_ready
-       ? '<div class="audempty">&#10003; <b>No data security errors.</b><br>Every data-bearing asset in inventory carries a certificate of erasure.</div>'
-       : '<div class="audpend"><b>Certificate check has not run yet.</b><br><br>'
-         +'The Makor DS feed is per-account and far too heavy for the board\'s '
-         +'1-minute refresh, so it is computed by <b>ds_compliance.py</b> on its '
-         +'own schedule (daily 05:00).</div>');
-  if(C.ds_ready && C.ds_age_hours!=null && C.ds_age_hours>24){
-    h2 = '<div class="audpend" style="padding-bottom:6px">&#9888; certificate data is '
-       + C.ds_age_hours + 'h old — re-run <b>ds_compliance.py</b></div>' + h2;
+  // SECTIONS (Rob, 2026-10-13) — the inventory error report's old breakdown.
+  // One card per unit per section; a unit failing several things in one
+  // section lists them all on its card. Built server-side (_error_sections)
+  // from the live inventory pass + the morning sales report's not-sale-ready
+  // list, so together they cover everything that keeps a unit off the report.
+  var S=C.sections||{};
+  var EMPTY={
+    location:'Every container and asset has a warehouse location and a container.',
+    grading:'Every unit carries a cosmetic grade and an F3+ functional grade.',
+    testing:'Every unit has a passing diagnostic record.',
+    security:'Every unit has a confirmed wipe and a matching Makor DS record.',
+    locks:'No iCloud or MDM locked units.',
+    drives:'Every loose drive in inventory has a wipe record.'
+  };
+  function card(r){
+    var iss=(r.issues||[]);
+    var fixes=[]; iss.forEach(function(i){ if(i[1] && fixes.indexOf(i[1])<0) fixes.push(i[1]); });
+    var meta = r.kind==='container'
+      ? ((r.assets?('<b>'+r.assets+'</b> assets'):('<b>'+lbs(r.weight||0)+'</b> lbs'))+' &middot; staged container')
+      : (esc(r.category||'')+(r.model?(' &middot; '+esc(r.model)):'')
+         +(r.container?(' &middot; '+esc(r.container)):'')
+         +(r.location?(' &middot; '+esc(r.location)):''));
+    return row(r, r.label,
+      meta+'<div class="ariss">'+iss.map(function(i){return '<span>'+esc(i[0])+'</span>';}).join('')+'</div>',
+      r.severity==='clerical'?'clerical':null, fixes.join(' '));
   }
-
-  // INVENTORY ERRORS — assets with no container (live, from the floor feed)
-  // plus missing grading / no container from the inventory pass.
-  var h3 = nc.map(function(r){
-        return row(r, r.label, '<b>no container</b> &middot; '+esc(r.category||'')
-          +(r.model?(' &middot; '+esc(r.model)):'')
-          +(r.location?(' &middot; at '+esc(r.location)):' &middot; no location either'),
-          null,
-          'Assign this asset to a container in Makor — outside one it cannot be located.');
-      }).concat(ie.map(function(r){
-        return row(r, r.label, '<b>'+esc(r.reason||'')+'</b> &middot; '+esc(r.category||'')
-          +(r.model?(' &middot; '+esc(r.model)):'')
-          +(r.container?(' &middot; '+esc(r.container)):'')
-          +(r.location?(' &middot; '+esc(r.location)):''),
-          null, r.fix);
-      })).join('')
-    || '<div class="audempty">&#10003; <b>No inventory errors.</b><br>Every asset is in a container and fully graded.</div>';
-
-  document.getElementById('audit_noloc').innerHTML=h1;
-  document.getElementById('audit_ds').innerHTML=h2;
-  document.getElementById('audit_inv').innerHTML=h3;
-  document.getElementById('a1hint').innerHTML=nl.length+' container'+(nl.length===1?'':'s');
-  var sec=ds.filter(function(r){return r.severity!=='clerical';}).length;
-  document.getElementById('a2hint').innerHTML=ds.length+' issue'+(ds.length===1?'':'s')
-    +(sec?(' &middot; <b style="color:#ff6b6b">'+sec+' real</b>'):'');
-  document.getElementById('a3hint').innerHTML=(nc.length+ie.length)+' issue'+((nc.length+ie.length)===1?'':'s');
+  ['location','grading','testing','security','locks','drives'].forEach(function(k){
+    var L=S[k]||[], el=document.getElementById('as_'+k), hx=document.getElementById('ah_'+k);
+    if(!el) return;
+    var h;
+    if(L.length) h=L.map(card).join('');
+    else if(!C.ds_ready && k!=='location')
+      h='<div class="audpend"><b>The inventory check has not run yet.</b><br>It is computed by <b>ds_compliance.py</b> on its own schedule.</div>';
+    else h='<div class="audempty">&#10003; <b>None.</b><br>'+EMPTY[k]+'</div>';
+    el.innerHTML=h;
+    var real=L.filter(function(r){return r.severity==='security';}).length;
+    if(hx) hx.innerHTML=L.length+' unit'+(L.length===1?'':'s')
+      +((k==='security'||k==='drives')&&real?(' &middot; <b style="color:#ff6b6b">'+real+' real</b>'):'');
+  });
+  // the sales-report half is a morning snapshot - say how old it is
+  var ah=C.blockers_age_hours, tx=document.getElementById('ah_testing');
+  if(tx) tx.innerHTML += (ah==null) ? ' &middot; <span style="color:#ff9f43">no sales-report data yet</span>'
+      : (' &middot; sales report '+(ah<1?'&lt;1':Math.round(ah))+'h ago');
+  if(C.ds_ready && C.ds_age_hours!=null && C.ds_age_hours>24){
+    var sx=document.getElementById('as_security');
+    if(sx) sx.innerHTML='<div class="audpend" style="padding-bottom:6px">&#9888; certificate data is '
+       + C.ds_age_hours + 'h old — re-run <b>ds_compliance.py</b></div>' + sx.innerHTML;
+  }
 }
 
 // Per-order CONTAINERS — read-only pick list: which containers are staged for
